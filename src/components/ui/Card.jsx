@@ -1,6 +1,6 @@
-export default function Card({ title, subtitle, actions, children, className = '' }) {
+export default function Card({ title, subtitle, actions, children, className = '', ...rest }) {
   return (
-    <section className={`card ${className}`.trim()}>
+    <section className={`card ${className}`.trim()} {...rest}>
       {(title || actions) && (
         <header className="card__head">
           <div className="row row--between">

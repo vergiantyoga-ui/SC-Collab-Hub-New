@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
@@ -75,12 +76,12 @@ export default function DocumentVerification() {
   if (queue.length === 0) {
     return (
       <>
-        <header className="page-head">
-          <h1>Verifikasi dokumen</h1>
-          <p>
-            Dokumen yang dikirim pemasok diperiksa di sini sebelum akun mereka diaktifkan.
-          </p>
-        </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Verifikasi dokumen' }]}
+        icon="verify"
+        title="Verifikasi dokumen"
+        description="Periksa keterbacaan berkas, kesesuaian nomor identitas, masa berlaku sertifikat, dan kecocokan nama pemilik rekening dengan badan usaha."
+      />
         <div className="card">
           <EmptyState
             title="Tidak ada dokumen yang menunggu"
@@ -98,13 +99,12 @@ export default function DocumentVerification() {
 
   return (
     <>
-      <header className="page-head">
-        <h1>Verifikasi dokumen</h1>
-        <p>
-          Periksa keterbacaan berkas, kesesuaian nomor identitas, masa berlaku sertifikat, dan
-          kecocokan nama pemilik rekening dengan badan usaha.
-        </p>
-      </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Verifikasi dokumen' }]}
+        icon="verify"
+        title="Verifikasi dokumen"
+        description="Periksa keterbacaan berkas, kesesuaian nomor identitas, masa berlaku sertifikat, dan kecocokan nama pemilik rekening dengan badan usaha."
+      />
 
       <div className="queue-layout">
         <aside className="queue-panel" aria-label="Menunggu verifikasi">

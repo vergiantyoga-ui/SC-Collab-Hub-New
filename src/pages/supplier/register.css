@@ -33,7 +33,7 @@
   color: var(--ink-400);
 }
 .register__step--current {
-  color: var(--navy-900);
+  color: var(--blue-600);
 }
 .register__step--done {
   color: var(--success);
@@ -57,7 +57,7 @@
 
 .register__panel {
   background: var(--surface);
-  border: 1px solid var(--line-soft);
+  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   padding: clamp(var(--sp-5), 4vw, var(--sp-6));
   box-shadow: var(--shadow-card);

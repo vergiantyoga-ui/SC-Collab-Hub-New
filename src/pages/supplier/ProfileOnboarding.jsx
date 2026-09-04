@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import SectionRail from '../../components/ui/SectionRail.jsx';
 import ProfileSectionForm from '../../components/profile/ProfileSectionForm.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -42,13 +43,12 @@ export default function ProfileOnboarding() {
 
   return (
     <div>
-      <header className="page-head">
-        <h1>Lengkapi profil perusahaan</h1>
-        <p>
-          Lima bagian di bawah wajib terisi sebelum akun Anda dapat diaktifkan. Anda bisa
-          menyimpannya bertahap dan melanjutkan kapan saja.
-        </p>
-      </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/portal/status' }, { label: 'Lengkapi profil' }]}
+        icon="document"
+        title="Lengkapi profil perusahaan"
+        description="Lima bagian di bawah wajib terisi sebelum akun Anda dapat diaktifkan. Anda bisa menyimpannya bertahap dan melanjutkan kapan saja."
+      />
 
       {fixNotes.length > 0 && (
         <div className="notice notice--danger" style={{ marginBottom: 'var(--sp-5)' }}>

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import Button from '../../components/ui/Button.jsx';
@@ -58,13 +59,12 @@ export default function QueueDashboard() {
 
   return (
     <>
-      <header className="page-head">
-        <h1>Antrian registrasi pemasok</h1>
-        <p>
-          Tinjau data yang dikirim pemasok, lalu setujui atau tolak. Setelah disetujui, pilih cara
-          melanjutkan onboarding.
-        </p>
-      </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Antrian registrasi' }]}
+        icon="queue"
+        title="Antrian registrasi"
+        description="Tinjau data yang dikirim pemasok, lalu setujui atau tolak. Setelah disetujui, pilih cara melanjutkan onboarding."
+      />
 
       <div className="queue-layout">
         <aside className="queue-panel" aria-label="Daftar pengajuan">

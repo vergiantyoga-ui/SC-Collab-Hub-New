@@ -61,6 +61,24 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 Pengajuan `SUP-2026-0135` sudah berada pada status menunggu approval manager,
 jadi langkah 4 bisa dicoba langsung tanpa mengisi ulang.
 
+## Bahasa visual
+
+Antarmuka mengikuti sistem desain konsol internal Paragon:
+
+- **Sidebar berkelompok** — menu dibagi menjadi kelompok bertajuk (Beranda, Proses,
+  Persetujuan) dengan pemisah tipis, dapat disempitkan menjadi ikon saja.
+- **Aksen tunggal biru** — satu warna untuk keadaan aktif, tautan, dan tindakan utama.
+  Tidak ada warna aksen kedua yang bersaing.
+- **Bilah atas** — nomor pekan dan jam berjalan, tombol tema, lalu identitas pengguna.
+- **Kepala halaman** — jejak navigasi, ikon berlatar biru muda, judul, lalu garis pemisah.
+- **Kartu menu** — petak dengan ikon indigo padat, dipakai pada beranda sebagai
+  jalan pintas ke tugas yang menunggu.
+- **Mode gelap** — mengikuti preferensi sistem saat pertama dibuka, dapat diubah
+  lewat tombol pada bilah atas.
+
+Seluruh warna, jarak, dan radius berasal dari token pada `src/styles/global.css`,
+sehingga penyesuaian merek cukup dilakukan di satu tempat.
+
 ## Struktur
 
 ```
@@ -70,19 +88,23 @@ src/
                 profileRules.js validasi lima bagian profil (murni, teruji)
                 format.js      tanggal, ID akun, masa berlaku
                 mockData.js    data contoh mencakup setiap status
-  store/        AppStore.jsx   reducer tunggal + seluruh aksi transisi status
+  store/        AppStore.jsx     reducer tunggal + seluruh aksi transisi status
+                ThemeContext.jsx tema terang/gelap
   components/
-    ui/         primitif: Button, Field, FileField, Modal, Toast, Tabs,
-                Card, StatusBadge, DataList, SectionRail, EmptyState
-    layout/     AuthShell, InternalLayout, SupplierLayout (+ CSS berdampingan)
+    ui/         primitif: Button, Field, FileField, Modal, Toast, Tabs, Card,
+                StatusBadge, DataList, SectionRail, EmptyState, Icon,
+                PageHeader, TileGrid
+    layout/     AppShell (sidebar + bilah atas, dipakai dua portal),
+                AuthShell, InternalLayout, SupplierLayout
     profile/    ProfileSectionForm (dipakai dua jalur), ProfileSummary
   pages/
     auth/       SupplierLogin, StaffLogin, ForgotPassword
     supplier/   RegisterWizard, ChangePassword, ProfileOnboarding,
                 ConsentPage, SupplierStatus, ActiveProfile
-    internal/   QueueDashboard, SubmissionReview, InternalRegistration,
-                ManagerApprovals, DocumentVerification
-  styles/       global.css — design token dan gaya dasar
+    internal/   InternalHome, QueueDashboard, SubmissionReview,
+                InternalRegistration, ManagerApprovals, DocumentVerification
+  styles/       global.css   token warna, tipografi, komponen dasar
+                patterns.css pola tata letak lintas halaman
 scripts/        flow-check.mjs — pemeriksaan transisi status
 ```
 
@@ -111,7 +133,9 @@ scripts/        flow-check.mjs — pemeriksaan transisi status
 - **Berkas unggahan** hanya disimpan sebagai metadata (nama, ukuran, tipe).
   Validasi format dan ukuran tetap berjalan penuh.
 - **Penyimpanan peramban** sengaja tidak dipakai agar demo selalu mulai dari
-  kondisi yang sama dan tidak menahan data pribadi contoh di perangkat.
+  kondisi yang sama dan tidak menahan data pribadi contoh di perangkat. Pilihan
+  tema karena itu juga tidak bertahan setelah halaman disegarkan; nilai awalnya
+  membaca preferensi sistem.
 - **Aksesibilitas**: cincin fokus terlihat, galat field terhubung lewat
   `aria-describedby`, tab dinavigasi tombol panah, modal menahan fokus dan
   ditutup dengan Escape, notifikasi memakai live region, `prefers-reduced-motion`

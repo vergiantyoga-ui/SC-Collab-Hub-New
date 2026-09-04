@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { MemoryRouter } from 'react-router-dom';
 
 import { AppStoreProvider } from '../src/store/AppStore.jsx';
+import { ThemeProvider } from '../src/store/ThemeContext.jsx';
 import { ToastProvider } from '../src/components/ui/Toast.jsx';
 import App from '../src/App.jsx';
 
@@ -17,6 +18,7 @@ const GUARDED_ROUTES = [
   '/portal/status',
   '/portal/profil',
   '/portal/persetujuan',
+  '/internal/beranda',
   '/internal/antrian',
   '/internal/verifikasi',
   '/internal/approval',
@@ -29,9 +31,13 @@ function render(route) {
       MemoryRouter,
       { initialEntries: [route] },
       React.createElement(
-        AppStoreProvider,
+        ThemeProvider,
         null,
-        React.createElement(ToastProvider, null, React.createElement(App)),
+        React.createElement(
+          AppStoreProvider,
+          null,
+          React.createElement(ToastProvider, null, React.createElement(App)),
+        ),
       ),
     ),
   );

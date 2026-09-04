@@ -13,6 +13,7 @@ import SupplierStatus from './pages/supplier/SupplierStatus.jsx';
 import ActiveProfile from './pages/supplier/ActiveProfile.jsx';
 
 import InternalLayout from './components/layout/InternalLayout.jsx';
+import InternalHome from './pages/internal/InternalHome.jsx';
 import QueueDashboard from './pages/internal/QueueDashboard.jsx';
 import InternalRegistration from './pages/internal/InternalRegistration.jsx';
 import ManagerApprovals from './pages/internal/ManagerApprovals.jsx';
@@ -43,7 +44,8 @@ export default function App() {
 
       {/* Konsol internal */}
       <Route path="/internal" element={<InternalLayout />}>
-        <Route index element={<Navigate to="/internal/antrian" replace />} />
+        <Route index element={<Navigate to="/internal/beranda" replace />} />
+        <Route path="beranda" element={<InternalHome />} />
         <Route path="antrian" element={<QueueDashboard />} />
         <Route path="registrasi/:id" element={<InternalRegistration />} />
         <Route path="approval" element={<ManagerApprovals />} />

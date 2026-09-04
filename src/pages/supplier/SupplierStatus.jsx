@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { useAppActions, useCurrentSubmission } from '../../store/AppStore.jsx';
@@ -87,7 +88,15 @@ export default function SupplierStatus() {
   };
 
   return (
-    <div className="stack-lg">
+    <>
+      <PageHeader
+        trail={[{ label: 'Beranda' }]}
+        icon="status"
+        title="Status pendaftaran"
+        description={`${submission.general.vendorName} · ${submission.id}`}
+      />
+
+      <div className="stack-lg">
       <div className={`notice notice--${view.tone}`}>
         <span className="notice__title">{view.title}</span>
         {view.body}
@@ -154,6 +163,7 @@ export default function SupplierStatus() {
           ))}
         </ul>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

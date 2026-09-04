@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
@@ -46,13 +47,12 @@ export default function ActiveProfile() {
 
   return (
     <div className="stack-lg">
-      <header className="page-head">
-        <h1>Profil perusahaan</h1>
-        <p>
-          Perbarui data kapan pun ada perubahan. Perubahan dokumen legalitas atau rekening perlu
-          diperiksa ulang tim procurement sebelum berlaku.
-        </p>
-      </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/portal/status' }, { label: 'Data perusahaan' }]}
+        icon="profile"
+        title="Profil perusahaan"
+        description="Perbarui data kapan pun ada perubahan. Perubahan dokumen legalitas atau rekening perlu diperiksa ulang tim procurement sebelum berlaku."
+      />
 
       {underReview && (
         <div className="notice notice--warn">

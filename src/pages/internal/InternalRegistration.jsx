@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import SectionRail from '../../components/ui/SectionRail.jsx';
 import ProfileSectionForm from '../../components/profile/ProfileSectionForm.jsx';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
@@ -59,19 +60,18 @@ export default function InternalRegistration() {
 
   return (
     <>
-      <header className="page-head">
-        <Button variant="quiet" size="sm" to="/internal/antrian">
-          ← Kembali ke antrian
-        </Button>
-        <h1 style={{ marginTop: 'var(--sp-3)' }}>
-          Registrasi internal — {submission.general.vendorName}
-        </h1>
-        <p>
-          Isi profil berdasarkan dokumen yang dikirim pemasok melalui{' '}
-          {submission.documentSource === 'whatsapp' ? 'WhatsApp' : 'email'}. Setelah lengkap,
-          ajukan ke manager untuk disetujui.
-        </p>
-      </header>
+      <PageHeader
+        trail={[
+          { label: 'Beranda', to: '/internal/beranda' },
+          { label: 'Antrian registrasi', to: '/internal/antrian' },
+          { label: submission.general.vendorName },
+        ]}
+        icon="document"
+        title="Registrasi internal"
+        description={`Isi profil berdasarkan dokumen yang dikirim pemasok melalui ${
+          submission.documentSource === 'whatsapp' ? 'WhatsApp' : 'email'
+        }. Setelah lengkap, ajukan ke manager untuk disetujui.`}
+      />
 
       {revisionNote && (
         <div className="notice notice--danger" style={{ marginBottom: 'var(--sp-5)' }}>

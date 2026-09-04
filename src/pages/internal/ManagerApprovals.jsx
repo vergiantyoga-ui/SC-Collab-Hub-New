@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
@@ -56,10 +57,12 @@ export default function ManagerApprovals() {
   if (queue.length === 0) {
     return (
       <>
-        <header className="page-head">
-          <h1>Approval registrasi internal</h1>
-          <p>Profil pemasok yang diisi admin procurement menunggu persetujuan Anda di sini.</p>
-        </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Approval manager' }]}
+        icon="approval"
+        title="Approval registrasi internal"
+        description="Periksa profil yang disiapkan admin. Menyetujui berarti akun pemasok dibuat dan undangan langsung dikirim."
+      />
         <div className="card">
           <EmptyState
             title="Tidak ada yang menunggu persetujuan"
@@ -80,13 +83,12 @@ export default function ManagerApprovals() {
 
   return (
     <>
-      <header className="page-head">
-        <h1>Approval registrasi internal</h1>
-        <p>
-          Periksa profil yang disiapkan admin. Menyetujui berarti akun pemasok dibuat dan undangan
-          langsung dikirim.
-        </p>
-      </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Approval manager' }]}
+        icon="approval"
+        title="Approval registrasi internal"
+        description="Periksa profil yang disiapkan admin. Menyetujui berarti akun pemasok dibuat dan undangan langsung dikirim."
+      />
 
       <div className="queue-layout">
         <aside className="queue-panel" aria-label="Menunggu persetujuan">

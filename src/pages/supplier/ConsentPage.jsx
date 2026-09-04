@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { Checkbox } from '../../components/ui/Field.jsx';
@@ -47,13 +48,12 @@ export default function ConsentPage() {
 
   return (
     <div style={{ maxWidth: 720, marginInline: 'auto' }}>
-      <header className="page-head">
-        <h1>Persetujuan sebelum aktivasi</h1>
-        <p>
-          Profil Anda sudah lengkap. Bacalah syarat dan ketentuan berikut, lalu setujui kedua
-          pernyataan di bawahnya untuk mengirim profil ke tahap verifikasi.
-        </p>
-      </header>
+      <PageHeader
+        trail={[{ label: 'Beranda', to: '/portal/status' }, { label: 'Persetujuan' }]}
+        icon="consent"
+        title="Persetujuan sebelum aktivasi"
+        description="Profil Anda sudah lengkap. Bacalah syarat dan ketentuan berikut, lalu setujui kedua pernyataan di bawahnya untuk mengirim profil ke tahap verifikasi."
+      />
 
       <form onSubmit={handleSubmit}>
         <Card
