@@ -25,6 +25,12 @@ export default function InternalLayout() {
       items: [{ to: '/internal/beranda', label: t('nav.summary'), icon: 'home', end: true }],
     },
     {
+      label: 'Questionnaire',
+      items: [
+        { to: '/internal/questionnaire', label: 'Template', icon: 'consent' },
+      ],
+    },
+    {
       label: t('nav.group.process'),
       items: [
         {

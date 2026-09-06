@@ -10,6 +10,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { AppStoreProvider } from '../src/store/AppStore.jsx';
 import { ThemeProvider } from '../src/store/ThemeContext.jsx';
 import { LanguageProvider } from '../src/i18n/LanguageContext.jsx';
+import { QuestionnaireStoreProvider } from '../src/questionnaire/store/QuestionnaireStore.jsx';
 import { ToastProvider } from '../src/components/ui/Toast.jsx';
 import App from '../src/App.jsx';
 
@@ -23,6 +24,10 @@ const GUARDED_ROUTES = [
   '/internal/beranda',
   '/internal/antrian',
   '/internal/verifikasi',
+  '/internal/questionnaire',
+  '/internal/questionnaire/baru',
+  '/internal/questionnaire/tpl_audit',
+  '/internal/questionnaire/tpl_audit/v/ver_audit_v1',
   '/internal/approval',
   '/internal/registrasi/SUP-2026-0135',
 ];
@@ -41,7 +46,11 @@ function render(route) {
         React.createElement(
           AppStoreProvider,
           null,
-          React.createElement(ToastProvider, null, React.createElement(App)),
+          React.createElement(
+            QuestionnaireStoreProvider,
+            null,
+            React.createElement(ToastProvider, null, React.createElement(App)),
+          ),
         ),
       ),
       ),

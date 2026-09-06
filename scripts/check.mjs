@@ -8,6 +8,7 @@ function run(label, command, args) {
 
 try {
   run('Transisi status & validasi', process.execPath, ['scripts/flow-check.mjs']);
+  run('Mesin questionnaire', process.execPath, ['scripts/questionnaire-check.mjs']);
 
   execFileSync(
     'npx',

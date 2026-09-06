@@ -18,6 +18,11 @@ import InternalRegistration from './pages/internal/InternalRegistration.jsx';
 import ManagerApprovals from './pages/internal/ManagerApprovals.jsx';
 import DocumentVerification from './pages/internal/DocumentVerification.jsx';
 
+import TemplateList from './questionnaire/pages/internal/TemplateList.jsx';
+import TemplateDetail from './questionnaire/pages/internal/TemplateDetail.jsx';
+import TemplateCreate from './questionnaire/pages/internal/TemplateCreate.jsx';
+import BuilderPlaceholder from './questionnaire/pages/internal/BuilderPlaceholder.jsx';
+
 import NotFound from './pages/NotFound.jsx';
 
 export default function App() {
@@ -50,6 +55,13 @@ export default function App() {
         <Route path="registrasi/:id" element={<InternalRegistration />} />
         <Route path="approval" element={<ManagerApprovals />} />
         <Route path="verifikasi" element={<DocumentVerification />} />
+        <Route path="questionnaire" element={<TemplateList />} />
+        <Route path="questionnaire/baru" element={<TemplateCreate />} />
+        <Route path="questionnaire/:templateId" element={<TemplateDetail />} />
+        <Route
+          path="questionnaire/:templateId/v/:versionId"
+          element={<BuilderPlaceholder />}
+        />
       </Route>
 
       <Route path="*" element={<NotFound />} />

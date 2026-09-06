@@ -6,6 +6,7 @@ import { AppStoreProvider } from './store/AppStore.jsx';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import { ThemeProvider } from './store/ThemeContext.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
+import { QuestionnaireStoreProvider } from './questionnaire/store/QuestionnaireStore.jsx';
 import './styles/global.css';
 import './styles/patterns.css';
 
@@ -15,9 +16,11 @@ createRoot(document.getElementById('root')).render(
       <LanguageProvider>
         <ThemeProvider>
         <AppStoreProvider>
+          <QuestionnaireStoreProvider>
           <ToastProvider>
             <App />
           </ToastProvider>
+          </QuestionnaireStoreProvider>
         </AppStoreProvider>
         </ThemeProvider>
       </LanguageProvider>
