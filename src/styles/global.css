@@ -377,6 +377,36 @@ textarea {
   }
 }
 
+/* Isian kata sandi dengan tombol lihat */
+.password {
+  position: relative;
+}
+.password__input {
+  padding-right: 42px;
+}
+.password__toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--ink-500);
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.password__toggle:hover {
+  color: var(--ink-900);
+  background: var(--surface-sunk);
+}
+.password__toggle[aria-pressed='true'] {
+  color: var(--blue-600);
+}
+
 .checkbox {
   display: flex;
   gap: var(--sp-3);

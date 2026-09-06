@@ -9,6 +9,7 @@ import { MemoryRouter } from 'react-router-dom';
 
 import { AppStoreProvider } from '../src/store/AppStore.jsx';
 import { ThemeProvider } from '../src/store/ThemeContext.jsx';
+import { LanguageProvider } from '../src/i18n/LanguageContext.jsx';
 import { ToastProvider } from '../src/components/ui/Toast.jsx';
 import App from '../src/App.jsx';
 
@@ -18,6 +19,7 @@ const GUARDED_ROUTES = [
   '/portal/status',
   '/portal/profil',
   '/portal/persetujuan',
+  '/portal/profil-onboarding',
   '/internal/beranda',
   '/internal/antrian',
   '/internal/verifikasi',
@@ -31,6 +33,9 @@ function render(route) {
       MemoryRouter,
       { initialEntries: [route] },
       React.createElement(
+        LanguageProvider,
+        null,
+        React.createElement(
         ThemeProvider,
         null,
         React.createElement(
@@ -38,6 +43,7 @@ function render(route) {
           null,
           React.createElement(ToastProvider, null, React.createElement(App)),
         ),
+      ),
       ),
     ),
   );

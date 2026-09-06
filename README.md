@@ -61,6 +61,19 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 Pengajuan `SUP-2026-0135` sudah berada pada status menunggu approval manager,
 jadi langkah 4 bisa dicoba langsung tanpa mengisi ulang.
 
+## Bahasa antarmuka
+
+Tersedia **Bahasa Indonesia, English, dan 中文**, dapat diganti lewat tombol
+globe pada bilah atas. Bahasa awal menebak dari pengaturan peramban dan kembali
+ke Bahasa Indonesia bila tidak dikenali.
+
+Kamus berada di `src/i18n/dictionaries.js` dengan Bahasa Indonesia sebagai acuan.
+Kunci yang belum diterjemahkan otomatis jatuh kembali ke teks Indonesia, sehingga
+antarmuka tidak pernah menampilkan kunci mentah. Cakupan saat ini menyasar
+kerangka aplikasi, navigasi, status, label bagian, tombol, dan layar masuk;
+sebagian teks penjelasan panjang di dalam formulir masih berbahasa Indonesia.
+Pemeriksaan `npm test` menjaga agar kamus EN dan ZH tidak menyimpang dari acuan.
+
 ## Bahasa visual
 
 Antarmuka mengikuti sistem desain konsol internal Paragon:
@@ -73,6 +86,8 @@ Antarmuka mengikuti sistem desain konsol internal Paragon:
 - **Kepala halaman** — jejak navigasi, ikon berlatar biru muda, judul, lalu garis pemisah.
 - **Kartu menu** — petak dengan ikon indigo padat, dipakai pada beranda sebagai
   jalan pintas ke tugas yang menunggu.
+- **Isian kata sandi** — setiap isian kata sandi punya tombol lihat/sembunyikan
+  yang dapat dicapai keyboard dan mengumumkan keadaannya lewat `aria-pressed`.
 - **Mode gelap** — mengikuti preferensi sistem saat pertama dibuka, dapat diubah
   lewat tombol pada bilah atas.
 
@@ -90,17 +105,19 @@ src/
                 mockData.js    data contoh mencakup setiap status
   store/        AppStore.jsx     reducer tunggal + seluruh aksi transisi status
                 ThemeContext.jsx tema terang/gelap
+  i18n/         dictionaries.js  kamus ID / EN / ZH
+                LanguageContext.jsx, LanguageMenu.jsx
   components/
-    ui/         primitif: Button, Field, FileField, Modal, Toast, Tabs, Card,
-                StatusBadge, DataList, SectionRail, EmptyState, Icon,
-                PageHeader, TileGrid
+    ui/         primitif: Button, Field, PasswordField, FileField, Modal,
+                Toast, Tabs, Card, StatusBadge, DataList, SectionRail,
+                EmptyState, Icon, PageHeader, TileGrid
     layout/     AppShell (sidebar + bilah atas, dipakai dua portal),
                 AuthShell, InternalLayout, SupplierLayout
     profile/    ProfileSectionForm (dipakai dua jalur), ProfileSummary
   pages/
     auth/       SupplierLogin, StaffLogin, ForgotPassword
-    supplier/   RegisterWizard, ChangePassword, ProfileOnboarding,
-                ConsentPage, SupplierStatus, ActiveProfile
+    supplier/   RegisterWizard, ChangePassword, SupplierProfile,
+                ConsentPage, SupplierStatus
     internal/   InternalHome, QueueDashboard, SubmissionReview,
                 InternalRegistration, ManagerApprovals, DocumentVerification
   styles/       global.css   token warna, tipografi, komponen dasar
@@ -123,6 +140,7 @@ scripts/        flow-check.mjs — pemeriksaan transisi status
 | Unggahan PDF/JPG/PNG maksimal 2 MB | `validation.validateFile`, `FileField.jsx` |
 | Termin pembayaran 7/15/30/45/60 Net Days | `constants.TERMS_OF_PAYMENT` |
 | Maksimal 10 kontak, satu kontak utama | `ProfileSectionForm.jsx`, `profileRules.js` |
+| Profil memuat data pendaftaran dan kelengkapan dalam satu halaman | `SupplierProfile.jsx`, `constants.PROFILE_SECTIONS` |
 | Perubahan dokumen setelah aktif memicu verifikasi ulang | `ActiveProfile.jsx`, `AppStore.updateActiveProfile` |
 
 ## Catatan implementasi

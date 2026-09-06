@@ -3,15 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import AuthShell from '../../components/layout/AuthShell.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { TextField } from '../../components/ui/Field.jsx';
+import PasswordField from '../../components/ui/PasswordField.jsx';
 import { useAppActions } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { STATUS } from '../../lib/constants.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Pintu masuk pemasok. Kedua portal terhubung lewat tautan eksplisit,
  * bukan deteksi domain email, sesuai dokumen flow.
  */
 export default function SupplierLogin() {
+  const t = useT();
   const [accountId, setAccountId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -53,14 +56,12 @@ export default function SupplierLogin() {
         { value: '7 hari', label: 'Masa berlaku undangan' },
       ]}
     >
-      <h2>Masuk ke portal pemasok</h2>
-      <p className="auth-shell__lede">
-        Gunakan ID akun dan kata sandi yang dikirim melalui email undangan dari tim procurement.
-      </p>
+      <h2>{t('login.supplier.title')}</h2>
+      <p className="auth-shell__lede">{t('login.supplier.lede')}</p>
 
       <form onSubmit={handleSubmit} noValidate>
         <TextField
-          label="ID akun pemasok"
+          label={t('login.accountId')}
           value={accountId}
           onChange={(e) => setAccountId(e.target.value)}
           placeholder="SUP-XXX-0000"
@@ -68,9 +69,8 @@ export default function SupplierLogin() {
           autoComplete="username"
           required
         />
-        <TextField
-          label="Kata sandi"
-          type="password"
+        <PasswordField
+          label={t('login.password')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
@@ -79,30 +79,30 @@ export default function SupplierLogin() {
 
         <div className="row row--between" style={{ marginBottom: 'var(--sp-4)' }}>
           <Link to="/lupa-sandi" className="link-btn">
-            Lupa kata sandi
+            {t('login.forgot')}
           </Link>
         </div>
 
         <Button type="submit" block>
-          Masuk
+          {t('common.signIn')}
         </Button>
       </form>
 
       <p className="auth-shell__switch">
-        Belum terdaftar sebagai pemasok Paragon?{' '}
+        {t('login.notRegistered')}{' '}
         <Link to="/daftar" className="link-btn">
-          Ajukan pendaftaran
+          {t('login.register')}
         </Link>
       </p>
       <p className="auth-shell__switch" style={{ borderTop: 0, paddingTop: 0, marginTop: 0 }}>
-        Staf Paragon?{' '}
+        {t('login.staffPrompt')}{' '}
         <Link to="/internal/masuk" className="link-btn">
-          Buka konsol procurement
+          {t('login.staffLink')}
         </Link>
       </p>
 
       <div className="demo-hint">
-        <h3>Akun contoh untuk mencoba</h3>
+        <h3>{t('login.demoAccounts')}</h3>
         <ul>
           <li>
             <code>SUP-PAC-0131</code> — profil lengkap, menunggu verifikasi dokumen
@@ -111,7 +111,7 @@ export default function SupplierLogin() {
             <code>SUP-RAW-0118</code> — pemasok aktif, bisa mengubah profil
           </li>
         </ul>
-        <p style={{ marginTop: 8 }}>Kata sandi apa pun diterima pada demo ini.</p>
+        <p style={{ marginTop: 8 }}>{t('login.anyPassword')}</p>
       </div>
     </AuthShell>
   );

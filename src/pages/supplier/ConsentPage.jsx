@@ -6,7 +6,7 @@ import Button from '../../components/ui/Button.jsx';
 import { Checkbox } from '../../components/ui/Field.jsx';
 import { useAppActions, useCurrentSubmission } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { GTC_CLAUSES, GTC_VERSION, PATH, PROFILE_SECTIONS } from '../../lib/constants.js';
+import { GTC_CLAUSES, GTC_VERSION, PATH, REQUIRED_SECTION_IDS } from '../../lib/constants.js';
 
 /**
  * Layar persetujuan. Dua kotak centang terpisah:
@@ -21,9 +21,9 @@ export default function ConsentPage() {
   const toast = useToast();
   const navigate = useNavigate();
 
-  const allSectionsDone = PROFILE_SECTIONS.every((s) => submission.profile.completed[s.id]);
+  const allSectionsDone = REQUIRED_SECTION_IDS.every((id) => submission.profile.completed[id]);
   if (!allSectionsDone) {
-    return <Navigate to="/portal/profil-onboarding" replace />;
+    return <Navigate to="/portal/profil" replace />;
   }
 
   const filledByStaff = submission.onboardingPath === PATH.INTERNAL;
@@ -97,7 +97,7 @@ export default function ConsentPage() {
         </div>
 
         <div className="form-actions">
-          <Button variant="secondary" to="/portal/profil-onboarding">
+          <Button variant="secondary" to="/portal/profil">
             Periksa kembali profil
           </Button>
           <Button type="submit" disabled={!bothAccepted}>

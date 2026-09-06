@@ -8,14 +8,87 @@ import { formatDate, orDash } from '../../lib/format.js';
  * yang menampilkan satu bagian per kartu, sementara layar verifikasi dan
  * approval menampilkan kelimanya sekaligus.
  */
-const ALL_SECTIONS = ['tax', 'documents', 'licenses', 'banking', 'contacts'];
+const ALL_SECTIONS = [
+  'general',
+  'address',
+  'contact',
+  'tax',
+  'documents',
+  'licenses',
+  'banking',
+  'contacts',
+];
 
-export default function ProfileSummary({ profile, sections = ALL_SECTIONS, showHeadings = true }) {
+/**
+ * `registration` berisi data yang diisi saat mendaftar (general, address, contact);
+ * `profile` berisi lima bagian kelengkapan. Keduanya dirender oleh komponen ini
+ * supaya halaman Profil menampilkan seluruh data pemasok dalam satu tempat.
+ */
+export default function ProfileSummary({
+  profile,
+  registration,
+  sections = ALL_SECTIONS,
+  showHeadings = true,
+}) {
   const show = (id) => sections.includes(id);
 
   return (
     <div className="stack-lg">
-      {show('tax') && (
+      {show('general') && registration && (
+        <Block title="Data umum" visible={showHeadings}>
+          <DataList
+            items={[
+              { label: 'Status badan hukum', value: registration.general.legalStatus },
+              { label: 'Bentuk badan usaha', value: registration.general.entityType },
+              { label: 'Nama perusahaan', value: registration.general.vendorName, full: true },
+              { label: 'Jenis pasokan', value: registration.general.vendorType },
+              { label: 'Rincian pasokan', value: registration.general.vendorTypeDetail },
+              { label: 'Perusahaan dituju', value: registration.general.targetCompanies, full: true },
+              { label: 'Rencana kerja sama', value: registration.general.otvStatus },
+              { label: 'Email perusahaan', value: registration.general.companyEmail },
+              { label: 'Telepon kantor', value: registration.general.officePhone },
+              { label: 'Nomor ponsel', value: registration.general.mobilePhone },
+              { label: 'Situs web', value: registration.general.website, full: true },
+            ]}
+          />
+        </Block>
+      )}
+
+      {show('address') && registration && (
+        <Block title="Alamat perusahaan" visible={showHeadings}>
+          <DataList
+            items={[
+              { label: 'Alamat lengkap', value: registration.address.street, full: true },
+              { label: 'Negara', value: registration.address.country },
+              { label: 'Provinsi', value: registration.address.province },
+              { label: 'Kota', value: registration.address.city },
+              { label: 'Kode pos', value: registration.address.postalCode },
+              { label: 'Kecamatan', value: registration.address.district },
+              { label: 'Kelurahan', value: registration.address.subdistrict },
+            ]}
+          />
+        </Block>
+      )}
+
+      {show('contact') && registration && (
+        <Block title="Penanggung jawab" visible={showHeadings}>
+          <DataList
+            items={[
+              {
+                label: 'Nama',
+                value: `${registration.contact.title} ${registration.contact.name}`.trim(),
+              },
+              { label: 'Bidang pekerjaan', value: registration.contact.jobPosition },
+              { label: 'Email', value: registration.contact.email },
+              { label: 'Telepon kantor', value: registration.contact.phone },
+              { label: 'Nomor ponsel', value: registration.contact.mobile },
+              { label: 'Catatan', value: registration.contact.notes, full: true },
+            ]}
+          />
+        </Block>
+      )}
+
+      {show('tax') && profile && (
         <Block title="Data pajak" visible={showHeadings}>
           <DataList
             items={[
@@ -28,7 +101,7 @@ export default function ProfileSummary({ profile, sections = ALL_SECTIONS, showH
         </Block>
       )}
 
-      {show('documents') && (
+      {show('documents') && profile && (
         <Block title="Dokumen legalitas" visible={showHeadings}>
           <FileRow label="Akta pendirian" file={profile.documents.aktaPendirian} />
           <FileRow label="SK pendirian" file={profile.documents.skPendirian} />
@@ -36,7 +109,7 @@ export default function ProfileSummary({ profile, sections = ALL_SECTIONS, showH
         </Block>
       )}
 
-      {show('licenses') && (
+      {show('licenses') && profile && (
         <Block title="Lisensi & sertifikat" visible={showHeadings}>
           {['gmp', 'cpkb', 'halal'].map((key) => {
             const cert = profile.licenses[key];
@@ -65,7 +138,7 @@ export default function ProfileSummary({ profile, sections = ALL_SECTIONS, showH
         </Block>
       )}
 
-      {show('banking') && (
+      {show('banking') && profile && (
         <Block title="Pembayaran & tagihan" visible={showHeadings}>
           <DataList
             items={[
@@ -79,7 +152,7 @@ export default function ProfileSummary({ profile, sections = ALL_SECTIONS, showH
         </Block>
       )}
 
-      {show('contacts') && (
+      {show('contacts') && profile && (
         <Block title={`Kontak perusahaan (${profile.contacts.length})`} visible={showHeadings}>
           {profile.contacts.length === 0 ? (
             <p className="text-sm muted">Belum ada kontak yang diisi.</p>

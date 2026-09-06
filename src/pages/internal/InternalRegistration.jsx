@@ -2,13 +2,19 @@ import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import SectionRail from '../../components/ui/SectionRail.jsx';
 import ProfileSectionForm from '../../components/profile/ProfileSectionForm.jsx';
+import ProfileSummary from '../../components/profile/ProfileSummary.jsx';
 import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import { useAppActions, useAppState, canUseInternalPath } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { PROFILE_SECTIONS, STATUS } from '../../lib/constants.js';
+import {
+  PROFILE_SECTIONS,
+  REGISTRATION_SECTIONS,
+  REQUIRED_SECTION_IDS,
+  STATUS,
+} from '../../lib/constants.js';
 
 /**
  * Jalur B — admin procurement mengisi profil atas nama pemasok.
@@ -34,10 +40,15 @@ export default function InternalRegistration() {
     return <Navigate to="/internal/antrian" replace />;
   }
 
-  const completed = submission.profile.completed;
+  // Bagian pendaftaran sudah terisi sejak pemasok mendaftar dan hanya dibaca di sini.
+  const completed = { ...submission.profile.completed };
+  REGISTRATION_SECTIONS.forEach((s) => {
+    completed[s.id] = true;
+  });
   const doneCount = PROFILE_SECTIONS.filter((s) => completed[s.id]).length;
-  const allDone = doneCount === PROFILE_SECTIONS.length;
+  const allDone = REQUIRED_SECTION_IDS.every((id) => submission.profile.completed[id]);
   const section = PROFILE_SECTIONS.find((s) => s.id === active);
+  const isRegistration = section.group === 'registration';
   const revisionNote =
     submission.managerReview?.status === 'revision_requested' ? submission.managerReview.note : null;
 
@@ -92,6 +103,10 @@ export default function InternalRegistration() {
             active={active}
             completed={completed}
             onSelect={setActive}
+            groups={[
+              { id: 'registration', label: 'Data pendaftaran' },
+              { id: 'onboarding', label: 'Kelengkapan profil' },
+            ]}
           />
 
           <div
@@ -102,7 +117,7 @@ export default function InternalRegistration() {
               borderTop: '1px solid var(--line-soft)',
             }}
           >
-            {doneCount} dari {PROFILE_SECTIONS.length} bagian selesai
+            {doneCount} dari {PROFILE_SECTIONS.length} bagian lengkap
           </div>
 
           <Button
@@ -120,13 +135,25 @@ export default function InternalRegistration() {
           )}
         </div>
 
-        <Card title={section.label} subtitle={section.hint}>
-          <ProfileSectionForm
-            key={active}
-            sectionId={active}
-            value={submission.profile[active]}
-            onSubmit={handleSave}
-          />
+        <Card
+          title={section.label}
+          subtitle={isRegistration ? 'Terisi saat pemasok mendaftar' : section.hint}
+        >
+          {isRegistration ? (
+            <ProfileSummary
+              profile={submission.profile}
+              registration={submission}
+              sections={[active]}
+              showHeadings={false}
+            />
+          ) : (
+            <ProfileSectionForm
+              key={active}
+              sectionId={active}
+              value={submission.profile[active]}
+              onSubmit={handleSave}
+            />
+          )}
         </Card>
       </div>
 
@@ -149,5 +176,5 @@ export default function InternalRegistration() {
 }
 
 function firstIncomplete(completed) {
-  return PROFILE_SECTIONS.find((s) => !completed[s.id])?.id ?? PROFILE_SECTIONS[0].id;
+  return REQUIRED_SECTION_IDS.find((id) => !completed[id]) ?? REQUIRED_SECTION_IDS[0];
 }

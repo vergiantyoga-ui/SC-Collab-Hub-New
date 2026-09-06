@@ -3,15 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import AuthShell from '../../components/layout/AuthShell.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { TextField } from '../../components/ui/Field.jsx';
+import PasswordField from '../../components/ui/PasswordField.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { INTERNAL_USERS } from '../../lib/mockData.js';
-import { ROLE_LABEL, STATUS } from '../../lib/constants.js';
+import { STATUS } from '../../lib/constants.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Masuk konsol internal. Email wajib berdomain @paragon-corp.com,
  * dan role menentukan menu yang muncul setelah masuk.
  */
 export default function StaffLogin() {
+  const t = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -55,14 +58,12 @@ export default function StaffLogin() {
         { value: '2 jalur', label: 'Undang pemasok atau isi internal' },
       ]}
     >
-      <h2>Masuk ke konsol internal</h2>
-      <p className="auth-shell__lede">
-        Gunakan akun kerja Paragon Anda. Menu yang tampil menyesuaikan wewenang role Anda.
-      </p>
+      <h2>{t('login.staff.title')}</h2>
+      <p className="auth-shell__lede">{t('login.staff.lede')}</p>
 
       <form onSubmit={handleSubmit} noValidate>
         <TextField
-          label="Email kerja"
+          label={t('login.workEmail')}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -71,36 +72,35 @@ export default function StaffLogin() {
           autoComplete="username"
           required
         />
-        <TextField
-          label="Kata sandi"
-          type="password"
+        <PasswordField
+          label={t('login.password')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="current-password"
           required
         />
         <Button type="submit" block>
-          Masuk
+          {t('common.signIn')}
         </Button>
       </form>
 
       <p className="auth-shell__switch">
-        Bukan staf Paragon?{' '}
+        {t('login.notStaff')}{' '}
         <Link to="/masuk" className="link-btn">
-          Kembali ke portal pemasok
+          {t('login.backToSupplier')}
         </Link>
       </p>
 
       <div className="demo-hint">
-        <h3>Akun contoh untuk mencoba</h3>
+        <h3>{t('login.demoAccounts')}</h3>
         <ul>
           {INTERNAL_USERS.map((user) => (
             <li key={user.id}>
-              <code>{user.email}</code> — {ROLE_LABEL[user.role]}
+              <code>{user.email}</code> — {t(`role.${user.role}`)}
             </li>
           ))}
         </ul>
-        <p style={{ marginTop: 8 }}>Kata sandi apa pun diterima pada demo ini.</p>
+        <p style={{ marginTop: 8 }}>{t('login.anyPassword')}</p>
       </div>
     </AuthShell>
   );

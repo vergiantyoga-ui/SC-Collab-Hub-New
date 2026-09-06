@@ -8,7 +8,8 @@ import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import { TextAreaField, SelectField } from '../../components/ui/Field.jsx';
 import { useAppActions, useAppState, canUseInternalPath } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { ROLE_LABEL, STATUS } from '../../lib/constants.js';
+import { ROLE, STATUS } from '../../lib/constants.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 import { formatDate, formatDateTime, passwordExpiryFrom } from '../../lib/format.js';
 
 const TABS = [
@@ -23,6 +24,7 @@ const TABS = [
  * diambil tanpa melihat seluruh data.
  */
 export default function SubmissionReview({ submission }) {
+  const t = useT();
   const { session } = useAppState();
   const actions = useAppActions();
   const toast = useToast();
@@ -198,7 +200,7 @@ export default function SubmissionReview({ submission }) {
                   </Button>
                 ) : (
                   <p className="text-xs muted">
-                    Hanya {ROLE_LABEL.procurement_admin} yang dapat memakai jalur ini.
+                    Hanya {t(`role.${ROLE.ADMIN}`)} yang dapat memakai jalur ini.
                   </p>
                 )}
               </div>

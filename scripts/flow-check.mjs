@@ -3,7 +3,14 @@
  * untuk memastikan transisi status pada kedua jalur berjalan sesuai dokumen flow.
  * Dijalankan lewat: node scripts/flow-check.mjs
  */
-import { STATUS, PATH } from '../src/lib/constants.js';
+import {
+  STATUS,
+  PATH,
+  PROFILE_SECTIONS,
+  REGISTRATION_SECTIONS,
+  REQUIRED_SECTION_IDS,
+} from '../src/lib/constants.js';
+import { DICTIONARIES, LANGUAGES } from '../src/i18n/dictionaries.js';
 import { SUBMISSIONS } from '../src/lib/mockData.js';
 import { buildAccountId, passwordExpiryFrom } from '../src/lib/format.js';
 import { validateSection } from '../src/lib/profileRules.js';
@@ -102,6 +109,27 @@ const noPrimary = validateSection('contacts', [
   { id: 'c1', name: 'A', title: 'Mr', jobPosition: 'Sales', email: 'a@b.com', mobile: '081234567', phone: '', isPrimary: false },
 ]);
 check('V4 kontak tanpa kontak utama ditolak', Boolean(noPrimary.contacts), true);
+
+/* --- Profil terpadu --- */
+check('P1 profil memuat delapan bagian', PROFILE_SECTIONS.length, 8);
+check('P2 tiga bagian berasal dari pendaftaran', REGISTRATION_SECTIONS.length, 3);
+check('P3 lima bagian wajib dilengkapi', REQUIRED_SECTION_IDS.length, 5);
+check(
+  'P4 urutan diawali data pendaftaran',
+  PROFILE_SECTIONS.slice(0, 3).every((s) => s.group === 'registration'),
+  true,
+);
+
+/* --- Bahasa --- */
+check('L1 tersedia tiga bahasa', LANGUAGES.length, 3);
+const idKeys = Object.keys(DICTIONARIES.id);
+check('L2 kamus Indonesia terisi', idKeys.length > 80, true);
+['en', 'zh'].forEach((code) => {
+  const extra = Object.keys(DICTIONARIES[code]).filter((k) => !idKeys.includes(k));
+  check(`L3 kunci ${code} tidak menyimpang dari acuan`, extra.length, 0);
+  const missing = idKeys.filter((k) => !(k in DICTIONARIES[code]));
+  check(`L4 cakupan ${code} minimal 85 persen`, missing.length / idKeys.length < 0.15, true);
+});
 
 console.log(`\n${failures === 0 ? 'Semua pemeriksaan lolos.' : `${failures} pemeriksaan gagal.`}`);
 process.exit(failures === 0 ? 0 : 1);

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
-import { TextField } from '../../components/ui/Field.jsx';
+import PasswordField from '../../components/ui/PasswordField.jsx';
 import { useAppActions, useCurrentSubmission } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { daysFromNow, passwordExpiryFrom } from '../../lib/format.js';
@@ -71,9 +71,8 @@ export default function ChangePassword() {
 
       <Card>
         <form onSubmit={handleSubmit} noValidate>
-          <TextField
+          <PasswordField
             label="Kata sandi baru"
-            type="password"
             value={values.next}
             onChange={(e) => setValues({ ...values, next: e.target.value })}
             error={errors.next}
@@ -81,9 +80,8 @@ export default function ChangePassword() {
             autoComplete="new-password"
             required
           />
-          <TextField
+          <PasswordField
             label="Ulangi kata sandi baru"
-            type="password"
             value={values.confirm}
             onChange={(e) => setValues({ ...values, confirm: e.target.value })}
             error={errors.confirm}

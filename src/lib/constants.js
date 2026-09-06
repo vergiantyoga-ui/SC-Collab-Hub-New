@@ -20,6 +20,11 @@ export const STATUS = {
   ACTIVE: 'active',
 };
 
+/**
+ * Label acuan bahasa Indonesia. Antarmuka membaca terjemahan lewat
+ * kunci `status.<id>` pada kamus; peta ini dipakai untuk keperluan
+ * non-antarmuka seperti berkas ekspor dan catatan uji.
+ */
 export const STATUS_LABEL = {
   [STATUS.PENDING]: 'Menunggu ditinjau',
   [STATUS.REJECTED]: 'Ditolak',
@@ -59,6 +64,7 @@ export const ROLE = {
   MANAGER: 'procurement_manager',
 };
 
+/** Label acuan role; antarmuka memakai kunci `role.<id>` pada kamus. */
 export const ROLE_LABEL = {
   [ROLE.STAFF]: 'Staf Procurement',
   [ROLE.ADMIN]: 'Staf Procurement Admin',
@@ -101,14 +107,34 @@ export const OTV_STATUSES = ['Regular Vendor', 'One Time Vendor'];
 export const TARGET_COMPANIES = ['Paragon Corp Indonesia', 'Paragon Corp Malaysia'];
 export const COUNTRIES = ['Indonesia', 'Malaysia'];
 
-/* Lima bagian profil onboarding (Section 4.6) */
-export const PROFILE_SECTIONS = [
-  { id: 'tax', label: 'Data pajak', hint: 'NIK, NPWP, KTP, SIUP' },
-  { id: 'documents', label: 'Dokumen legalitas', hint: 'Akta, SK, izin usaha' },
-  { id: 'licenses', label: 'Lisensi & sertifikat', hint: 'GMP, CPKB, halal' },
-  { id: 'banking', label: 'Pembayaran & tagihan', hint: 'Rekening, mata uang, termin' },
-  { id: 'contacts', label: 'Kontak perusahaan', hint: `Maksimal ${MAX_CONTACTS} orang` },
+/*
+ * Profil pemasok terdiri dari dua kelompok:
+ *  - Data pendaftaran, sudah terisi sejak pemasok mendaftar.
+ *  - Kelengkapan profil, wajib diisi setelah pendaftaran disetujui.
+ * Keduanya tampil pada satu halaman Profil.
+ */
+export const REGISTRATION_SECTIONS = [
+  { id: 'general', label: 'Data umum', hint: 'Identitas dan jenis pasokan', group: 'registration' },
+  { id: 'address', label: 'Alamat perusahaan', hint: 'Alamat dan wilayah', group: 'registration' },
+  { id: 'contact', label: 'Penanggung jawab', hint: 'Kontak saat mendaftar', group: 'registration' },
 ];
+
+export const ONBOARDING_SECTIONS = [
+  { id: 'tax', label: 'Data pajak', hint: 'NIK, NPWP, KTP, SIUP', group: 'onboarding' },
+  { id: 'documents', label: 'Dokumen legalitas', hint: 'Akta, SK, izin usaha', group: 'onboarding' },
+  { id: 'licenses', label: 'Lisensi & sertifikat', hint: 'GMP, CPKB, halal', group: 'onboarding' },
+  { id: 'banking', label: 'Pembayaran & tagihan', hint: 'Rekening, mata uang, termin', group: 'onboarding' },
+  { id: 'contacts', label: 'Kontak perusahaan', hint: `Maksimal ${MAX_CONTACTS} orang`, group: 'onboarding' },
+];
+
+/** Seluruh bagian profil, berurutan sesuai tampilan. */
+export const PROFILE_SECTIONS = [...REGISTRATION_SECTIONS, ...ONBOARDING_SECTIONS];
+
+/** Bagian yang wajib dilengkapi setelah pendaftaran disetujui. */
+export const REQUIRED_SECTION_IDS = ONBOARDING_SECTIONS.map((s) => s.id);
+
+/** Bagian yang perubahannya memicu verifikasi ulang saat pemasok sudah aktif. */
+export const REVERIFY_SECTION_IDS = ['tax', 'documents', 'licenses', 'banking'];
 
 /* Klausul GTC yang ditampilkan pada layar persetujuan (Section 4.7) */
 export const GTC_CLAUSES = [

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import Icon from '../ui/Icon.jsx';
 import { useTheme } from '../../store/ThemeContext.jsx';
+import { useLanguage, useT } from '../../i18n/LanguageContext.jsx';
+import LanguageMenu from '../../i18n/LanguageMenu.jsx';
 import { initialsOf } from '../../lib/format.js';
 import './app-shell.css';
 
@@ -13,13 +15,14 @@ import './app-shell.css';
  * `groups` berbentuk [{ label, items: [{ to, label, icon, count }] }].
  */
 export default function AppShell({ groups, user, subtitle, onSignOut, children }) {
+  const t = useT();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className={`shell ${collapsed ? 'shell--collapsed' : ''}`.trim()}>
       <a className="skip-link" href="#main">
-        Lompat ke konten utama
+        {t('shell.skip')}
       </a>
 
       {mobileOpen && (
@@ -47,7 +50,7 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
             type="button"
             className="shell__collapse"
             onClick={() => setCollapsed((v) => !v)}
-            aria-label={collapsed ? 'Lebarkan menu samping' : 'Persempit menu samping'}
+            aria-label={collapsed ? t('shell.expand') : t('shell.collapse')}
           >
             <Icon name={collapsed ? 'chevronRight' : 'chevronLeft'} size={18} />
           </button>
@@ -56,13 +59,13 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
             type="button"
             className="shell__close"
             onClick={() => setMobileOpen(false)}
-            aria-label="Tutup menu"
+            aria-label={t('shell.closeMenu')}
           >
             <Icon name="close" size={18} />
           </button>
         </div>
 
-        <nav className="shell__nav" aria-label="Navigasi utama">
+        <nav className="shell__nav" aria-label={t('shell.mainNav')}>
           {groups.map((group) => (
             <div className="shell__group" key={group.label}>
               <p className="shell__group-label">{group.label}</p>
@@ -81,7 +84,7 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
                       <Icon name={item.icon} size={20} />
                       <span className="shell__link-text">{item.label}</span>
                       {item.count > 0 && (
-                        <span className="shell__count" aria-label={`${item.count} menunggu`}>
+                        <span className="shell__count" aria-label={`${item.count} ${t('common.waiting')}`}>
                           {item.count}
                         </span>
                       )}
@@ -95,7 +98,7 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
 
         <button type="button" className="shell__link shell__signout" onClick={onSignOut}>
           <Icon name="logout" size={20} />
-          <span className="shell__link-text">Keluar</span>
+          <span className="shell__link-text">{t('common.signOut')}</span>
         </button>
       </aside>
 
@@ -105,12 +108,14 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
             type="button"
             className="shell__burger"
             onClick={() => setMobileOpen(true)}
-            aria-label="Buka menu"
+            aria-label={t('shell.openMenu')}
           >
             <Icon name="menu" size={20} />
           </button>
 
           <Clock />
+
+          <LanguageMenu />
 
           <ThemeToggle />
 
@@ -135,6 +140,7 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
 
 /** Nomor pekan dan waktu berjalan, seperti pada bilah atas rancangan. */
 function Clock() {
+  const t = useT();
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
@@ -142,14 +148,17 @@ function Clock() {
     return () => clearInterval(timer);
   }, []);
 
+  const locale = { id: 'id-ID', en: 'en-GB', zh: 'zh-CN' }[useLanguage().lang] ?? 'id-ID';
   const date = now
-    .toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+    .toLocaleDateString(locale, { day: '2-digit', month: 'short', year: 'numeric' })
     .replace(/ /g, '-');
-  const time = now.toLocaleTimeString('id-ID', { hour12: false });
+  const time = now.toLocaleTimeString(locale, { hour12: false });
 
   return (
     <p className="shell__clock">
-      <strong>Pekan {isoWeek(now)}</strong>
+      <strong>
+        {t('shell.week')} {isoWeek(now)}
+      </strong>
       <span>
         {date} {time} WIB
       </span>
@@ -165,6 +174,7 @@ function isoWeek(date) {
 }
 
 function ThemeToggle() {
+  const t = useT();
   const { theme, toggle } = useTheme();
   const goingDark = theme === 'light';
 
@@ -173,7 +183,7 @@ function ThemeToggle() {
       type="button"
       className="shell__theme"
       onClick={toggle}
-      aria-label={goingDark ? 'Beralih ke tampilan gelap' : 'Beralih ke tampilan terang'}
+      aria-label={goingDark ? t('shell.toDark') : t('shell.toLight')}
     >
       <Icon name={goingDark ? 'moon' : 'sun'} size={18} />
     </button>

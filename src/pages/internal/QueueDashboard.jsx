@@ -7,14 +7,16 @@ import SubmissionReview from './SubmissionReview.jsx';
 import { useAppState } from '../../store/AppStore.jsx';
 import { STATUS } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
+/** Saringan status; label diambil dari kamus saat dirender. */
 const FILTERS = [
-  { id: 'all', label: 'Semua' },
-  { id: STATUS.PENDING, label: 'Menunggu ditinjau' },
-  { id: STATUS.APPROVED, label: 'Disetujui' },
-  { id: 'onboarding', label: 'Sedang onboarding' },
-  { id: STATUS.ACTIVE, label: 'Aktif' },
-  { id: STATUS.REJECTED, label: 'Ditolak' },
+  { id: 'all', key: 'common.all' },
+  { id: STATUS.PENDING, key: `status.${STATUS.PENDING}` },
+  { id: STATUS.APPROVED, key: `status.${STATUS.APPROVED}` },
+  { id: 'onboarding', key: `status.${STATUS.ONBOARDING}` },
+  { id: STATUS.ACTIVE, key: `status.${STATUS.ACTIVE}` },
+  { id: STATUS.REJECTED, key: `status.${STATUS.REJECTED}` },
 ];
 
 const ONBOARDING_STATUSES = [
@@ -32,6 +34,7 @@ const ONBOARDING_STATUSES = [
  * detail pengajuan terpilih di kanan.
  */
 export default function QueueDashboard() {
+  const t = useT();
   const { submissions } = useAppState();
   const [filter, setFilter] = useState(STATUS.PENDING);
   const [selectedId, setSelectedId] = useState(null);
@@ -60,28 +63,28 @@ export default function QueueDashboard() {
   return (
     <>
       <PageHeader
-        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Antrian registrasi' }]}
+        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.queue') }]}
         icon="queue"
-        title="Antrian registrasi"
+        title={t('queue.title')}
         description="Tinjau data yang dikirim pemasok, lalu setujui atau tolak. Setelah disetujui, pilih cara melanjutkan onboarding."
       />
 
       <div className="queue-layout">
         <aside className="queue-panel" aria-label="Daftar pengajuan">
           <label className="visually-hidden" htmlFor="queue-search">
-            Cari pengajuan
+            {t('common.search')}
           </label>
           <input
             id="queue-search"
             type="search"
             className="input"
-            placeholder="Cari nama atau nomor"
+            placeholder={t('queue.searchPlaceholder')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{ marginBottom: 'var(--sp-4)' }}
           />
 
-          <div className="queue-filters" role="group" aria-label="Saring menurut status">
+          <div className="queue-filters" role="group" aria-label={t('queue.filterByStatus')}>
             {FILTERS.map((item) => (
               <button
                 key={item.id}
@@ -90,14 +93,14 @@ export default function QueueDashboard() {
                 aria-pressed={filter === item.id}
                 onClick={() => setFilter(item.id)}
               >
-                {item.label}
+                {t(item.key)}
               </button>
             ))}
           </div>
 
           {visible.length === 0 ? (
             <p className="text-sm muted" style={{ padding: 'var(--sp-3) 0' }}>
-              Tidak ada pengajuan pada saringan ini.
+              {t('queue.empty')}
             </p>
           ) : (
             <ul className="queue-list">
@@ -131,7 +134,7 @@ export default function QueueDashboard() {
                 description="Ubah saringan atau kata kunci pencarian untuk melihat pengajuan lain."
                 action={
                   <Button variant="secondary" onClick={() => { setFilter('all'); setQuery(''); }}>
-                    Tampilkan semua
+                    {t('common.showAll')}
                   </Button>
                 }
               />

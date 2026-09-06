@@ -5,6 +5,7 @@ import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import { useAppState } from '../../store/AppStore.jsx';
 import { ROLE, STATUS } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Ringkasan pembuka konsol. Kartu menu menjadi jalan pintas ke tugas
@@ -12,6 +13,7 @@ import { formatDate } from '../../lib/format.js';
  * apa yang berubah sejak terakhir membuka.
  */
 export default function InternalHome() {
+  const t = useT();
   const { submissions, session } = useAppState();
   const user = session.user;
   const count = (status) => submissions.filter((s) => s.status === status).length;
@@ -19,13 +21,13 @@ export default function InternalHome() {
   const tiles = [
     {
       to: '/internal/antrian',
-      label: 'Antrian registrasi',
+      label: t('nav.queue'),
       icon: 'queue',
       count: count(STATUS.PENDING),
     },
     {
       to: '/internal/verifikasi',
-      label: 'Verifikasi dokumen',
+      label: t('nav.verification'),
       icon: 'verify',
       count: count(STATUS.AWAITING_VERIFICATION),
     },
@@ -33,7 +35,7 @@ export default function InternalHome() {
       ? [
           {
             to: '/internal/approval',
-            label: 'Approval manager',
+            label: t('nav.managerApproval'),
             icon: 'approval',
             count: count(STATUS.AWAITING_MANAGER),
           },
@@ -53,7 +55,7 @@ export default function InternalHome() {
   return (
     <>
       <PageHeader
-        trail={[{ label: 'Beranda' }]}
+        trail={[{ label: t('common.home') }]}
         icon="home"
         title={`Selamat datang, ${user.name.split(' ')[0]}`}
         description="Ringkasan pekerjaan yang menunggu tindakan Anda hari ini."

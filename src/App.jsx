@@ -7,10 +7,9 @@ import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import RegisterWizard from './pages/supplier/RegisterWizard.jsx';
 import SupplierLayout from './components/layout/SupplierLayout.jsx';
 import ChangePassword from './pages/supplier/ChangePassword.jsx';
-import ProfileOnboarding from './pages/supplier/ProfileOnboarding.jsx';
+import SupplierProfile from './pages/supplier/SupplierProfile.jsx';
 import ConsentPage from './pages/supplier/ConsentPage.jsx';
 import SupplierStatus from './pages/supplier/SupplierStatus.jsx';
-import ActiveProfile from './pages/supplier/ActiveProfile.jsx';
 
 import InternalLayout from './components/layout/InternalLayout.jsx';
 import InternalHome from './pages/internal/InternalHome.jsx';
@@ -37,9 +36,10 @@ export default function App() {
         <Route index element={<Navigate to="/portal/status" replace />} />
         <Route path="ganti-sandi" element={<ChangePassword />} />
         <Route path="status" element={<SupplierStatus />} />
-        <Route path="profil-onboarding" element={<ProfileOnboarding />} />
+        <Route path="profil" element={<SupplierProfile />} />
         <Route path="persetujuan" element={<ConsentPage />} />
-        <Route path="profil" element={<ActiveProfile />} />
+        {/* Tautan lama dari email undangan tetap berfungsi */}
+        <Route path="profil-onboarding" element={<Navigate to="/portal/profil" replace />} />
       </Route>
 
       {/* Konsol internal */}

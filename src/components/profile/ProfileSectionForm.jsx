@@ -1,13 +1,25 @@
 import { useState } from 'react';
-import { TextField, SelectField, TextAreaField, Checkbox } from '../ui/Field.jsx';
+import {
+  TextField,
+  SelectField,
+  TextAreaField,
+  Checkbox,
+  CheckboxGroup,
+} from '../ui/Field.jsx';
 import FileField from '../ui/FileField.jsx';
 import Button from '../ui/Button.jsx';
 import {
   CONTACT_TITLES,
+  COUNTRIES,
   CURRENCIES,
+  ENTITY_TYPES,
   JOB_POSITIONS,
+  LEGAL_STATUSES,
   MAX_CONTACTS,
+  OTV_STATUSES,
+  TARGET_COMPANIES,
   TERMS_OF_PAYMENT,
+  VENDOR_TYPES,
 } from '../../lib/constants.js';
 import { formatNpwp, wasNpwpNormalized } from '../../lib/validation.js';
 import { LICENSES, normalizeSection, validateSection } from '../../lib/profileRules.js';
@@ -42,6 +54,9 @@ export default function ProfileSectionForm({ sectionId, value, onSubmit, onCance
 
   return (
     <form onSubmit={handleSubmit} noValidate>
+      {sectionId === 'general' && <GeneralStep values={values} set={set} errors={errors} />}
+      {sectionId === 'address' && <AddressStep values={values} set={set} errors={errors} />}
+      {sectionId === 'contact' && <ContactStep values={values} set={set} errors={errors} />}
       {sectionId === 'tax' && <TaxSection values={values} set={set} errors={errors} />}
       {sectionId === 'documents' && <DocumentsSection values={values} set={set} errors={errors} />}
       {sectionId === 'licenses' && <LicensesSection values={values} set={set} errors={errors} />}
@@ -267,6 +282,227 @@ function BankingSection({ values, set, errors }) {
           error={errors.termsOfPayment}
           hint="Dihitung sejak tagihan diterima dan disetujui."
           required
+        />
+      </div>
+    </>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Data pendaftaran — dipakai wizard pendaftaran dan halaman profil    */
+/* ------------------------------------------------------------------ */
+export function GeneralStep({ values, set, errors }) {
+  const isEntity = values.legalStatus === 'Badan Usaha';
+  return (
+    <div className="field-grid">
+      <SelectField
+        label="Status badan hukum"
+        options={LEGAL_STATUSES}
+        value={values.legalStatus}
+        onChange={(e) => set({ legalStatus: e.target.value, entityType: '' })}
+        error={errors.legalStatus}
+        required
+      />
+      <SelectField
+        label="Bentuk badan usaha"
+        options={ENTITY_TYPES}
+        value={values.entityType}
+        onChange={(e) => set({ entityType: e.target.value })}
+        error={errors.entityType}
+        disabled={!isEntity}
+        hint={isEntity ? undefined : 'Tersedia bila status badan hukum adalah badan usaha.'}
+        required={isEntity}
+      />
+      <TextField
+        label="Nama perusahaan"
+        className="span-full"
+        value={values.vendorName}
+        onChange={(e) => set({ vendorName: e.target.value })}
+        error={errors.vendorName}
+        required
+      />
+      <SelectField
+        label="Jenis pasokan"
+        options={VENDOR_TYPES}
+        value={values.vendorType}
+        onChange={(e) => set({ vendorType: e.target.value })}
+        error={errors.vendorType}
+        required
+      />
+      <TextField
+        label="Rincian jenis pasokan"
+        value={values.vendorTypeDetail}
+        onChange={(e) => set({ vendorTypeDetail: e.target.value })}
+        error={errors.vendorTypeDetail}
+        placeholder="Misalnya bahan baku herbal"
+        required
+      />
+      <div className="span-full">
+        <CheckboxGroup
+          legend="Perusahaan Paragon yang dituju"
+          options={TARGET_COMPANIES}
+          values={values.targetCompanies}
+          onChange={(next) => set({ targetCompanies: next })}
+          error={errors.targetCompanies}
+        />
+      </div>
+      <SelectField
+        label="Rencana kerja sama"
+        options={OTV_STATUSES}
+        value={values.otvStatus}
+        onChange={(e) => set({ otvStatus: e.target.value })}
+        error={errors.otvStatus}
+        hint="Pilih sekali pakai bila hanya untuk satu transaksi."
+        required
+      />
+      <TextField
+        label="Email perusahaan"
+        type="email"
+        value={values.companyEmail}
+        onChange={(e) => set({ companyEmail: e.target.value })}
+        error={errors.companyEmail}
+        required
+      />
+      <TextField
+        label="Telepon kantor"
+        value={values.officePhone}
+        onChange={(e) => set({ officePhone: e.target.value })}
+        error={errors.officePhone}
+      />
+      <TextField
+        label="Nomor ponsel"
+        value={values.mobilePhone}
+        onChange={(e) => set({ mobilePhone: e.target.value })}
+        error={errors.mobilePhone}
+        required
+      />
+      <TextField
+        label="Situs web"
+        className="span-full"
+        value={values.website}
+        onChange={(e) => set({ website: e.target.value })}
+        placeholder="https://"
+      />
+    </div>
+  );
+}
+
+export function AddressStep({ values, set, errors }) {
+  return (
+    <div className="field-grid">
+      <TextAreaField
+        label="Alamat lengkap"
+        className="span-full"
+        rows={2}
+        value={values.street}
+        onChange={(e) => set({ street: e.target.value })}
+        error={errors.street}
+        required
+      />
+      <SelectField
+        label="Negara"
+        options={COUNTRIES}
+        value={values.country}
+        onChange={(e) => set({ country: e.target.value })}
+        error={errors.country}
+        required
+      />
+      <TextField
+        label="Provinsi atau negara bagian"
+        value={values.province}
+        onChange={(e) => set({ province: e.target.value })}
+        error={errors.province}
+        required
+      />
+      <TextField
+        label="Kota atau kabupaten"
+        value={values.city}
+        onChange={(e) => set({ city: e.target.value })}
+        error={errors.city}
+        required
+      />
+      <TextField
+        label="Kode pos"
+        inputMode="numeric"
+        value={values.postalCode}
+        onChange={(e) => set({ postalCode: e.target.value.replace(/\D/g, '') })}
+        error={errors.postalCode}
+        required
+      />
+      <TextField
+        label="Kecamatan"
+        value={values.district}
+        onChange={(e) => set({ district: e.target.value })}
+      />
+      <TextField
+        label="Kelurahan atau desa"
+        value={values.subdistrict}
+        onChange={(e) => set({ subdistrict: e.target.value })}
+      />
+    </div>
+  );
+}
+
+export function ContactStep({ values, set, errors }) {
+  return (
+    <>
+      <div className="notice notice--info" style={{ marginBottom: 'var(--sp-5)' }}>
+        Email pada bagian ini menjadi alamat tujuan undangan portal bila pendaftaran Anda disetujui.
+        Pastikan alamatnya aktif dan dipantau.
+      </div>
+
+      <div className="field-grid">
+        <TextField
+          label="Nama lengkap"
+          value={values.name}
+          onChange={(e) => set({ name: e.target.value })}
+          error={errors.name}
+          required
+        />
+        <SelectField
+          label="Sapaan"
+          options={CONTACT_TITLES}
+          value={values.title}
+          onChange={(e) => set({ title: e.target.value })}
+          error={errors.title}
+          required
+        />
+        <SelectField
+          label="Bidang pekerjaan"
+          options={JOB_POSITIONS}
+          value={values.jobPosition}
+          onChange={(e) => set({ jobPosition: e.target.value })}
+          error={errors.jobPosition}
+          required
+        />
+        <TextField
+          label="Email"
+          type="email"
+          value={values.email}
+          onChange={(e) => set({ email: e.target.value })}
+          error={errors.email}
+          required
+        />
+        <TextField
+          label="Telepon kantor"
+          value={values.phone}
+          onChange={(e) => set({ phone: e.target.value })}
+          error={errors.phone}
+        />
+        <TextField
+          label="Nomor ponsel"
+          value={values.mobile}
+          onChange={(e) => set({ mobile: e.target.value })}
+          error={errors.mobile}
+          required
+        />
+        <TextAreaField
+          label="Catatan tambahan"
+          className="span-full"
+          rows={3}
+          value={values.notes}
+          onChange={(e) => set({ notes: e.target.value })}
+          hint="Opsional. Misalnya riwayat kerja sama sebelumnya dengan Paragon."
         />
       </div>
     </>

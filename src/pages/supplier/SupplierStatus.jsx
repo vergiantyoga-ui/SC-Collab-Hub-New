@@ -4,20 +4,22 @@ import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import { useAppActions, useCurrentSubmission } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { PATH, PROFILE_SECTIONS, STATUS } from '../../lib/constants.js';
+import { PATH, REQUIRED_SECTION_IDS, STATUS } from '../../lib/constants.js';
 import { formatDate, formatDateTime } from '../../lib/format.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Layar utama pemasok. Isinya berubah mengikuti status pengajuan supaya
  * pemasok selalu melihat satu tindakan berikutnya yang jelas.
  */
 export default function SupplierStatus() {
+  const t = useT();
   const submission = useCurrentSubmission();
   const { resubmitDocuments } = useAppActions();
   const navigate = useNavigate();
   const toast = useToast();
 
-  const doneCount = PROFILE_SECTIONS.filter((s) => submission.profile.completed[s.id]).length;
+  const doneCount = REQUIRED_SECTION_IDS.filter((id) => submission.profile.completed[id]).length;
   const preparedByStaff = submission.onboardingPath === PATH.INTERNAL;
 
   const views = {
@@ -26,7 +28,7 @@ export default function SupplierStatus() {
       title: 'Saatnya melengkapi profil perusahaan',
       body: 'Kami memerlukan dokumen pajak, legalitas, sertifikat, data rekening, dan kontak tim Anda sebelum akun dapat diaktifkan.',
       action: (
-        <Button onClick={() => navigate('/portal/profil-onboarding')}>Mulai isi profil</Button>
+        <Button onClick={() => navigate('/portal/profil')}>Mulai isi profil</Button>
       ),
     },
     [STATUS.CONNECTED]: {
@@ -34,17 +36,17 @@ export default function SupplierStatus() {
       title: 'Profil Anda sudah disiapkan tim Paragon',
       body: 'Tim procurement mengisikan profil berdasarkan dokumen yang Anda kirim sebelumnya. Mohon tinjau isinya, perbaiki bila ada yang keliru, lalu berikan persetujuan.',
       action: (
-        <Button onClick={() => navigate('/portal/profil-onboarding')}>Tinjau profil</Button>
+        <Button onClick={() => navigate('/portal/profil')}>Tinjau profil</Button>
       ),
     },
     [STATUS.ONBOARDING]: {
       tone: 'info',
-      title: `Profil terisi ${doneCount} dari ${PROFILE_SECTIONS.length} bagian`,
+      title: `Kelengkapan profil terisi ${doneCount} dari ${REQUIRED_SECTION_IDS.length} bagian`,
       body: preparedByStaff
         ? 'Periksa data yang disiapkan tim Paragon, lalu lanjutkan ke persetujuan.'
         : 'Lanjutkan pengisian bagian yang tersisa. Data yang sudah disimpan tidak akan hilang.',
       action: (
-        <Button onClick={() => navigate('/portal/profil-onboarding')}>Lanjutkan pengisian</Button>
+        <Button onClick={() => navigate('/portal/profil')}>Lanjutkan pengisian</Button>
       ),
     },
     [STATUS.AWAITING_VERIFICATION]: {
@@ -59,7 +61,7 @@ export default function SupplierStatus() {
       body: 'Perbaiki berkas yang disebut di bawah, lalu kirim ulang untuk diperiksa kembali.',
       action: (
         <div className="row">
-          <Button onClick={() => navigate('/portal/profil-onboarding')}>Perbaiki dokumen</Button>
+          <Button onClick={() => navigate('/portal/profil')}>Perbaiki dokumen</Button>
           <Button
             variant="secondary"
             onClick={() => {
@@ -90,9 +92,9 @@ export default function SupplierStatus() {
   return (
     <>
       <PageHeader
-        trail={[{ label: 'Beranda' }]}
+        trail={[{ label: t('common.home') }]}
         icon="status"
-        title="Status pendaftaran"
+        title={t('nav.status')}
         description={`${submission.general.vendorName} · ${submission.id}`}
       />
 

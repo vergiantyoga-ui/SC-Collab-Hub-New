@@ -12,12 +12,14 @@ import { useAppActions, useAppState, isManager } from '../../store/AppStore.jsx'
 import { useToast } from '../../components/ui/Toast.jsx';
 import { STATUS } from '../../lib/constants.js';
 import { formatDate, passwordExpiryFrom } from '../../lib/format.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Antrian khusus manager procurement. Menyetujui berarti akun pemasok
  * dibuat dan email dikirim, jadi keputusannya diberi konfirmasi eksplisit.
  */
 export default function ManagerApprovals() {
+  const t = useT();
   const { submissions, session } = useAppState();
   const actions = useAppActions();
   const toast = useToast();
@@ -58,9 +60,9 @@ export default function ManagerApprovals() {
     return (
       <>
       <PageHeader
-        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Approval manager' }]}
+        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.managerApproval') }]}
         icon="approval"
-        title="Approval registrasi internal"
+        title={t('approval.title')}
         description="Periksa profil yang disiapkan admin. Menyetujui berarti akun pemasok dibuat dan undangan langsung dikirim."
       />
         <div className="card">
@@ -84,9 +86,9 @@ export default function ManagerApprovals() {
   return (
     <>
       <PageHeader
-        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Approval manager' }]}
+        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.managerApproval') }]}
         icon="approval"
-        title="Approval registrasi internal"
+        title={t('approval.title')}
         description="Periksa profil yang disiapkan admin. Menyetujui berarti akun pemasok dibuat dan undangan langsung dikirim."
       />
 

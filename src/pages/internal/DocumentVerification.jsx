@@ -11,6 +11,7 @@ import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { PATH, STATUS } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Verifikasi dokumen — gerbang terakhir sebelum pemasok berstatus aktif.
@@ -28,6 +29,7 @@ const CHECKABLE_DOCUMENTS = [
 ];
 
 export default function DocumentVerification() {
+  const t = useT();
   const { submissions, session } = useAppState();
   const actions = useAppActions();
   const toast = useToast();
@@ -77,9 +79,9 @@ export default function DocumentVerification() {
     return (
       <>
       <PageHeader
-        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Verifikasi dokumen' }]}
+        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.verification') }]}
         icon="verify"
-        title="Verifikasi dokumen"
+        title={t('verify.title')}
         description="Periksa keterbacaan berkas, kesesuaian nomor identitas, masa berlaku sertifikat, dan kecocokan nama pemilik rekening dengan badan usaha."
       />
         <div className="card">
@@ -100,9 +102,9 @@ export default function DocumentVerification() {
   return (
     <>
       <PageHeader
-        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Verifikasi dokumen' }]}
+        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.verification') }]}
         icon="verify"
-        title="Verifikasi dokumen"
+        title={t('verify.title')}
         description="Periksa keterbacaan berkas, kesesuaian nomor identitas, masa berlaku sertifikat, dan kecocokan nama pemilik rekening dengan badan usaha."
       />
 

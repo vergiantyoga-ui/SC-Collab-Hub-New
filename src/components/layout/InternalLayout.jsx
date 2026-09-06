@@ -1,13 +1,15 @@
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
-import { ROLE, ROLE_LABEL, STATUS } from '../../lib/constants.js';
+import { ROLE, STATUS } from '../../lib/constants.js';
+import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Konsol internal. Menu dikelompokkan menurut jenis pekerjaan, dan
  * kelompok Persetujuan hanya muncul untuk manager sesuai aturan akses.
  */
 export default function InternalLayout() {
+  const t = useT();
   const { session, submissions } = useAppState();
   const { signOut } = useAppActions();
   const navigate = useNavigate();
@@ -19,21 +21,21 @@ export default function InternalLayout() {
 
   const groups = [
     {
-      label: 'Beranda',
-      items: [{ to: '/internal/beranda', label: 'Ringkasan', icon: 'home', end: true }],
+      label: t('nav.group.home'),
+      items: [{ to: '/internal/beranda', label: t('nav.summary'), icon: 'home', end: true }],
     },
     {
-      label: 'Proses',
+      label: t('nav.group.process'),
       items: [
         {
           to: '/internal/antrian',
-          label: 'Antrian registrasi',
+          label: t('nav.queue'),
           icon: 'queue',
           count: count(STATUS.PENDING),
         },
         {
           to: '/internal/verifikasi',
-          label: 'Verifikasi dokumen',
+          label: t('nav.verification'),
           icon: 'verify',
           count: count(STATUS.AWAITING_VERIFICATION),
         },
@@ -42,11 +44,11 @@ export default function InternalLayout() {
     ...(user.role === ROLE.MANAGER
       ? [
           {
-            label: 'Persetujuan',
+            label: t('nav.group.approval'),
             items: [
               {
                 to: '/internal/approval',
-                label: 'Approval manager',
+                label: t('nav.managerApproval'),
                 icon: 'approval',
                 count: count(STATUS.AWAITING_MANAGER),
               },
@@ -60,7 +62,7 @@ export default function InternalLayout() {
     <AppShell
       groups={groups}
       user={user}
-      subtitle={ROLE_LABEL[user.role]}
+      subtitle={t(`role.${user.role}`)}
       onSignOut={() => {
         signOut();
         navigate('/internal/masuk', { replace: true });

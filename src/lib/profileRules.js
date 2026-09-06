@@ -22,6 +22,47 @@ export const LICENSES = [
 ];
 
 export function validateSection(sectionId, values) {
+  if (sectionId === 'general') {
+    return collectErrors({
+      legalStatus: required(values.legalStatus, 'Status badan hukum'),
+      entityType:
+        values.legalStatus === 'Badan Usaha'
+          ? required(values.entityType, 'Bentuk badan usaha')
+          : null,
+      vendorName: required(values.vendorName, 'Nama perusahaan'),
+      vendorType: required(values.vendorType, 'Jenis pasokan'),
+      vendorTypeDetail: required(values.vendorTypeDetail, 'Rincian jenis pasokan'),
+      targetCompanies: values.targetCompanies?.length
+        ? null
+        : 'Pilih minimal satu perusahaan Paragon.',
+      otvStatus: required(values.otvStatus, 'Rencana kerja sama'),
+      companyEmail: validateEmail(values.companyEmail),
+      mobilePhone: validatePhone(values.mobilePhone),
+      officePhone: validatePhone(values.officePhone, { required: false }),
+    });
+  }
+
+  if (sectionId === 'address') {
+    return collectErrors({
+      street: required(values.street, 'Alamat lengkap'),
+      country: required(values.country, 'Negara'),
+      province: required(values.province, 'Provinsi'),
+      city: required(values.city, 'Kota'),
+      postalCode: required(values.postalCode, 'Kode pos'),
+    });
+  }
+
+  if (sectionId === 'contact') {
+    return collectErrors({
+      name: required(values.name, 'Nama lengkap'),
+      title: required(values.title, 'Sapaan'),
+      jobPosition: required(values.jobPosition, 'Bidang pekerjaan'),
+      email: validateEmail(values.email),
+      mobile: validatePhone(values.mobile),
+      phone: validatePhone(values.phone, { required: false }),
+    });
+  }
+
   if (sectionId === 'tax') {
     return collectErrors({
       nik: validateNik(values.nik),

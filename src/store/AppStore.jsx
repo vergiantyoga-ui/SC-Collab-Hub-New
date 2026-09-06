@@ -183,6 +183,15 @@ export function AppStoreProvider({ children }) {
         }));
       },
 
+      /** Menyunting salah satu bagian data pendaftaran (general/address/contact). */
+      updateRegistrationSection(id, sectionId, values, actor) {
+        patch(
+          id,
+          { [sectionId]: values },
+          entry(`Data pendaftaran diperbarui (${sectionId})`, actor),
+        );
+      },
+
       submitToManager(id, actor) {
         patch(
           id,
