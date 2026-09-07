@@ -7,7 +7,7 @@ import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
-import { useAppActions, useAppState, canUseInternalPath } from '../../store/AppStore.jsx';
+import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import {
   PROFILE_SECTIONS,
@@ -24,7 +24,7 @@ import {
 export default function InternalRegistration() {
   const { id } = useParams();
   const { submissions, session } = useAppState();
-  const { saveProfileSection, submitToManager } = useAppActions();
+  const { saveProfileSection, finishInternalRegistration } = useAppActions();
   const [confirming, setConfirming] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
@@ -35,7 +35,6 @@ export default function InternalRegistration() {
   );
 
   if (!submission) return <Navigate to="/internal/antrian" replace />;
-  if (!canUseInternalPath(session.user)) return <Navigate to="/internal/antrian" replace />;
   if (submission.status !== STATUS.INTERNAL_DRAFT) {
     return <Navigate to="/internal/antrian" replace />;
   }
@@ -49,8 +48,6 @@ export default function InternalRegistration() {
   const allDone = REQUIRED_SECTION_IDS.every((id) => submission.profile.completed[id]);
   const section = PROFILE_SECTIONS.find((s) => s.id === active);
   const isRegistration = section.group === 'registration';
-  const revisionNote =
-    submission.managerReview?.status === 'revision_requested' ? submission.managerReview.note : null;
 
   function handleSave(values) {
     saveProfileSection(submission.id, active, values, 'staff');
@@ -62,10 +59,10 @@ export default function InternalRegistration() {
     }
   }
 
-  function handleSubmitToManager() {
-    submitToManager(submission.id, session.user);
+  function handleFinish() {
+    finishInternalRegistration(submission.id, session.user);
     setConfirming(false);
-    toast.success('Profil diajukan ke manager procurement.');
+    toast.success('Registrasi internal selesai. Undangan portal dikirim ke pemasok.');
     navigate('/internal/antrian');
   }
 
@@ -81,19 +78,12 @@ export default function InternalRegistration() {
         title="Registrasi internal"
         description={`Isi profil berdasarkan dokumen yang dikirim pemasok melalui ${
           submission.documentSource === 'whatsapp' ? 'WhatsApp' : 'email'
-        }. Setelah lengkap, ajukan ke manager untuk disetujui.`}
+        }. Setelah lengkap, akun pemasok langsung dibuat dan undangannya dikirim.`}
       />
 
-      {revisionNote && (
-        <div className="notice notice--danger" style={{ marginBottom: 'var(--sp-5)' }}>
-          <span className="notice__title">Manager meminta revisi</span>
-          {revisionNote}
-        </div>
-      )}
-
       <div className="notice notice--info" style={{ marginBottom: 'var(--sp-5)' }}>
-        Pemasok tetap akan meninjau dan menyetujui data ini setelah akun dikirim, jadi pastikan
-        setiap angka disalin persis dari dokumen aslinya.
+        Pemasok akan meninjau dan menyetujui data ini setelah akun dikirim, jadi pastikan setiap
+        angka disalin persis dari dokumen aslinya.
       </div>
 
       <div className="profile-layout">
@@ -126,11 +116,11 @@ export default function InternalRegistration() {
             disabled={!allDone}
             onClick={() => setConfirming(true)}
           >
-            Ajukan ke manager
+            Selesai dan kirim akun
           </Button>
           {!allDone && (
             <p className="text-xs muted" style={{ marginTop: 'var(--sp-2)' }}>
-              Lengkapi seluruh bagian sebelum mengajukan.
+              Lengkapi seluruh bagian sebelum mengirim akun.
             </p>
           )}
         </div>
@@ -160,14 +150,14 @@ export default function InternalRegistration() {
       <Modal
         open={confirming}
         onClose={() => setConfirming(false)}
-        title="Ajukan profil ke manager?"
-        description="Manager procurement akan memeriksa isian ini. Akun dan email pemasok baru dibuat setelah manager menyetujui."
+        title="Selesaikan registrasi internal?"
+        description="Akun pemasok akan dibuat dan undangan portal dikirim ke email kontaknya. Pemasok kemudian meninjau profil ini dan memberikan persetujuan."
         footer={
           <>
             <Button variant="secondary" onClick={() => setConfirming(false)}>
               Batal
             </Button>
-            <Button onClick={handleSubmitToManager}>Ajukan sekarang</Button>
+            <Button onClick={handleFinish}>Kirim akun sekarang</Button>
           </>
         }
       />

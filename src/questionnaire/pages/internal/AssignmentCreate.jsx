@@ -14,7 +14,7 @@ import {
 import { TEMPLATE_STATUS, MATERIAL_TYPES } from '../../engine/index.js';
 import { PRIORITIES } from '../../store/assignmentMockData.js';
 import { INTERNAL_USERS } from '../../../lib/mockData.js';
-import { STATUS } from '../../../lib/constants.js';
+import { hasFinishedRegistration } from '../../../lib/constants.js';
 import { collectErrors, required } from '../../../lib/validation.js';
 
 /**
@@ -61,7 +61,9 @@ export default function AssignmentCreate() {
       )
     : [];
 
-  const activeSuppliers = submissions.filter((item) => item.status === STATUS.ACTIVE);
+  // Kuesioner ditugaskan sejak tahap qualification; menunggu status preferred
+  // justru membalik urutannya, sebab hasil kuesioner ikut dinilai manager.
+  const activeSuppliers = submissions.filter((item) => hasFinishedRegistration(item.status));
 
   function handleSubmit(event) {
     event.preventDefault();

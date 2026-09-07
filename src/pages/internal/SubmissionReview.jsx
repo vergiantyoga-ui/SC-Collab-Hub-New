@@ -6,9 +6,9 @@ import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import { TextAreaField, SelectField } from '../../components/ui/Field.jsx';
-import { useAppActions, useAppState, canUseInternalPath } from '../../store/AppStore.jsx';
+import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { ROLE, STATUS } from '../../lib/constants.js';
+import { STATUS } from '../../lib/constants.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 import { formatDate, formatDateTime, passwordExpiryFrom } from '../../lib/format.js';
 
@@ -41,7 +41,6 @@ export default function SubmissionReview({ submission }) {
 
   const user = session.user;
   const allVisited = TABS.every((t) => visited.includes(t.id));
-  const isAdmin = canUseInternalPath(user);
 
   function selectTab(id) {
     setTab(id);
@@ -150,7 +149,7 @@ export default function SubmissionReview({ submission }) {
         <hr style={{ border: 0, borderTop: '1px solid var(--line-soft)', margin: 'var(--sp-5) 0' }} />
 
         {/* --- Keputusan atas pengajuan baru --- */}
-        {submission.status === STATUS.PENDING && (
+        {submission.status === STATUS.SUPPLIER_REQUEST && (
           <>
             {!allVisited && (
               <p className="text-sm muted" style={{ marginBottom: 'var(--sp-3)' }}>
@@ -188,21 +187,15 @@ export default function SubmissionReview({ submission }) {
                 <Button onClick={handleInvite}>Kirim undangan</Button>
               </div>
 
-              <div className={`path-card ${isAdmin ? '' : 'path-card--locked'}`}>
+              <div className="path-card">
                 <h3>Isi profil secara internal</h3>
                 <p>
                   Untuk pemasok yang menyerahkan dokumen lewat email atau WhatsApp. Profil diisi
-                  admin, disetujui manager, baru akun dikirim.
+                  staf procurement, lalu akun langsung dikirim ke pemasok.
                 </p>
-                {isAdmin ? (
-                  <Button variant="secondary" onClick={() => setChoosingInternal(true)}>
-                    Mulai registrasi internal
-                  </Button>
-                ) : (
-                  <p className="text-xs muted">
-                    Hanya {t(`role.${ROLE.ADMIN}`)} yang dapat memakai jalur ini.
-                  </p>
-                )}
+                <Button variant="secondary" onClick={() => setChoosingInternal(true)}>
+                  Mulai registrasi internal
+                </Button>
               </div>
             </div>
           </section>
@@ -221,22 +214,10 @@ export default function SubmissionReview({ submission }) {
             <div className="notice notice--info">
               <span className="notice__title">Registrasi internal sedang berjalan</span>
               Dokumen diterima melalui {submission.documentSource === 'whatsapp' ? 'WhatsApp' : 'email'}.
-              {submission.managerReview?.status === 'revision_requested' &&
-                ` Manager meminta revisi: ${submission.managerReview.note}`}
             </div>
-            {isAdmin && (
-              <div>
-                <Button to={`/internal/registrasi/${submission.id}`}>Lanjutkan pengisian</Button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {submission.status === STATUS.AWAITING_MANAGER && (
-          <div className="notice notice--warn">
-            <span className="notice__title">Menunggu keputusan manager</span>
-            Profil sudah lengkap dan diajukan {formatDate(submission.internalDraft?.completedAt)}.
-            Akun pemasok dibuat setelah manager menyetujui.
+            <div>
+              <Button to={`/internal/registrasi/${submission.id}`}>Lanjutkan pengisian</Button>
+            </div>
           </div>
         )}
 
@@ -247,17 +228,25 @@ export default function SubmissionReview({ submission }) {
           }} />
         )}
 
-        {submission.status === STATUS.AWAITING_VERIFICATION && (
+        {submission.status === STATUS.REGISTRATION && (
           <div className="notice notice--warn">
             <span className="notice__title">Dokumen menunggu diperiksa</span>
             Buka menu verifikasi dokumen untuk menyelesaikan pemeriksaan.
           </div>
         )}
 
-        {submission.status === STATUS.ACTIVE && (
+        {submission.status === STATUS.PREFERRED && (
           <div className="notice notice--success">
-            <span className="notice__title">Pemasok aktif sejak {formatDate(submission.activatedAt)}</span>
-            ID akun {submission.account?.accountId}.
+            <span className="notice__title">Preferred supplier</span>
+            Ditetapkan {formatDate(submission.preferredDecision?.decidedAt)} oleh{' '}
+            {submission.preferredDecision?.decidedBy}. ID akun {submission.account?.accountId}.
+          </div>
+        )}
+
+        {submission.status === STATUS.DISQUALIFIED && (
+          <div className="notice notice--danger">
+            <span className="notice__title">Didiskualifikasi</span>
+            {submission.preferredDecision?.note}
           </div>
         )}
 

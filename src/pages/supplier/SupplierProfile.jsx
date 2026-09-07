@@ -16,6 +16,7 @@ import {
   REQUIRED_SECTION_IDS,
   REVERIFY_SECTION_IDS,
   STATUS,
+  hasFinishedRegistration,
 } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
@@ -39,7 +40,7 @@ export default function SupplierProfile() {
   const toast = useToast();
   const navigate = useNavigate();
 
-  const isActive = submission.status === STATUS.ACTIVE;
+  const isActive = hasFinishedRegistration(submission.status);
   const completed = completionMap(submission);
   const doneCount = PROFILE_SECTIONS.filter((s) => completed[s.id]).length;
   const allDone = REQUIRED_SECTION_IDS.every((id) => completed[id]);
@@ -118,7 +119,7 @@ export default function SupplierProfile() {
         </div>
       )}
 
-      {submission.status === STATUS.AWAITING_VERIFICATION && (
+      {submission.status === STATUS.REGISTRATION && (
         <div className="notice notice--warn" style={{ marginBottom: 'var(--sp-5)' }}>
           <span className="notice__title">Sedang diperiksa tim procurement</span>
           Data lama Anda tetap berlaku sampai pemeriksaan selesai.

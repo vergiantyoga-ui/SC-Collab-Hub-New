@@ -22,7 +22,7 @@ export default function StaffLogin() {
   const { submissions } = useAppState();
   const navigate = useNavigate();
 
-  const pendingCount = submissions.filter((s) => s.status === STATUS.PENDING).length;
+  const pendingCount = submissions.filter((s) => s.status === STATUS.SUPPLIER_REQUEST).length;
 
   function handleSubmit(event) {
     event.preventDefault();

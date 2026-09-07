@@ -3,7 +3,7 @@ import TileGrid from '../../components/ui/TileGrid.jsx';
 import Card from '../../components/ui/Card.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import { useAppState } from '../../store/AppStore.jsx';
-import { ROLE, STATUS } from '../../lib/constants.js';
+import { STATUS, STATUS_LABEL, STATUS_PIPELINE } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
@@ -19,29 +19,24 @@ export default function InternalHome() {
   const count = (status) => submissions.filter((s) => s.status === status).length;
 
   const tiles = [
-    {
-      to: '/internal/antrian',
-      label: t('nav.queue'),
-      icon: 'queue',
-      count: count(STATUS.PENDING),
-    },
-    {
-      to: '/internal/verifikasi',
-      label: t('nav.verification'),
-      icon: 'verify',
-      count: count(STATUS.AWAITING_VERIFICATION),
-    },
-    ...(user.role === ROLE.MANAGER
-      ? [
-          {
-            to: '/internal/approval',
-            label: t('nav.managerApproval'),
-            icon: 'approval',
-            count: count(STATUS.AWAITING_MANAGER),
-          },
-        ]
-      : []),
+    { to: '/internal/antrian', label: 'Supplier request', icon: 'queue', count: count(STATUS.SUPPLIER_REQUEST) },
+    { to: '/internal/verifikasi', label: 'Registrasi', icon: 'verify', count: count(STATUS.REGISTRATION) },
+    { to: '/internal/kualifikasi', label: 'Qualification', icon: 'approval', count: count(STATUS.QUALIFICATION) },
+    { to: '/internal/preferred', label: 'Preferred', icon: 'profile', count: count(STATUS.AWAITING_PREFERRED) },
   ];
+
+  /**
+   * Tahapan pemasok berurutan. Menampilkan seluruh langkah sekaligus, termasuk
+   * yang sedang kosong, supaya staf melihat bentuk keseluruhan alurnya dan tahu
+   * di mana pemasok menumpuk.
+   */
+  const pipeline = STATUS_PIPELINE.map((status) => ({
+    status,
+    label: STATUS_LABEL[status],
+    value: count(status),
+  }));
+
+  const disqualified = count(STATUS.DISQUALIFIED);
 
   const recent = [...submissions]
     .filter((s) => s.timeline.length > 0)
@@ -62,6 +57,30 @@ export default function InternalHome() {
       />
 
       <TileGrid tiles={tiles} />
+
+      <Card
+        title="Tahapan pemasok"
+        subtitle="Jumlah pemasok pada setiap langkah"
+        style={{ marginTop: 'var(--sp-5)' }}
+      >
+        <ol className="pipeline">
+          {pipeline.map((step, index) => (
+            <li className="pipeline__step" key={step.status}>
+              <span className="pipeline__num" aria-hidden="true">
+                {index + 1}
+              </span>
+              <span className="pipeline__label">{step.label}</span>
+              <span className="pipeline__count">{step.value}</span>
+            </li>
+          ))}
+        </ol>
+
+        {disqualified > 0 && (
+          <p className="pipeline__aside">
+            {disqualified} pemasok didiskualifikasi dan berada di luar alur ini.
+          </p>
+        )}
+      </Card>
 
       <Card
         title="Aktivitas terakhir"

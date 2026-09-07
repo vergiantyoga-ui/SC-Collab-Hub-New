@@ -49,7 +49,7 @@ export default function SupplierStatus() {
         <Button onClick={() => navigate('/portal/profil')}>Lanjutkan pengisian</Button>
       ),
     },
-    [STATUS.AWAITING_VERIFICATION]: {
+    [STATUS.REGISTRATION]: {
       tone: 'warn',
       title: 'Dokumen sedang diperiksa tim procurement',
       body: 'Kami memeriksa keterbacaan berkas, kesesuaian nomor identitas, dan masa berlaku sertifikat. Anda akan menerima email begitu pemeriksaan selesai.',
@@ -74,7 +74,7 @@ export default function SupplierStatus() {
         </div>
       ),
     },
-    [STATUS.ACTIVE]: {
+    [STATUS.PREFERRED]: {
       tone: 'success',
       title: 'Akun Anda aktif',
       body: 'Anda kini dapat menerima pesanan pembelian, mengirim tagihan, dan memperbarui data perusahaan kapan pun ada perubahan.',

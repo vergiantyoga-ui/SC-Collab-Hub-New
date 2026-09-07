@@ -39,7 +39,7 @@ export default function DocumentVerification() {
   const [rejecting, setRejecting] = useState(false);
   const [approving, setApproving] = useState(false);
 
-  const queue = submissions.filter((s) => s.status === STATUS.AWAITING_VERIFICATION);
+  const queue = submissions.filter((s) => s.status === STATUS.REGISTRATION);
   const selected = queue.find((s) => s.id === selectedId) ?? queue[0] ?? null;
 
   function toggleFlag(docId, checked) {

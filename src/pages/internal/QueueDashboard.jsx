@@ -12,20 +12,20 @@ import { useT } from '../../i18n/LanguageContext.jsx';
 /** Saringan status; label diambil dari kamus saat dirender. */
 const FILTERS = [
   { id: 'all', key: 'common.all' },
-  { id: STATUS.PENDING, key: `status.${STATUS.PENDING}` },
+  { id: STATUS.SUPPLIER_REQUEST, key: `status.${STATUS.SUPPLIER_REQUEST}` },
   { id: STATUS.APPROVED, key: `status.${STATUS.APPROVED}` },
   { id: 'onboarding', key: `status.${STATUS.ONBOARDING}` },
-  { id: STATUS.ACTIVE, key: `status.${STATUS.ACTIVE}` },
+  { id: STATUS.QUALIFICATION, key: `status.${STATUS.QUALIFICATION}` },
+  { id: STATUS.PREFERRED, key: `status.${STATUS.PREFERRED}` },
   { id: STATUS.REJECTED, key: `status.${STATUS.REJECTED}` },
 ];
 
 const ONBOARDING_STATUSES = [
   STATUS.INVITED,
   STATUS.INTERNAL_DRAFT,
-  STATUS.AWAITING_MANAGER,
   STATUS.CONNECTED,
   STATUS.ONBOARDING,
-  STATUS.AWAITING_VERIFICATION,
+  STATUS.REGISTRATION,
   STATUS.NEEDS_DOCUMENT_FIX,
 ];
 
@@ -36,7 +36,7 @@ const ONBOARDING_STATUSES = [
 export default function QueueDashboard() {
   const t = useT();
   const { submissions } = useAppState();
-  const [filter, setFilter] = useState(STATUS.PENDING);
+  const [filter, setFilter] = useState(STATUS.SUPPLIER_REQUEST);
   const [selectedId, setSelectedId] = useState(null);
   const [query, setQuery] = useState('');
 
@@ -63,9 +63,9 @@ export default function QueueDashboard() {
   return (
     <>
       <PageHeader
-        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.queue') }]}
+        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: 'Supplier request' }]}
         icon="queue"
-        title={t('queue.title')}
+        title="Supplier request"
         description="Tinjau data yang dikirim pemasok, lalu setujui atau tolak. Setelah disetujui, pilih cara melanjutkan onboarding."
       />
 

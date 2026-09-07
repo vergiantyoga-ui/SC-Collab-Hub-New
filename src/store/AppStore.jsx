@@ -111,7 +111,7 @@ export function AppStoreProvider({ children }) {
           type: 'REGISTER_SUPPLIER',
           submission: {
             id,
-            status: STATUS.PENDING,
+            status: STATUS.SUPPLIER_REQUEST,
             submittedAt: now(),
             ...payload,
             onboardingPath: null,
@@ -199,19 +199,12 @@ export function AppStoreProvider({ children }) {
         );
       },
 
-      submitToManager(id, actor) {
-        patch(
-          id,
-          (s) => ({
-            status: STATUS.AWAITING_MANAGER,
-            internalDraft: { ...s.internalDraft, completedAt: now() },
-            managerReview: { status: 'pending' },
-          }),
-          entry('Profil diajukan ke manager', actor.name),
-        );
-      },
-
-      managerApprove(id, actor) {
+      /**
+       * Menyelesaikan registrasi internal. Sejak persyaratan diubah, tahap ini
+       * tidak lagi melewati persetujuan manager: begitu staf merampungkan profil,
+       * akun pemasok langsung dibuat dan undangannya dikirim.
+       */
+      finishInternalRegistration(id, actor) {
         const submission = state.submissions.find((s) => s.id === id);
         const account = {
           accountId: buildAccountId(submission.general.vendorType, id),
@@ -222,25 +215,56 @@ export function AppStoreProvider({ children }) {
         };
         patch(
           id,
-          {
+          (s) => ({
             status: STATUS.CONNECTED,
             account,
-            managerReview: { status: 'approved', decidedAt: now(), decidedBy: actor.name },
+            internalDraft: { ...s.internalDraft, completedAt: now() },
             editRightsTransferredAt: now(),
-          },
-          entry('Manager menyetujui, akun dikirim ke pemasok', actor.name),
+          }),
+          entry('Registrasi internal selesai, akun dikirim ke pemasok', actor.name),
         );
         return account;
       },
 
-      managerRequestRevision(id, note, actor) {
+      /* ---------------- Preferred supplier ---------------- */
+
+      /** Mengajukan pemasok ke manager untuk dinilai sebagai preferred supplier. */
+      submitForPreferred(id, actor) {
+        patch(
+          id,
+          { status: STATUS.AWAITING_PREFERRED, preferredSubmittedAt: now(), preferredSubmittedBy: actor.name },
+          entry('Diajukan sebagai preferred supplier', actor.name),
+        );
+      },
+
+      approvePreferred(id, note, actor) {
         patch(
           id,
           {
-            status: STATUS.INTERNAL_DRAFT,
-            managerReview: { status: 'revision_requested', note, decidedAt: now(), decidedBy: actor.name },
+            status: STATUS.PREFERRED,
+            preferredDecision: { decision: 'approved', note, decidedAt: now(), decidedBy: actor.name },
           },
-          entry('Manager meminta revisi profil', actor.name),
+          entry('Ditetapkan sebagai preferred supplier', actor.name),
+        );
+      },
+
+      disqualifySupplier(id, reason, actor) {
+        patch(
+          id,
+          {
+            status: STATUS.DISQUALIFIED,
+            preferredDecision: { decision: 'disqualified', note: reason, decidedAt: now(), decidedBy: actor.name },
+          },
+          entry('Pemasok didiskualifikasi', actor.name),
+        );
+      },
+
+      /** Mengembalikan pemasok yang didiskualifikasi ke tahap qualification. */
+      reopenQualification(id, actor) {
+        patch(
+          id,
+          { status: STATUS.QUALIFICATION, preferredDecision: null },
+          entry('Dikembalikan ke tahap qualification', actor.name),
         );
       },
 
@@ -256,7 +280,7 @@ export function AppStoreProvider({ children }) {
         patch(
           id,
           {
-            status: STATUS.AWAITING_VERIFICATION,
+            status: STATUS.REGISTRATION,
             consent: {
               gtcAcceptedAt: now(),
               dataAccuracyAcceptedAt: now(),
@@ -275,11 +299,11 @@ export function AppStoreProvider({ children }) {
         patch(
           id,
           {
-            status: STATUS.ACTIVE,
-            activatedAt: now(),
+            status: STATUS.QUALIFICATION,
+            registeredAt: now(),
             verification: { status: 'verified', verifiedAt: now(), verifiedBy: actor.name, notes: [] },
           },
-          entry('Dokumen diverifikasi, akun aktif', actor.name),
+          entry('Dokumen lolos periksa, lanjut ke tahap qualification', actor.name),
         );
       },
 
@@ -297,7 +321,7 @@ export function AppStoreProvider({ children }) {
       resubmitDocuments(id, actor) {
         patch(
           id,
-          { status: STATUS.AWAITING_VERIFICATION, verification: { status: 'pending', notes: [] } },
+          { status: STATUS.REGISTRATION, verification: { status: 'pending', notes: [] } },
           entry('Dokumen diunggah ulang pemasok', actor),
         );
       },
@@ -310,7 +334,7 @@ export function AppStoreProvider({ children }) {
             profile: { ...s.profile, [sectionId]: values },
             ...(needsReverification
               ? {
-                  status: STATUS.AWAITING_VERIFICATION,
+                  status: STATUS.REGISTRATION,
                   verification: { status: 'pending', notes: [], triggeredBySection: sectionId },
                 }
               : {}),
@@ -401,9 +425,13 @@ export function useCurrentSubmission() {
   return submissions.find((s) => s.id === session?.submissionId) ?? null;
 }
 
-/** Hanya Staf Procurement Admin yang boleh membuka jalur registrasi internal. */
+/**
+ * Staf Procurement dan Staf Procurement Admin memiliki wewenang yang sama.
+ * Pembedaan sebelumnya dihapus atas permintaan tim procurement, sehingga
+ * kedua role dapat memilih jalur registrasi internal maupun mengisi profil.
+ */
 export function canUseInternalPath(user) {
-  return user?.role === ROLE.ADMIN;
+  return user?.role === ROLE.STAFF || user?.role === ROLE.ADMIN;
 }
 
 export function isManager(user) {

@@ -142,6 +142,63 @@
 }
 
 /* ------------------------------------------------------------
+   Tahapan pemasok pada ringkasan
+   ------------------------------------------------------------ */
+.pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.pipeline__step {
+  flex: 1 1 150px;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunk);
+  position: relative;
+}
+.pipeline__step + .pipeline__step::before {
+  content: '›';
+  position: absolute;
+  left: calc(var(--sp-2) * -1);
+  color: var(--ink-400);
+}
+.pipeline__num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--blue-100);
+  color: var(--blue-700);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.pipeline__label {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  min-width: 0;
+}
+.pipeline__count {
+  font-size: var(--text-md);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pipeline__aside {
+  font-size: var(--text-sm);
+  color: var(--ink-500);
+  margin-top: var(--sp-4);
+}
+
+/* ------------------------------------------------------------
    Garis waktu aktivitas
    ------------------------------------------------------------ */
 .timeline {

@@ -6,7 +6,7 @@ import { TextField } from '../../components/ui/Field.jsx';
 import PasswordField from '../../components/ui/PasswordField.jsx';
 import { useAppActions } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { STATUS } from '../../lib/constants.js';
+import { hasFinishedRegistration } from '../../lib/constants.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
@@ -43,7 +43,7 @@ export default function SupplierLogin() {
       navigate('/portal/ganti-sandi');
       return;
     }
-    navigate(submission.status === STATUS.ACTIVE ? '/portal/profil' : '/portal/status');
+    navigate(hasFinishedRegistration(submission.status) ? '/portal/profil' : '/portal/status');
     toast.notify(`Selamat datang kembali, ${submission.contact.name}.`);
   }
 

@@ -51,9 +51,11 @@ export function canViewQualification(user) {
  * berjalan berdampingan dengan verifikasi dokumen, bukan mengantre di belakangnya.
  */
 export const QUALIFIABLE_STATUSES = [
-  STATUS.AWAITING_VERIFICATION,
+  STATUS.REGISTRATION,
   STATUS.NEEDS_DOCUMENT_FIX,
-  STATUS.ACTIVE,
+  STATUS.QUALIFICATION,
+  STATUS.AWAITING_PREFERRED,
+  STATUS.PREFERRED,
 ];
 
 export function isEligible(submission) {
@@ -66,12 +68,11 @@ export function ineligibilityReason(submission) {
   if (isEligible(submission)) return null;
 
   const stage = {
-    [STATUS.PENDING]: 'pendaftarannya masih menunggu ditinjau',
+    [STATUS.SUPPLIER_REQUEST]: 'pendaftarannya masih menunggu ditinjau',
     [STATUS.REJECTED]: 'pendaftarannya ditolak',
     [STATUS.APPROVED]: 'jalur onboarding-nya belum dipilih',
     [STATUS.INVITED]: 'belum mulai mengisi profil',
     [STATUS.INTERNAL_DRAFT]: 'profilnya masih diisi admin procurement',
-    [STATUS.AWAITING_MANAGER]: 'profilnya menunggu persetujuan manager',
     [STATUS.CONNECTED]: 'belum meninjau profil yang disiapkan tim Paragon',
     [STATUS.ONBOARDING]: 'belum selesai mengisi profil',
   }[submission.status];
