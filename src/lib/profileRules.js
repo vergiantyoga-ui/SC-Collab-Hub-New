@@ -1,3 +1,4 @@
+import { LEGAL_STATUS_ENTITY } from './masterData.js';
 import {
   collectErrors,
   normalizeNpwp,
@@ -26,12 +27,13 @@ export function validateSection(sectionId, values) {
     return collectErrors({
       legalStatus: required(values.legalStatus, 'Status badan hukum'),
       entityType:
-        values.legalStatus === 'Badan Usaha'
+        values.legalStatus === LEGAL_STATUS_ENTITY
           ? required(values.entityType, 'Bentuk badan usaha')
           : null,
       vendorName: required(values.vendorName, 'Nama perusahaan'),
       vendorType: required(values.vendorType, 'Jenis pasokan'),
       vendorTypeDetail: required(values.vendorTypeDetail, 'Rincian jenis pasokan'),
+      vendorDirectType: required(values.vendorDirectType, 'Tipe vendor'),
       targetCompanies: values.targetCompanies?.length
         ? null
         : 'Pilih minimal satu perusahaan Paragon.',

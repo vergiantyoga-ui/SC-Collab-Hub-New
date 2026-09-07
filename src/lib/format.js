@@ -53,9 +53,17 @@ export function initialsOf(name = '') {
     .join('');
 }
 
-/** ID akun pemasok, mis. SUP-RAW-0148. */
-export function buildAccountId(vendorType, submissionId) {
-  const slug = (vendorType || 'SUP').replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase();
+/**
+ * ID akun pemasok, mis. SUP-RAW-0148.
+ *
+ * Menerima **nama** jenis pasokan, bukan kodenya: kode seperti "0001" tidak
+ * menyisakan huruf apa pun dan dahulu menghasilkan id cacat `SUP--0148` tanpa
+ * peringatan. Bila nama tidak menyisakan huruf, dipakai `GEN` agar id tetap
+ * berbentuk utuh.
+ */
+export function buildAccountId(vendorTypeName, submissionId) {
+  const letters = String(vendorTypeName ?? '').replace(/[^A-Za-z]/g, '');
+  const slug = (letters || 'GEN').slice(0, 3).toUpperCase();
   return `SUP-${slug}-${submissionId.slice(-4)}`;
 }
 

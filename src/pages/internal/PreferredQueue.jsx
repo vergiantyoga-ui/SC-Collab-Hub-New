@@ -11,6 +11,7 @@ import { summariseLines } from '../../qualification/qualificationRules.js';
 import { ROLE, STATUS } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
 import './preferred.css';
+import { VENDOR_TYPES, labelOf } from '../../lib/masterData.js';
 
 const FILTERS = [
   { id: 'all', label: 'Semua' },
@@ -118,7 +119,7 @@ export default function PreferredQueue() {
                         {submission.general.vendorName}
                       </Link>
                       <span className="qtable__sub">
-                        {submission.id} · {submission.general.vendorType}
+                        {submission.id} · {labelOf(VENDOR_TYPES, submission.general.vendorType)}
                       </span>
                     </th>
                     <td>

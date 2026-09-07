@@ -7,6 +7,7 @@ import { useToast } from '../../components/ui/Toast.jsx';
 import { PATH, REQUIRED_SECTION_IDS, STATUS } from '../../lib/constants.js';
 import { formatDate, formatDateTime } from '../../lib/format.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
+import { VENDOR_TYPES, labelOf } from '../../lib/masterData.js';
 
 /**
  * Layar utama pemasok. Isinya berubah mengikuti status pengajuan supaya
@@ -136,7 +137,7 @@ export default function SupplierStatus() {
           </div>
           <div>
             <dt>Jenis pasokan</dt>
-            <dd>{submission.general.vendorType}</dd>
+            <dd>{labelOf(VENDOR_TYPES, submission.general.vendorType)}</dd>
           </div>
           <div>
             <dt>Didaftarkan pada</dt>

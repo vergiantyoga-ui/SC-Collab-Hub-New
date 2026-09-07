@@ -30,6 +30,7 @@ import {
 import { ROLE, STATUS } from '../../lib/constants.js';
 import { formatDate, formatDateTime } from '../../lib/format.js';
 import './preferred.css';
+import { VENDOR_TYPES, labelOf } from '../../lib/masterData.js';
 
 const TABS = [
   { id: 'profile', label: 'Profil registrasi' },
@@ -250,7 +251,7 @@ export default function PreferredReview() {
             <DataList
               items={[
                 { label: 'Nomor', value: submission.id },
-                { label: 'Jenis pasokan', value: submission.general.vendorType },
+                { label: 'Jenis pasokan', value: labelOf(VENDOR_TYPES, submission.general.vendorType) },
                 { label: 'Negara', value: submission.address.country },
                 { label: 'Diajukan', value: formatDate(submission.preferredSubmittedAt) },
                 { label: 'Oleh', value: submission.preferredSubmittedBy },

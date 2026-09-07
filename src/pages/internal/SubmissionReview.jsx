@@ -9,6 +9,18 @@ import { TextAreaField, SelectField } from '../../components/ui/Field.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { STATUS } from '../../lib/constants.js';
+import {
+  CORPORATE_ENTITIES,
+  ENTITY_TYPES,
+  LEGAL_STATUSES,
+  OTV_STATUSES,
+  VENDOR_DIRECT_TYPES,
+  VENDOR_TYPES,
+  VENDOR_TYPE_DETAILS,
+  corporateCodesFor,
+  labelOf,
+  labelWithCode,
+} from '../../lib/masterData.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 import { formatDate, formatDateTime, passwordExpiryFrom } from '../../lib/format.js';
 
@@ -86,8 +98,9 @@ export default function SubmissionReview({ submission }) {
           <div>
             <h2 style={{ fontSize: 'var(--text-lg)' }}>{submission.general.vendorName}</h2>
             <p className="text-sm muted">
-              {submission.id} · {submission.general.legalStatus}
-              {submission.general.entityType && ` (${submission.general.entityType})`}
+              {submission.id} · {labelOf(LEGAL_STATUSES, submission.general.legalStatus)}
+              {submission.general.entityType &&
+                ` (${labelOf(ENTITY_TYPES, submission.general.entityType)})`}
             </p>
           </div>
           <StatusBadge status={submission.status} />
@@ -102,12 +115,18 @@ export default function SubmissionReview({ submission }) {
         <TabPanel id="general" active={tab}>
           <DataList
             items={[
-              { label: 'Status badan hukum', value: submission.general.legalStatus },
-              { label: 'Bentuk badan usaha', value: submission.general.entityType },
-              { label: 'Jenis pasokan', value: submission.general.vendorType },
-              { label: 'Rincian pasokan', value: submission.general.vendorTypeDetail },
+              { label: 'Status badan hukum', value: labelWithCode(LEGAL_STATUSES, submission.general.legalStatus) },
+              { label: 'Bentuk badan usaha', value: labelWithCode(ENTITY_TYPES, submission.general.entityType) },
+              { label: 'Jenis pasokan', value: labelWithCode(VENDOR_TYPES, submission.general.vendorType) },
+              { label: 'Rincian pasokan', value: labelWithCode(VENDOR_TYPE_DETAILS, submission.general.vendorTypeDetail) },
+              { label: 'Tipe vendor', value: labelWithCode(VENDOR_DIRECT_TYPES, submission.general.vendorDirectType) },
               { label: 'Perusahaan dituju', value: submission.general.targetCompanies, full: true },
-              { label: 'Rencana kerja sama', value: submission.general.otvStatus },
+              {
+                label: 'Kode korporat untuk SAP',
+                value: corporateCodesFor(submission.general.targetCompanies).join(', '),
+                full: true,
+              },
+              { label: 'Rencana kerja sama', value: labelWithCode(OTV_STATUSES, submission.general.otvStatus) },
               { label: 'Email perusahaan', value: submission.general.companyEmail },
               { label: 'Telepon kantor', value: submission.general.officePhone },
               { label: 'Nomor ponsel', value: submission.general.mobilePhone },

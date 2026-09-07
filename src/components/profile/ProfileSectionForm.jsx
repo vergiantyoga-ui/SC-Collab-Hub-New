@@ -15,11 +15,15 @@ import {
   ENTITY_TYPES,
   JOB_POSITIONS,
   LEGAL_STATUSES,
+  LEGAL_STATUS_ENTITY,
   MAX_CONTACTS,
   OTV_STATUSES,
   TARGET_COMPANIES,
   TERMS_OF_PAYMENT,
+  VENDOR_DIRECT_TYPES,
   VENDOR_TYPES,
+  asOptions,
+  detailsForVendorType,
 } from '../../lib/constants.js';
 import { formatNpwp, wasNpwpNormalized } from '../../lib/validation.js';
 import { LICENSES, normalizeSection, validateSection } from '../../lib/profileRules.js';
@@ -292,12 +296,18 @@ function BankingSection({ values, set, errors }) {
 /* Data pendaftaran — dipakai wizard pendaftaran dan halaman profil    */
 /* ------------------------------------------------------------------ */
 export function GeneralStep({ values, set, errors }) {
-  const isEntity = values.legalStatus === 'Badan Usaha';
+  // Bentuk badan usaha hanya relevan bila status badan hukumnya "Badan".
+  const isEntity = values.legalStatus === LEGAL_STATUS_ENTITY;
+
+  // Rincian jenis pasokan menyesuaikan jenis pasokan yang dipilih; menggantinya
+  // mengosongkan rincian lama supaya tidak tersimpan pasangan yang tak cocok.
+  const detailOptions = detailsForVendorType(values.vendorType);
+
   return (
     <div className="field-grid">
       <SelectField
         label="Status badan hukum"
-        options={LEGAL_STATUSES}
+        options={asOptions(LEGAL_STATUSES)}
         value={values.legalStatus}
         onChange={(e) => set({ legalStatus: e.target.value, entityType: '' })}
         error={errors.legalStatus}
@@ -305,12 +315,12 @@ export function GeneralStep({ values, set, errors }) {
       />
       <SelectField
         label="Bentuk badan usaha"
-        options={ENTITY_TYPES}
+        options={asOptions(ENTITY_TYPES)}
         value={values.entityType}
         onChange={(e) => set({ entityType: e.target.value })}
         error={errors.entityType}
         disabled={!isEntity}
-        hint={isEntity ? undefined : 'Tersedia bila status badan hukum adalah badan usaha.'}
+        hint={isEntity ? undefined : 'Tersedia bila status badan hukum adalah badan.'}
         required={isEntity}
       />
       <TextField
@@ -323,18 +333,42 @@ export function GeneralStep({ values, set, errors }) {
       />
       <SelectField
         label="Jenis pasokan"
-        options={VENDOR_TYPES}
+        options={asOptions(VENDOR_TYPES)}
         value={values.vendorType}
-        onChange={(e) => set({ vendorType: e.target.value })}
+        onChange={(e) => set({ vendorType: e.target.value, vendorTypeDetail: '' })}
         error={errors.vendorType}
         required
       />
-      <TextField
+      <SelectField
         label="Rincian jenis pasokan"
+        options={asOptions(detailOptions)}
         value={values.vendorTypeDetail}
         onChange={(e) => set({ vendorTypeDetail: e.target.value })}
         error={errors.vendorTypeDetail}
-        placeholder="Misalnya bahan baku herbal"
+        disabled={!values.vendorType}
+        hint={
+          values.vendorType
+            ? 'Pilihan menyesuaikan jenis pasokan.'
+            : 'Pilih jenis pasokan terlebih dahulu.'
+        }
+        required
+      />
+      <SelectField
+        label="Tipe vendor"
+        options={asOptions(VENDOR_DIRECT_TYPES)}
+        value={values.vendorDirectType}
+        onChange={(e) => set({ vendorDirectType: e.target.value })}
+        error={errors.vendorDirectType}
+        hint="Direct transaction untuk pemasok yang menjual langsung, manufacturer untuk produsennya."
+        required
+      />
+      <SelectField
+        label="Rencana kerja sama"
+        options={asOptions(OTV_STATUSES)}
+        value={values.otvStatus}
+        onChange={(e) => set({ otvStatus: e.target.value })}
+        error={errors.otvStatus}
+        hint="Pilih one time vendor bila hanya untuk satu transaksi."
         required
       />
       <div className="span-full">
@@ -346,15 +380,6 @@ export function GeneralStep({ values, set, errors }) {
           error={errors.targetCompanies}
         />
       </div>
-      <SelectField
-        label="Rencana kerja sama"
-        options={OTV_STATUSES}
-        value={values.otvStatus}
-        onChange={(e) => set({ otvStatus: e.target.value })}
-        error={errors.otvStatus}
-        hint="Pilih sekali pakai bila hanya untuk satu transaksi."
-        required
-      />
       <TextField
         label="Email perusahaan"
         type="email"

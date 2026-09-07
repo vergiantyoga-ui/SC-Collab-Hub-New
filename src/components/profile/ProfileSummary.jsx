@@ -1,6 +1,15 @@
 import DataList from '../ui/DataList.jsx';
 import { formatBytes, formatNpwp } from '../../lib/validation.js';
 import { formatDate, orDash } from '../../lib/format.js';
+import {
+  ENTITY_TYPES,
+  LEGAL_STATUSES,
+  OTV_STATUSES,
+  VENDOR_DIRECT_TYPES,
+  VENDOR_TYPES,
+  VENDOR_TYPE_DETAILS,
+  labelOf,
+} from '../../lib/masterData.js';
 
 /**
  * Tampilan read-only profil pemasok.
@@ -38,13 +47,14 @@ export default function ProfileSummary({
         <Block title="Data umum" visible={showHeadings}>
           <DataList
             items={[
-              { label: 'Status badan hukum', value: registration.general.legalStatus },
-              { label: 'Bentuk badan usaha', value: registration.general.entityType },
+              { label: 'Status badan hukum', value: labelOf(LEGAL_STATUSES, registration.general.legalStatus) },
+              { label: 'Bentuk badan usaha', value: labelOf(ENTITY_TYPES, registration.general.entityType) },
               { label: 'Nama perusahaan', value: registration.general.vendorName, full: true },
-              { label: 'Jenis pasokan', value: registration.general.vendorType },
-              { label: 'Rincian pasokan', value: registration.general.vendorTypeDetail },
+              { label: 'Jenis pasokan', value: labelOf(VENDOR_TYPES, registration.general.vendorType) },
+              { label: 'Rincian pasokan', value: labelOf(VENDOR_TYPE_DETAILS, registration.general.vendorTypeDetail) },
+              { label: 'Tipe vendor', value: labelOf(VENDOR_DIRECT_TYPES, registration.general.vendorDirectType) },
               { label: 'Perusahaan dituju', value: registration.general.targetCompanies, full: true },
-              { label: 'Rencana kerja sama', value: registration.general.otvStatus },
+              { label: 'Rencana kerja sama', value: labelOf(OTV_STATUSES, registration.general.otvStatus) },
               { label: 'Email perusahaan', value: registration.general.companyEmail },
               { label: 'Telepon kantor', value: registration.general.officePhone },
               { label: 'Nomor ponsel', value: registration.general.mobilePhone },

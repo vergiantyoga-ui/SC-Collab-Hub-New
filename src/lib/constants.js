@@ -133,16 +133,28 @@ export const CURRENCIES = ['IDR', 'MYR', 'USD', 'SGD', 'EUR'];
 export const CONTACT_TITLES = ['Mr', 'Miss', 'Madam'];
 export const JOB_POSITIONS = ['Finance', 'Sales', 'Quality', 'Logistics', 'Other'];
 
-export const LEGAL_STATUSES = ['Badan Usaha', 'Perorangan'];
-export const ENTITY_TYPES = ['PT', 'CV', 'UD', 'Firma', 'Koperasi', 'Co. Ltd', 'Sdn Bhd'];
-export const VENDOR_TYPES = [
-  'Raw Material',
-  'Packaging Material',
-  'Indirect Material',
-  'Jasa / Services',
-];
-export const OTV_STATUSES = ['Regular Vendor', 'One Time Vendor'];
-export const TARGET_COMPANIES = ['Paragon Corp Indonesia', 'Paragon Corp Malaysia'];
+/**
+ * Pilihan Data Umum kini berkode dan tinggal di `masterData.js`, karena
+ * nilainya harus tersimpan sebagai kode untuk integrasi SAP. Diekspor ulang
+ * di sini supaya modul lama tidak perlu mengubah jalur impornya.
+ */
+export {
+  LEGAL_STATUSES,
+  LEGAL_STATUS_ENTITY,
+  ENTITY_TYPES,
+  VENDOR_TYPES,
+  VENDOR_TYPE_DETAILS,
+  VENDOR_DIRECT_TYPES,
+  OTV_STATUSES,
+  TARGET_COMPANIES,
+  CORPORATE_ENTITIES,
+  corporateCodesFor,
+  detailsForVendorType,
+  labelOf,
+  labelWithCode,
+  asOptions,
+} from './masterData.js';
+
 export const COUNTRIES = ['Indonesia', 'Malaysia'];
 
 /*
