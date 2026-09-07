@@ -67,6 +67,10 @@ Bedanya dengan `flow-check.mjs`: berkas itu hanya menguji fungsi murni,
 sedangkan berkas ini menjalankan reducer dan aksi yang benar-benar dipakai
 antarmuka.
 
+Bila terjadi galat saat render, layar tidak lagi kosong: sebuah penangkap galat
+menampilkan pesan beserta rincian teknis yang dapat disalin dan dilampirkan saat
+melaporkan masalah.
+
 **Manual — `npm run dev`.** Telusuri kedua jalur mengikuti langkah pada bagian
 berikutnya. Menyegarkan halaman mengembalikan seluruh data ke kondisi awal,
 sehingga percobaan dapat diulang berkali-kali tanpa jejak.
@@ -178,6 +182,51 @@ src/
                 patterns.css pola tata letak lintas halaman
 scripts/        flow-check.mjs — pemeriksaan transisi status
 ```
+
+## Master data Data Umum dan integrasi SAP
+
+Seluruh pilihan pada bagian Data Umum disimpan sebagai **kode**, bukan nama.
+Nama hanya dipakai untuk ditampilkan, sehingga perubahan ejaan atau bahasa tidak
+memengaruhi data yang sudah tersimpan. Definisinya ada di `src/lib/masterData.js`.
+
+| Field | Kode | Catatan |
+|---|---|---|
+| Status badan hukum | `Z1` Perorangan, `Z2` Badan | Bentuk badan usaha hanya aktif bila `Z2` |
+| Bentuk badan usaha | `0001`–`0028` | 28 bentuk, dari PT sampai S.L.U |
+| Jenis pasokan | `0001` Raw, `0002` Packaging, `0003` Indirect | |
+| Rincian jenis pasokan | `0001`–`0007` | **Dropdown terfilter** menurut jenis pasokan |
+| Rencana kerja sama | `C1` Reguler, `C0` One Time | |
+| Tipe vendor | `Z002` Direct Transaction, `Z009` Manufacturer | Field baru |
+
+**Rincian jenis pasokan bersifat interaktif.** Memilih Packaging Material hanya
+memunculkan Packaging Primer dan Packaging Sekunder; mengganti jenis pasokan
+mengosongkan rincian yang sudah dipilih agar tidak tersimpan pasangan yang
+tidak cocok.
+
+### Perusahaan Paragon yang dituju
+
+Antarmuka hanya menampilkan dua pilihan, sementara basis data menyimpan kode
+korporatnya. Saat sebuah nama antarmuka dipilih, **seluruh kode korporat di
+bawahnya dikirim ke SAP sebagai larik**:
+
+| Kode korporat | Nama | Nama antarmuka |
+|---|---|---|
+| `ID01` | PT Paragon Universa Utama | Paragon Corp Indonesia |
+| `ID02` | PT Paragon Technology And Innovation | Paragon Corp Indonesia |
+| `ID03` | PT Parama Global Inspira | Paragon Corp Indonesia |
+| `ID04` | PT Varcos Citra International | Paragon Corp Indonesia |
+| `ID05` | PT Paranova Global Optima | Paragon Corp Indonesia |
+| `ID06` | PT Alpha Global Medika | Paragon Corp Indonesia |
+| `MY01` | PT Pharmacore Technology & Innovation | Paragon Corp Malaysia |
+
+Memilih **Paragon Corp Indonesia** mengirim `["ID01","ID02","ID03","ID04","ID05","ID06"]`;
+memilih **Paragon Corp Malaysia** mengirim `["MY01"]`. Fungsinya ada pada
+`corporateCodesFor()`, dan hasilnya sudah ditampilkan pada layar tinjauan
+pendaftaran sebagai baris "Kode korporat untuk SAP".
+
+⚠️ Pemetaan kode-kode ini ke struktur SAP yang sebenarnya **belum didefinisikan**
+dan menunggu keputusan tim integrasi. Yang sudah pasti hanyalah kodenya tersimpan
+apa adanya di sisi aplikasi.
 
 ## Tahapan pemasok
 
