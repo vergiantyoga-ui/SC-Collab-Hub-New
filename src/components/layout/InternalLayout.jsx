@@ -2,6 +2,8 @@ import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { ROLE, STATUS } from '../../lib/constants.js';
+import { useQuestionnaireState } from '../../questionnaire/store/QuestionnaireStore.jsx';
+import { QUALIFIABLE_STATUSES } from '../../qualification/qualificationRules.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
@@ -10,7 +12,8 @@ import { useT } from '../../i18n/LanguageContext.jsx';
  */
 export default function InternalLayout() {
   const t = useT();
-  const { session, submissions } = useAppState();
+  const { session, submissions, qualifications } = useAppState();
+  const questionnaireState = useQuestionnaireState();
   const { signOut } = useAppActions();
   const navigate = useNavigate();
 
@@ -18,6 +21,18 @@ export default function InternalLayout() {
 
   const { user } = session;
   const count = (status) => submissions.filter((s) => s.status === status).length;
+  // Pemasok yang sudah mengirim profil namun kualifikasinya belum diselesaikan.
+  const pendingQualification = submissions.filter(
+    (item) =>
+      QUALIFIABLE_STATUSES.includes(item.status) &&
+      qualifications[item.id]?.status !== 'completed',
+  ).length;
+  const unreadNotifications = questionnaireState.notifications.filter(
+    (item) => item.audience === 'internal' && !item.read,
+  ).length;
+  const awaitingReview = questionnaireState.responses.filter(
+    (item) => item.status === 'submitted' || item.status === 'under_review',
+  ).length;
 
   const groups = [
     {
@@ -27,8 +42,10 @@ export default function InternalLayout() {
     {
       label: 'Questionnaire',
       items: [
+        { to: '/internal/dashboard-kuesioner', label: 'Dashboard', icon: 'home' },
         { to: '/internal/questionnaire', label: 'Template', icon: 'consent' },
         { to: '/internal/penugasan', label: 'Penugasan', icon: 'queue' },
+        { to: '/internal/tinjauan', label: 'Tinjauan', icon: 'verify', count: awaitingReview },
       ],
     },
     {
@@ -46,6 +63,24 @@ export default function InternalLayout() {
           icon: 'verify',
           count: count(STATUS.AWAITING_VERIFICATION),
         },
+        {
+          to: '/internal/kualifikasi',
+          label: 'Kualifikasi',
+          icon: 'approval',
+          count: pendingQualification,
+        },
+      ],
+    },
+    {
+      label: 'Lain-lain',
+      items: [
+        {
+          to: '/internal/notifikasi',
+          label: 'Notifikasi',
+          icon: 'status',
+          count: unreadNotifications,
+        },
+        { to: '/internal/jejak-audit', label: 'Jejak audit', icon: 'document' },
       ],
     },
     ...(user.role === ROLE.MANAGER

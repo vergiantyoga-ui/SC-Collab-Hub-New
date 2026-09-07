@@ -53,6 +53,14 @@ export default function SupplierLayout() {
             label: 'Kuesioner',
             items: [
               { to: '/portal/kuesioner', label: 'Kuesioner saya', icon: 'consent', count: openCount },
+              {
+                to: '/portal/notifikasi',
+                label: 'Notifikasi',
+                icon: 'status',
+                count: questionnaireState.notifications.filter(
+                  (item) => item.audience === 'supplier' && !item.read,
+                ).length,
+              },
             ],
           },
         ]
