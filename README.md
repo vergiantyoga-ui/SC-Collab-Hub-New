@@ -57,9 +57,9 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 
 | Email | Role | Yang bisa dilakukan |
 |---|---|---|
-| `dewi.anggraini@paragon-corp.com` | Staf Procurement | Tinjau, setujui, tolak, undang pemasok, verifikasi dokumen |
-| `rangga.prasetyo@paragon-corp.com` | Staf Procurement Admin | Semua di atas, ditambah jalur registrasi internal |
-| `lestari.handayani@paragon-corp.com` | Manager Procurement | Menyetujui profil hasil registrasi internal |
+| `dewi.anggraini@paragon-corp.com` | Staf Procurement | Tinjau pendaftaran, kedua jalur onboarding, periksa dokumen, isi kualifikasi, ajukan preferred |
+| `rangga.prasetyo@paragon-corp.com` | Staf Procurement Admin | Wewenang sama persis dengan Staf Procurement |
+| `lestari.handayani@paragon-corp.com` | Manager Procurement | Menetapkan preferred supplier atau mendiskualifikasi |
 
 **Portal pemasok — `/masuk`**
 
@@ -81,15 +81,18 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 
 **Jalur B — registrasi internal**
 
-1. Masuk sebagai Staf Procurement **Admin**, setujui sebuah pengajuan.
+1. Masuk sebagai Staf Procurement atau Staf Procurement Admin — keduanya berwenang
+   sama — lalu setujui sebuah pengajuan.
 2. Pilih **Mulai registrasi internal**, tentukan asal dokumen (email atau WhatsApp).
-3. Isi kelima bagian, lalu **Ajukan ke manager**.
-4. Keluar, masuk sebagai Manager Procurement, buka **Approval manager**.
-5. Setujui — barulah akun dibuat dan undangan dikirim.
-6. Masuk sebagai pemasok memakai ID akun tersebut untuk meninjau dan menyetujui.
+3. Isi kelima bagian, lalu **Selesai dan kirim akun**. Tidak ada persetujuan
+   manager di tengah jalan; akun pemasok langsung dibuat.
+4. Masuk sebagai pemasok memakai ID akun tersebut untuk meninjau dan menyetujui.
 
-Pengajuan `SUP-2026-0135` sudah berada pada status menunggu approval manager,
-jadi langkah 4 bisa dicoba langsung tanpa mengisi ulang.
+**Menelusuri preferred supplier**
+
+`SUP-2026-0135` sudah berada pada tahap qualification. Isi kualifikasinya lewat
+menu **Kualifikasi**, ajukan dari menu **Preferred supplier**, lalu masuk sebagai
+Manager Procurement untuk menilainya.
 
 
 ---
@@ -154,20 +157,56 @@ src/
 scripts/        flow-check.mjs — pemeriksaan transisi status
 ```
 
+## Tahapan pemasok
+
+Perjalanan pemasok mengikuti lima langkah berurutan, ditampilkan pada ringkasan beranda:
+
+```
+Supplier request → Registrasi → Qualification → Menunggu preferred → Preferred supplier
+                        ↘ Perlu perbaikan dokumen        ↘ Disqualification
+```
+
+| Tahap | Artinya |
+|---|---|
+| **Supplier request** | Pendaftaran baru masuk, menunggu ditinjau staf procurement |
+| **Registrasi** | Profil sudah dikirim, dokumennya sedang diperiksa |
+| **Qualification** | Staf mengisi kualifikasi komoditas, pemasok mengisi kuesioner |
+| **Menunggu preferred** | Berkas diajukan staf, menunggu keputusan manager |
+| **Preferred supplier** | Manager menetapkan pemasok sebagai preferred |
+| **Disqualification** | Manager menolak; masih dapat dikembalikan ke tahap qualification |
+
+Di antara Supplier request dan Registrasi terdapat tahap onboarding — pemilihan
+jalur, pengiriman undangan, dan pengisian profil — yang tampil pada antrian
+sebagai `Diundang`, `Registrasi internal`, `Terhubung`, dan `Melengkapi profil`.
+
+## Modul Preferred Supplier
+
+Manager procurement menilai empat berkas sekaligus sebelum menetapkan pemasok
+sebagai preferred: **profil registrasi, dokumen legalitas, kualifikasi komoditas,
+dan hasil kuesioner**. Tombol keputusan baru terbuka setelah keempat tab dibuka,
+mengikuti pola yang sudah dipakai pada tinjauan pendaftaran.
+
+- Staf procurement mengajukan pemasok yang berkasnya sudah lengkap. Pengajuan
+  terkunci selama kualifikasi belum terisi, karena justru itu yang dinilai manager.
+- Keputusan **Preferred** atau **Disqualification** dicatat beserta alasan dan pelakunya.
+- Pemasok yang didiskualifikasi dapat dikembalikan ke tahap qualification, sehingga
+  keputusan tidak menjadi jalan buntu.
+
 ## Modul Kualifikasi Pemasok
 
 Setelah pemasok mengirimkan profilnya, staf procurement menentukan kategori
 komoditas dan negara asal pasokannya.
 
-- **Akses** — Staf Procurement dan Staf Procurement Admin dapat mengisi; Manager
-  Procurement dapat meninjau tanpa menyunting.
+- **Akses** — Staf Procurement dan Staf Procurement Admin memiliki wewenang yang
+  sama dan keduanya dapat mengisi; Manager Procurement meninjau tanpa menyunting.
 - **Kelayakan** — gerbangnya adalah **profil yang sudah dikirim pemasok**, bukan
   dokumen yang sudah diverifikasi, sehingga kualifikasi berjalan berdampingan
   dengan verifikasi dokumen alih-alih mengantre di belakangnya. Kedua jalur
   onboarding bertemu di titik ini: pada jalur undangan pemasok mengirim profilnya
   sendiri, sedangkan pada registrasi internal manager menyetujui isian admin
   lebih dahulu sebelum pemasok meninjau dan mengirimkannya. Status yang memenuhi
-  syarat: `Menunggu verifikasi dokumen`, `Perlu perbaikan dokumen`, dan `Aktif`.
+  syarat: `Registrasi`, `Perlu perbaikan dokumen`, `Qualification`,
+  `Menunggu preferred`, dan `Preferred supplier`.
   Daftar menampilkan status onboarding tiap pemasok agar staf punya konteks, dan
   pemasok yang belum layak tetap menampilkan alasannya secara spesifik.
 - **Baris ganda** — satu baris mewakili satu pasangan komoditas dan negara.
