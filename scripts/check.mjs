@@ -8,8 +8,25 @@ function run(label, command, args) {
 
 try {
   run('Transisi status & validasi', process.execPath, ['scripts/flow-check.mjs']);
+
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      'scripts/registration-e2e.jsx',
+      '--bundle',
+      '--platform=node',
+      '--format=cjs',
+      '--jsx=automatic',
+      '--outfile=scripts/.e2e.built.cjs',
+      '--loader:.css=empty',
+    ],
+    { stdio: 'ignore' },
+  );
+  run('Registrasi end-to-end lewat store', process.execPath, ['scripts/.e2e.built.cjs']);
   run('Mesin questionnaire', process.execPath, ['scripts/questionnaire-check.mjs']);
   run('Kualifikasi pemasok', process.execPath, ['scripts/qualification-check.mjs']);
+  run('Master data Data Umum', process.execPath, ['scripts/masterdata-check.mjs']);
 
   execFileSync(
     'npx',

@@ -13,6 +13,7 @@ import {
 import { DICTIONARIES, LANGUAGES } from '../src/i18n/dictionaries.js';
 import { SUBMISSIONS } from '../src/lib/mockData.js';
 import { buildAccountId, passwordExpiryFrom } from '../src/lib/format.js';
+import { VENDOR_TYPES, labelOf } from '../src/lib/masterData.js';
 import { validateSection } from '../src/lib/profileRules.js';
 
 let failures = 0;
@@ -26,19 +27,19 @@ function check(label, actual, expected) {
 /* --- Data contoh mencakup setiap status --- */
 const statusesPresent = new Set(SUBMISSIONS.map((s) => s.status));
 [
-  STATUS.PENDING,
+  STATUS.SUPPLIER_REQUEST,
   STATUS.APPROVED,
   STATUS.REJECTED,
-  STATUS.AWAITING_MANAGER,
-  STATUS.AWAITING_VERIFICATION,
-  STATUS.ACTIVE,
+  STATUS.REGISTRATION,
+  STATUS.QUALIFICATION,
+  STATUS.PREFERRED,
 ].forEach((status) => {
   check(`data contoh memuat status ${status}`, statusesPresent.has(status), true);
 });
 
 /* --- Jalur A: undangan langsung --- */
 let a = { ...SUBMISSIONS[0] };
-check('A1 pengajuan baru berstatus pending', a.status, STATUS.PENDING);
+check('A1 pengajuan baru berstatus supplier request', a.status, STATUS.SUPPLIER_REQUEST);
 
 a = { ...a, status: STATUS.APPROVED };
 check('A2 setelah disetujui', a.status, STATUS.APPROVED);
@@ -47,7 +48,10 @@ a = {
   ...a,
   status: STATUS.INVITED,
   onboardingPath: PATH.INVITE,
-  account: { accountId: buildAccountId(a.general.vendorType, a.id), emailSentAt: new Date().toISOString() },
+  account: {
+    accountId: buildAccountId(labelOf(VENDOR_TYPES, a.general.vendorType), a.id),
+    emailSentAt: new Date().toISOString(),
+  },
 };
 check('A3 undangan mengubah status', a.status, STATUS.INVITED);
 check('A4 id akun terbentuk', a.account.accountId, 'SUP-RAW-0148');
@@ -58,8 +62,12 @@ check('A5 kata sandi berlaku 7 hari sejak email', days, 7);
 
 a = { ...a, status: STATUS.ONBOARDING };
 a = { ...a, status: STATUS.AWAITING_VERIFICATION };
-a = { ...a, status: STATUS.ACTIVE };
-check('A6 aktif setelah verifikasi', a.status, STATUS.ACTIVE);
+a = { ...a, status: STATUS.REGISTRATION };
+a = { ...a, status: STATUS.QUALIFICATION };
+check('A6 dokumen lolos periksa menuju qualification', a.status, STATUS.QUALIFICATION);
+a = { ...a, status: STATUS.AWAITING_PREFERRED };
+a = { ...a, status: STATUS.PREFERRED };
+check('A7 berakhir sebagai preferred supplier', a.status, STATUS.PREFERRED);
 
 /* --- Jalur B: registrasi internal --- */
 let b = { ...SUBMISSIONS[2], status: STATUS.APPROVED };
@@ -67,18 +75,19 @@ b = { ...b, status: STATUS.INTERNAL_DRAFT, onboardingPath: PATH.INTERNAL };
 check('B1 jalur internal terkunci', b.onboardingPath, PATH.INTERNAL);
 check('B2 belum ada akun sebelum approval', b.account, null);
 
-b = { ...b, status: STATUS.AWAITING_MANAGER };
-check('B3 menunggu manager', b.status, STATUS.AWAITING_MANAGER);
-
-b = { ...b, status: STATUS.INTERNAL_DRAFT };
-check('B4 revisi mengembalikan ke draft', b.status, STATUS.INTERNAL_DRAFT);
+// Approval manager pada registrasi internal sudah dihapus: begitu staf selesai,
+// akun langsung dibuat tanpa langkah persetujuan di tengah.
+check('B3 tidak ada status approval manager', 'AWAITING_MANAGER' in STATUS, false);
 
 b = {
   ...b,
   status: STATUS.CONNECTED,
-  account: { accountId: buildAccountId(b.general.vendorType, b.id), emailSentAt: new Date().toISOString() },
+  account: {
+    accountId: buildAccountId(labelOf(VENDOR_TYPES, b.general.vendorType), b.id),
+    emailSentAt: new Date().toISOString(),
+  },
 };
-check('B5 akun baru dibuat setelah approval', Boolean(b.account.accountId), true);
+check('B4 akun dibuat begitu registrasi internal selesai', Boolean(b.account.accountId), true);
 
 /* --- Validasi field --- */
 const taxOk = validateSection('tax', {

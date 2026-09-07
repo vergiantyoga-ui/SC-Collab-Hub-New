@@ -59,23 +59,23 @@ check('Q19 pemasok tidak punya akses', canViewQualification({ role: ROLE.SUPPLIE
 
 /* ---------------- Kelayakan ---------------- */
 const byStatus = (status) => SUBMISSIONS.find((s) => s.status === status);
-const active = byStatus(STATUS.ACTIVE);
-const pending = byStatus(STATUS.PENDING);
-const awaitingManager = byStatus(STATUS.AWAITING_MANAGER);
-const awaitingVerification = byStatus(STATUS.AWAITING_VERIFICATION);
+const active = byStatus(STATUS.PREFERRED);
+const pending = byStatus(STATUS.SUPPLIER_REQUEST);
+const qualifying = byStatus(STATUS.QUALIFICATION);
+const inRegistration = byStatus(STATUS.REGISTRATION);
 
-check('Q20 pemasok aktif layak dikualifikasi', isEligible(active), true);
+check('Q20 preferred supplier tetap layak ditinjau', isEligible(active), true);
 // Jalur A: kualifikasi terbuka begitu pemasok mengirim profil, tanpa menunggu
 // verifikasi dokumen selesai.
-check('Q21 profil terkirim sudah layak meski dokumen belum diverifikasi', isEligible(awaitingVerification), true);
+check('Q21 tahap registrasi sudah layak meski dokumen belum lolos periksa', isEligible(inRegistration), true);
 check('Q22 dokumen yang perlu diperbaiki tetap layak', isEligible({ status: STATUS.NEEDS_DOCUMENT_FIX }), true);
 check('Q23 pendaftaran baru belum layak', isEligible(pending), false);
-check('Q24 menunggu approval manager belum layak', isEligible(awaitingManager), false);
+check('Q24 tahap qualification jelas layak', isEligible(qualifying), true);
 check('Q25 profil yang belum selesai diisi belum layak', isEligible({ status: STATUS.ONBOARDING }), false);
 check('Q26 pemasok ditolak tidak pernah layak', isEligible({ status: STATUS.REJECTED }), false);
 check('Q27 alasan ketidaklayakan dijelaskan', ineligibilityReason(pending).length > 20, true);
 check('Q28 pemasok layak tanpa alasan penolakan', ineligibilityReason(active), null);
-check('Q29 tiga status memenuhi syarat kualifikasi', QUALIFIABLE_STATUSES.length, 3);
+check('Q29 lima status memenuhi syarat kualifikasi', QUALIFIABLE_STATUSES.length, 5);
 
 /* ---------------- Baris ---------------- */
 const good = [

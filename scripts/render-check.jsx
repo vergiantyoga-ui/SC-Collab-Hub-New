@@ -40,7 +40,8 @@ const GUARDED_ROUTES = [
   '/internal/jejak-audit',
   '/internal/kualifikasi',
   '/internal/kualifikasi/SUP-2026-0118',
-  '/internal/approval',
+  '/internal/preferred',
+  '/internal/preferred/SUP-2026-0135',
   '/internal/registrasi/SUP-2026-0135',
 ];
 
