@@ -44,10 +44,32 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # keluaran produksi ke dist/
 npm run preview  # meninjau hasil build
-npm test         # memeriksa transisi status & aturan validasi
+npm test         # lima rangkaian pemeriksaan, termasuk registrasi end-to-end
 ```
 
 Butuh Node 18 atau lebih baru.
+
+## Menguji registrasi tanpa basis data
+
+Seluruh data hidup di memori, jadi alur registrasi dapat diuji dari ujung ke
+ujung tanpa menyiapkan basis data apa pun. Ada dua cara.
+
+**Otomatis — `npm test`.** Rangkaian `scripts/registration-e2e.jsx` memasang
+store sungguhan lewat react-test-renderer, lalu memanggil aksinya berurutan
+seperti pengguna menekan tombol: mendaftar, menyetujui, mengundang, mengganti
+sandi, mengisi lima bagian profil, menyetujui consent, meminta perbaikan
+dokumen, mengirim ulang, meloloskan periksa, mengisi kualifikasi, mengajukan,
+lalu menetapkan preferred. Jalur registrasi internal, penolakan, dan
+diskualifikasi ikut diuji. Karena setiap pemasangan store dimulai dari data
+contoh yang sama, tidak ada yang perlu dibersihkan antar-uji.
+
+Bedanya dengan `flow-check.mjs`: berkas itu hanya menguji fungsi murni,
+sedangkan berkas ini menjalankan reducer dan aksi yang benar-benar dipakai
+antarmuka.
+
+**Manual — `npm run dev`.** Telusuri kedua jalur mengikuti langkah pada bagian
+berikutnya. Menyegarkan halaman mengembalikan seluruh data ke kondisi awal,
+sehingga percobaan dapat diulang berkali-kali tanpa jejak.
 
 ## Akun demo
 
