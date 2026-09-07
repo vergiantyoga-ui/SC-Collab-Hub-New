@@ -4,7 +4,23 @@
  * memastikan fungsi berjalan.
  */
 import {
+  addSectionFromLibrary,
+  updateVersionSettings,
+  updateRiskBand,
+  addQuestion,
+  addSection,
   assertShape,
+  changeQuestionType,
+  deleteQuestion,
+  deleteSection,
+  duplicateQuestion,
+  duplicateSection,
+  eligibleTriggers,
+  findQuestion,
+  moveQuestion,
+  moveSection,
+  moveQuestionToSection,
+  updateQuestion,
   calculateCompletion,
   calculateScore,
   canEdit,
@@ -32,7 +48,9 @@ import {
   QUESTIONNAIRE_TEMPLATES,
   QUESTIONNAIRE_VERSIONS,
   QUESTION_LIBRARY,
+  SECTION_LIBRARY,
 } from '../src/questionnaire/store/questionnaireMockData.js';
+import { ASSIGNMENTS, RESPONSES } from '../src/questionnaire/store/assignmentMockData.js';
 
 let failures = 0;
 
@@ -220,6 +238,162 @@ check(
 const rule = makeAttachmentRule({ required: true, expiryDateRequired: true });
 check('A1 aturan lampiran punya batas ukuran', rule.maxFileSizeMb > 0);
 check('A2 aturan lampiran membatasi tipe berkas', rule.allowedTypes.length > 0);
+
+/* ---------------- Operasi builder (Fase 3) ---------------- */
+let b = makeVersion();
+b = addSection(b, { name: 'Alpha' });
+b = addSection(b, { name: 'Beta' });
+check('B1 seksi bertambah', countSections(b), 2);
+check('B2 urutan tercatat', b.sections.map((s) => s.order).join(','), '0,1');
+
+const alphaId = b.sections[0].id;
+const betaId = b.sections[1].id;
+
+b = moveSection(b, betaId, -1);
+check('B3 seksi naik satu langkah', b.sections[0].name, 'Beta');
+check('B4 urutan dinomori ulang', b.sections.map((s) => s.order).join(','), '0,1');
+
+const unchanged = moveSection(b, b.sections[0].id, -1);
+check('B5 memindah di luar batas tidak mengubah apa pun', unchanged.sections[0].name, 'Beta');
+
+b = addQuestion(b, alphaId, 'yes_no');
+const trigger = findQuestion(b, b.sections.find((s) => s.id === alphaId).questions[0].id).question;
+check('B6 tipe berpilihan mendapat preset', trigger.options.length, 2);
+
+b = addQuestion(b, alphaId, 'file_single');
+const fileQ = b.sections.find((s) => s.id === alphaId).questions[1];
+check('B7 tipe berkas mendapat aturan lampiran', Boolean(fileQ.attachmentRule), true);
+check('B8 lampiran berkas wajib secara bawaan', fileQ.attachmentRule.required, true);
+
+b = updateQuestion(b, fileQ.id, {
+  conditions: { all: [{ questionId: trigger.id, operator: 'equals', value: 'yes' }] },
+});
+check('B9 kondisi terpasang', Boolean(findQuestion(b, fileQ.id).question.conditions), true);
+
+// Menghapus pemicu harus membersihkan kondisi yang menggantung.
+const afterDelete = deleteQuestion(b, trigger.id);
+check('B10 kondisi yatim dibersihkan', findQuestion(afterDelete, fileQ.id).question.conditions, null);
+check('B11 bentuk tetap sehat setelah hapus', assertShape(afterDelete).length, 0);
+
+// Menghapus seksi juga membersihkan kondisi lintas seksi.
+b = addQuestion(b, betaId, 'short_text');
+const betaQ = b.sections.find((s) => s.id === betaId).questions[0];
+b = updateQuestion(b, betaQ.id, {
+  conditions: { all: [{ questionId: trigger.id, operator: 'equals', value: 'yes' }] },
+});
+const afterSectionDelete = deleteSection(b, alphaId);
+check('B12 hapus seksi membersihkan kondisi lintas seksi', findQuestion(afterSectionDelete, betaQ.id).question.conditions, null);
+check('B13 bentuk tetap sehat setelah hapus seksi', assertShape(afterSectionDelete).length, 0);
+
+// Duplikasi harus memberi id baru, bukan membagi objek yang sama.
+const dupQ = duplicateQuestion(b, alphaId, trigger.id);
+const alphaQuestions = dupQ.sections.find((s) => s.id === alphaId).questions;
+check('B14 duplikat pertanyaan menambah satu', alphaQuestions.length, 3);
+check('B15 duplikat memakai id berbeda', alphaQuestions[0].id !== alphaQuestions[1].id, true);
+check('B16 pilihan duplikat juga ber-id baru', alphaQuestions[0].options[0].id !== alphaQuestions[1].options[0].id, true);
+check('B17 duplikat tidak mewarisi kondisi', alphaQuestions[1].conditions, null);
+
+const dupSec = duplicateSection(b, alphaId);
+check('B18 duplikat seksi menambah satu', countSections(dupSec), 3);
+check('B19 duplikat seksi ber-id baru', dupSec.sections[0].id !== dupSec.sections[1].id, true);
+
+// Mengganti tipe harus menyesuaikan pilihan dan aturan lampiran.
+const retyped = changeQuestionType(b, trigger.id, 'short_text');
+check('B20 ganti ke teks menghapus pilihan', findQuestion(retyped, trigger.id).question.options.length, 0);
+const retypedNa = changeQuestionType(b, trigger.id, 'yes_no_na');
+check('B21 ganti ke ya/tidak/NA memberi empat pilihan', findQuestion(retypedNa, trigger.id).question.options.length, 4);
+
+// Pemicu kondisi hanya boleh pertanyaan sebelumnya, agar tidak melingkar.
+const triggers = eligibleTriggers(b, betaQ.id);
+check('B22 pemicu hanya dari pertanyaan sebelumnya', triggers.every((t) => t.question.id !== betaQ.id), true);
+check('B23 pemicu wajib punya pilihan', triggers.every((t) => t.question.options.length > 0), true);
+
+// Memindah pertanyaan antar seksi.
+const moved = moveQuestionToSection(b, betaQ.id, alphaId);
+check('B24 pertanyaan pindah seksi', moved.sections.find((s) => s.id === betaId).questions.length, 0);
+check('B25 jumlah total pertanyaan tetap', countQuestions(moved), countQuestions(b));
+
+const movedQ = moveQuestion(b, alphaId, b.sections.find((s) => s.id === alphaId).questions[1].id, -1);
+check('B26 pertanyaan naik satu langkah', movedQ.sections.find((s) => s.id === alphaId).questions[0].type, 'file_single');
+
+/* ---------------- Pustaka & pengaturan versi (Fase 4) ---------------- */
+let L = makeVersion();
+const libSection = SECTION_LIBRARY.find((s) => s.id === 'lib_sec_quality');
+L = addSectionFromLibrary(L, libSection, QUESTION_LIBRARY);
+
+check('P1 seksi pustaka masuk beserta soalnya', L.sections[0].questions.length, libSection.questionIds.length);
+check('P2 soal dari pustaka mendapat id baru', L.sections[0].questions[0].id.startsWith('lib_'), false);
+check('P3 asal pustaka tercatat untuk penelusuran', L.sections[0].questions[0].libraryItemId, 'lib_q_iso');
+check('P4 pilihan salinan juga ber-id baru', L.sections[0].questions[0].options[0].id.startsWith('lib_'), false);
+
+// Aturan 13: menyunting pustaka tidak boleh merembet ke versi yang memakainya.
+const libraryCopy = structuredClone(QUESTION_LIBRARY);
+libraryCopy[0].question.text = 'TEKS PUSTAKA BERUBAH';
+check('P5 versi tidak ikut berubah saat pustaka disunting', L.sections[0].questions[0].text !== 'TEKS PUSTAKA BERUBAH', true);
+
+// Mematikan skoring tidak boleh menghapus bobot yang sudah diisi.
+let W = makeVersion({ scoringEnabled: true });
+W = addSection(W, { name: 'S', weight: 3 });
+W = updateVersionSettings(W, { scoringEnabled: false });
+check('P6 mematikan skoring mempertahankan bobot seksi', W.sections[0].weight, 3);
+W = updateVersionSettings(W, { scoringEnabled: true, passingScore: 80 });
+check('P7 nilai kelulusan tersimpan', W.passingScore, 80);
+
+const banded = updateRiskBand(W, 'good', { label: 'Cukup' });
+check('P8 pita risiko dapat diubah', banded.riskBands.find((b) => b.id === 'good').label, 'Cukup');
+check('P9 pita lain tidak ikut berubah', banded.riskBands.find((b) => b.id === 'excellent').label, 'Excellent');
+
+/* ---------------- Penugasan & respons (Fase 5) ---------------- */
+const versionIds = new Set(QUESTIONNAIRE_VERSIONS.map((v) => v.id));
+const templateIds = new Set(QUESTIONNAIRE_TEMPLATES.map((t) => t.id));
+
+check('A1 tiga penugasan tersedia', ASSIGNMENTS.length, 3);
+check('A2 setiap penugasan menunjuk versi yang ada', ASSIGNMENTS.every((a) => versionIds.has(a.versionId)), true);
+check('A3 setiap penugasan menunjuk template yang ada', ASSIGNMENTS.every((a) => templateIds.has(a.templateId)), true);
+
+const assignmentIds = new Set(ASSIGNMENTS.map((a) => a.id));
+check('A4 setiap respons menunjuk penugasan yang ada', RESPONSES.every((r) => assignmentIds.has(r.assignmentId)), true);
+check('A5 setiap penugasan punya tepat satu respons', ASSIGNMENTS.every((a) => RESPONSES.filter((r) => r.assignmentId === a.id).length === 1), true);
+
+// Jawaban contoh tidak boleh menunjuk pertanyaan yang tidak ada pada versinya.
+let danglingAnswers = 0;
+RESPONSES.forEach((response) => {
+  const assignment = ASSIGNMENTS.find((a) => a.id === response.assignmentId);
+  const version = QUESTIONNAIRE_VERSIONS.find((v) => v.id === assignment.versionId);
+  const ids = new Set(version.sections.flatMap((s) => s.questions.map((q) => q.id)));
+  Object.keys(response.answers).forEach((qid) => {
+    if (!ids.has(qid)) danglingAnswers += 1;
+  });
+  Object.keys(response.attachments).forEach((qid) => {
+    if (!ids.has(qid)) danglingAnswers += 1;
+  });
+});
+check('A6 tidak ada jawaban yang menunjuk pertanyaan hantu', danglingAnswers, 0);
+
+// Respons yang sudah terkirim harus benar-benar lolos validasi.
+const submitted = RESPONSES.find((r) => r.status === 'submitted');
+const submittedAssignment = ASSIGNMENTS.find((a) => a.id === submitted.assignmentId);
+const submittedVersion = QUESTIONNAIRE_VERSIONS.find((v) => v.id === submittedAssignment.versionId);
+const submittedBlockers = submissionBlockers(submittedVersion, submitted.answers, submitted.attachments);
+check('A7 respons terkirim tidak menyisakan penghalang', submittedBlockers.length, 0);
+
+const submittedCompletion = calculateCompletion(submittedVersion, submitted.answers, submitted.attachments);
+check('A8 respons terkirim terisi penuh', submittedCompletion.percent, 100);
+
+const submittedScore = calculateScore(submittedVersion, submitted.answers);
+check('A9 skor respons terkirim terhitung', typeof submittedScore.total, 'number');
+check('A10 klasifikasi risiko terisi', Boolean(submittedScore.riskLevel), true);
+
+// Respons setengah jalan belum boleh dikirim.
+const partialResponse = RESPONSES.find((r) => r.status === 'in_progress');
+const partialAssignment = ASSIGNMENTS.find((a) => a.id === partialResponse.assignmentId);
+const partialVersion = QUESTIONNAIRE_VERSIONS.find((v) => v.id === partialAssignment.versionId);
+check('A11 respons setengah jalan masih terhalang', submissionBlockers(partialVersion, partialResponse.answers, partialResponse.attachments).length > 0, true);
+
+// Membersihkan cabang tersembunyi sebelum kirim.
+const beforePrune = { ...partialResponse.answers, q_audit_iso_doc: ['berkas lama'] };
+const afterPrune = pruneHiddenAnswers(partialVersion, { ...beforePrune, q_audit_iso: 'no' });
+check('A12 jawaban cabang tersembunyi tidak ikut terkirim', 'q_audit_iso_doc' in afterPrune, false);
 
 console.log(`\n${failures === 0 ? 'Seluruh pemeriksaan questionnaire lolos.' : `${failures} pemeriksaan gagal.`}`);
 process.exit(failures === 0 ? 0 : 1);

@@ -124,21 +124,30 @@ src/
                 InternalRegistration, ManagerApprovals, DocumentVerification
   questionnaire/
     engine/     schema.js        entitas, JSDoc typedef, pembekuan versi
+                builderOps.js    operasi penyuntingan struktur (murni)
                 questionTypes.js registri 18 tipe soal
                 conditions.js    percabangan pertanyaan
                 answerValidation.js  wajib, format, aturan lampiran
                 scoring.js       skor berbobot & klasifikasi risiko
                 completion.js    persentase pengisian
                 versioning.js    terbit, versi baru, salin dari pustaka
-    store/      QuestionnaireStore.jsx, questionnaireMockData.js
-    components/ shared/ (status, skor, bilah kemajuan)
-    pages/      internal/ (TemplateList, TemplateDetail, TemplateCreate)
+    store/      QuestionnaireStore.jsx, questionnaireMockData.js,
+                assignmentMockData.js
+    components/ builder/ (QuestionToolbox, SectionCard, QuestionCard,
+                          PropertiesPanel, ConditionEditor,
+                          AttachmentRulePanel, ScoringPanel, LibraryPicker)
+                render/  (QuestionRenderer + lampiran & tanda tangan)
+                shared/  (status, skor, bilah kemajuan)
+    pages/      internal/ (TemplateList, TemplateDetail, TemplateCreate,
+                          QuestionnaireBuilder, AssignmentList,
+                          AssignmentCreate)
+                supplier/ (MyQuestionnaires, ResponseWizard)
   styles/       global.css   token warna, tipografi, komponen dasar
                 patterns.css pola tata letak lintas halaman
 scripts/        flow-check.mjs — pemeriksaan transisi status
 ```
 
-## Modul Questionnaire (Fase 1–2)
+## Modul Questionnaire (Fase 1–5)
 
 Mesin kuesioner modular untuk audit pemasok, pernyataan kepatuhan, dan
 asesmen lain. Tipe kuesioner tidak di-hardcode: menambah jenis baru cukup
@@ -158,10 +167,30 @@ Yang sudah berjalan:
   Halal Compliance (draf). Ditambah pustaka soal dan pustaka seksi.
 - **Antarmuka** — daftar template dengan pencarian dan saringan, detail
   template beserta riwayat versi, dan formulir pembuatan template.
+- **Builder** — kanvas tiga kolom: kotak perkakas, susunan seksi dan pertanyaan,
+  serta panel properti. Menambah, menyunting, menggandakan, menghapus, dan
+  menyusun ulang seksi maupun pertanyaan; mengganti tipe soal; menyunting daftar
+  pilihan beserta skornya; mengatur batas isian. Versi terbit dibuka dalam mode
+  baca. Penyusunan ulang memakai tombol naik/turun, tanpa dependensi baru.
+- **Editor kondisi** — menyusun aturan tampil dengan penggabung "semua" atau
+  "salah satu". Pemicu dibatasi pada pertanyaan sebelumnya, sehingga acuan
+  melingkar tidak mungkin tersusun.
+- **Aturan lampiran per pertanyaan** dapat disunting penuh: wajib atau tidak,
+  jumlah berkas, ukuran maksimum, format yang diterima, tanggal berlaku, dan
+  sisa masa berlaku minimum.
+- **Pengaturan skoring** — sakelar per versi, nilai kelulusan, dan tabel
+  klasifikasi risiko yang dapat diubah sebutan maupun rentangnya.
+- **Pustaka soal dan seksi** — butir yang dipilih disalin nilainya, sehingga
+  menyunting pustaka tidak mengubah kuesioner yang sudah memakainya.
+- **Penugasan** — menugaskan versi terbit kepada pemasok aktif beserta material,
+  tenggat, peninjau, prioritas, dan instruksi. Daftar penugasan memantau
+  kemajuan pengisian dan menandai yang lewat tenggat.
+- **Portal pemasok** — daftar kuesioner yang ditugaskan, dan wizard pengisian
+  per seksi dengan simpan draf, pertanyaan bersyarat yang muncul seketika,
+  unggahan dokumen sesuai aturan tiap soal, serta prapemeriksaan sebelum kirim
+  yang menyebutkan persis apa yang masih kurang.
 
-Belum dikerjakan: builder penyuntingan (Fase 3), penugasan dan portal pemasok
-(Fase 5), tinjauan dan revisi (Fase 6), dashboard (Fase 7). Rute builder saat ini
-menampilkan struktur versi sebagai pratinjau baca-saja.
+Belum dikerjakan: tinjauan dan revisi (Fase 6), dashboard dan notifikasi (Fase 7).
 
 Rancangan lengkap termasuk skema basis data dan spesifikasi API ada pada
 dokumen proposal terpisah; keduanya artefak rancangan untuk tim backend,
@@ -249,14 +278,15 @@ keadaan terkini.
 |---|---|---|
 | 1 | Mesin, skema, registri tipe soal, pengujian | **Selesai** |
 | 2 | Store, data contoh, daftar & detail template | **Selesai** |
-| 3 | Builder: seksi, pertanyaan, panel properti | Belum |
-| 4 | Lampiran, kondisi, skoring, pustaka soal & seksi | Belum |
-| 5 | Penugasan dan portal pemasok | Belum |
+| 3 | Builder: seksi, pertanyaan, panel properti | **Selesai** |
+| 4 | Lampiran, kondisi, skoring, pustaka soal & seksi | **Selesai** |
+| 5 | Penugasan dan portal pemasok | **Selesai** |
 | 6 | Tinjauan, revisi, riwayat | Belum |
 | 7 | Dashboard, notifikasi, penyempurnaan i18n | Belum |
 
-Rute builder saat ini menampilkan struktur versi sebagai pratinjau baca-saja,
-supaya mesin dan data contoh dapat diperiksa sebelum antarmuka penyuntingan ada.
+Tipe soal **tabel/matriks** belum tersedia pada antarmuka pengisian; pemasok
+melihat catatan yang mengarahkan memakai teks panjang atau lampiran. Tanda tangan
+berupa kanvas gambar tangan, bukan tanda tangan elektronik tersertifikasi.
 
 ## Keputusan yang sudah diambil
 

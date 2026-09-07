@@ -21,6 +21,8 @@ const GUARDED_ROUTES = [
   '/portal/profil',
   '/portal/persetujuan',
   '/portal/profil-onboarding',
+  '/portal/kuesioner',
+  '/portal/kuesioner/res_0001',
   '/internal/beranda',
   '/internal/antrian',
   '/internal/verifikasi',
@@ -28,6 +30,8 @@ const GUARDED_ROUTES = [
   '/internal/questionnaire/baru',
   '/internal/questionnaire/tpl_audit',
   '/internal/questionnaire/tpl_audit/v/ver_audit_v1',
+  '/internal/penugasan',
+  '/internal/penugasan/baru',
   '/internal/approval',
   '/internal/registrasi/SUP-2026-0135',
 ];
