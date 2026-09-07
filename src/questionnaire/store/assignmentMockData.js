@@ -69,6 +69,25 @@ export const ASSIGNMENTS = [
     assignedBy: 'Dewi Anggraini',
     assignedAt: daysAgo(30),
   },
+  {
+    // Sengaja lewat tenggat dan belum dikirim, supaya KPI keterlambatan dan
+    // saringan "Terlambat" punya isi sejak pertama dibuka.
+    id: 'asg_0004',
+    versionId: 'ver_animal_v1',
+    templateId: 'tpl_animal',
+    supplierId: 'SUP-2026-0131',
+    supplierName: 'PT Karton Sejati Abadi',
+    supplierSite: 'Genuk, Semarang',
+    materialCategory: 'Packaging Material',
+    materialName: 'Tinta cetak kemasan',
+    dueDate: daysFromNow(-9),
+    reviewerId: 'usr-admin-1',
+    reviewerName: 'Rangga Prasetyo',
+    priority: 'high',
+    instructions: 'Mohon segera dilengkapi, tenggat sudah terlewat.',
+    assignedBy: 'Rangga Prasetyo',
+    assignedAt: daysAgo(28),
+  },
 ];
 
 export const RESPONSES = [
@@ -86,6 +105,7 @@ export const RESPONSES = [
     },
     attachments: {},
     revision: 1,
+    reviews: [],
     history: [{ at: daysAgo(4), label: 'Pengisian dimulai', actor: 'Hendra Wijaya' }],
   },
   {
@@ -97,6 +117,7 @@ export const RESPONSES = [
     answers: {},
     attachments: {},
     revision: 1,
+    reviews: [],
     history: [],
   },
   {
@@ -135,10 +156,23 @@ export const RESPONSES = [
       ],
     },
     revision: 1,
+    reviews: [],
     history: [
       { at: daysAgo(20), label: 'Pengisian dimulai', actor: 'Siti Aminah' },
       { at: daysAgo(3), label: 'Kuesioner dikirim', actor: 'Siti Aminah' },
     ],
+  },
+  {
+    id: 'res_0004',
+    assignmentId: 'asg_0004',
+    status: RESPONSE_STATUS.IN_PROGRESS,
+    startedAt: daysAgo(25),
+    submittedAt: null,
+    answers: { q_animal_company: 'PT Karton Sejati Abadi' },
+    attachments: {},
+    revision: 1,
+    reviews: [],
+    history: [{ at: daysAgo(25), label: 'Pengisian dimulai', actor: 'Siti Aminah' }],
   },
 ];
 

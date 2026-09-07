@@ -16,6 +16,7 @@ const now = () => new Date().toISOString();
 
 const initialState = {
   submissions: SUBMISSIONS,
+  qualifications: {}, // supplierId → { lines, status, updatedAt, updatedBy }
   session: null, // { kind: 'internal' | 'supplier', user }
 };
 
@@ -47,6 +48,12 @@ function reducer(state, action) {
 
     case 'PATCH':
       return patchSubmission(state, action.id, action.patch, action.timelineEntry);
+
+    case 'SAVE_QUALIFICATION':
+      return {
+        ...state,
+        qualifications: { ...state.qualifications, [action.supplierId]: action.qualification },
+      };
 
     default:
       return state;
@@ -313,6 +320,38 @@ export function AppStoreProvider({ children }) {
               ? `Perubahan ${sectionId} dikirim untuk verifikasi ulang`
               : `Perubahan ${sectionId} disimpan`,
             actor,
+          ),
+        );
+      },
+
+      /**
+       * Menyimpan kualifikasi pemasok. Baris kosong dibuang di sini supaya
+       * baris sisa saat mengisi tidak ikut tersimpan sebagai data.
+       */
+      saveQualification(supplierId, lines, status, actor) {
+        const kept = lines.filter(
+          (line) => line.commodityCode || line.countryCode || line.notes?.trim(),
+        );
+
+        dispatch({
+          type: 'SAVE_QUALIFICATION',
+          supplierId,
+          qualification: {
+            lines: kept,
+            status,
+            updatedAt: now(),
+            updatedBy: actor?.name ?? '',
+          },
+        });
+
+        patch(
+          supplierId,
+          {},
+          entry(
+            status === 'completed'
+              ? `Kualifikasi diselesaikan (${kept.length} baris)`
+              : 'Draf kualifikasi disimpan',
+            actor?.name ?? '',
           ),
         );
       },

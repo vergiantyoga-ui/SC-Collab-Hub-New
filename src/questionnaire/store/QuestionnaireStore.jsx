@@ -7,8 +7,10 @@ import {
   SECTION_LIBRARY,
 } from './questionnaireMockData.js';
 import {
+  REVIEW_DECISION,
   RESPONSE_STATUS,
   TEMPLATE_STATUS,
+  nextRevision,
   addQuestion,
   addSection,
   archive,
@@ -56,6 +58,7 @@ const initialState = {
   sectionLibrary: SECTION_LIBRARY,
   assignments: ASSIGNMENTS,
   responses: RESPONSES,
+  notifications: [],
   auditLog: [],
 };
 
@@ -112,6 +115,23 @@ function reducer(state, action) {
         ),
       };
 
+    case 'NOTIFY':
+      return { ...state, notifications: [action.notification, ...state.notifications] };
+
+    case 'READ_NOTIFICATION':
+      return {
+        ...state,
+        notifications: state.notifications.map((item) =>
+          item.id === action.id ? { ...item, read: true } : item,
+        ),
+      };
+
+    case 'READ_ALL_NOTIFICATIONS':
+      return {
+        ...state,
+        notifications: state.notifications.map((item) => ({ ...item, read: true })),
+      };
+
     case 'LOG':
       return { ...state, auditLog: [action.entry, ...state.auditLog] };
 
@@ -136,6 +156,27 @@ export function QuestionnaireStoreProvider({ children }) {
         objectId,
         previousValue: previous ?? null,
         newValue: next ?? null,
+        at: now(),
+      },
+    });
+  }, []);
+
+  /**
+   * Peristiwa notifikasi. Pengiriman email adalah pekerjaan server; yang ada
+   * di sini hanya notifikasi dalam aplikasi beserta pemicunya, supaya
+   * penyambungan penyedia email kelak tidak perlu mengubah alur.
+   */
+  const notify = useCallback((event, audience, title, body, link) => {
+    dispatch({
+      type: 'NOTIFY',
+      notification: {
+        id: makeId('ntf'),
+        event,
+        audience, // 'internal' | 'supplier'
+        title,
+        body,
+        link: link ?? null,
+        read: false,
         at: now(),
       },
     });
@@ -212,6 +253,13 @@ export function QuestionnaireStoreProvider({ children }) {
 
         dispatch({ type: 'ADD_ASSIGNMENT', assignment, response });
         log(actor, 'questionnaire.assigned', 'assignment', assignment.id, null, input.supplierName);
+        notify(
+          'assignment.created',
+          'supplier',
+          'Kuesioner baru ditugaskan',
+          `${input.supplierName} menerima penugasan dengan tenggat ${new Date(input.dueDate).toLocaleDateString('id-ID')}.`,
+          '/portal/kuesioner',
+        );
 
         return { assignment, response };
       },
@@ -240,12 +288,110 @@ export function QuestionnaireStoreProvider({ children }) {
       },
 
       submitResponse(responseId, actorName) {
+        const response = state.responses.find((item) => item.id === responseId);
+        const isResubmission = (response?.reviews ?? []).length > 0;
+
         dispatch({
           type: 'PATCH_RESPONSE',
           id: responseId,
-          patch: { status: RESPONSE_STATUS.SUBMITTED, submittedAt: now() },
-          historyEntry: { at: now(), label: 'Kuesioner dikirim', actor: actorName },
+          patch: {
+            status: RESPONSE_STATUS.SUBMITTED,
+            submittedAt: now(),
+            revision: isResubmission ? nextRevision(response) : response?.revision ?? 1,
+          },
+          historyEntry: {
+            at: now(),
+            label: isResubmission ? 'Revisi dikirim ulang' : 'Kuesioner dikirim',
+            actor: actorName,
+          },
         });
+
+        notify(
+          'response.submitted',
+          'internal',
+          isResubmission ? 'Revisi kuesioner diterima' : 'Kuesioner dikirim pemasok',
+          `${actorName} mengirimkan kuesioner untuk ditinjau.`,
+          '/internal/tinjauan',
+        );
+      },
+
+      /* ---------------------- Tinjauan ------------------------ */
+      startReview(responseId, actor) {
+        dispatch({
+          type: 'PATCH_RESPONSE',
+          id: responseId,
+          patch: { status: RESPONSE_STATUS.UNDER_REVIEW },
+          historyEntry: { at: now(), label: 'Tinjauan dimulai', actor: actor?.name ?? '' },
+        });
+      },
+
+      /**
+       * Menyelesaikan satu putaran tinjauan. Keputusan, komentar, dan salinan
+       * jawaban saat ditinjau disimpan sebagai satu entri riwayat yang tidak
+       * pernah dihapus — dasar bagi pemeriksaan apakah revisi benar diperbaiki.
+       */
+      decideReview(responseId, { decision, flagged = [], comments = [], note }, actor) {
+        const response = state.responses.find((item) => item.id === responseId);
+        if (!response) return { ok: false, message: 'Respons tidak ditemukan.' };
+
+        const review = {
+          id: makeId('rev'),
+          revision: response.revision ?? 1,
+          decision,
+          note: note ?? '',
+          reviewerId: actor?.id ?? null,
+          reviewerName: actor?.name ?? '',
+          decidedAt: now(),
+          flagged: flagged.map((item) => ({
+            ...item,
+            attachmentSnapshot: response.attachments[item.questionId] ?? [],
+          })),
+          comments,
+          answerSnapshot: { ...response.answers },
+        };
+
+        const status =
+          decision === REVIEW_DECISION.APPROVE
+            ? RESPONSE_STATUS.APPROVED
+            : decision === REVIEW_DECISION.REJECT
+              ? RESPONSE_STATUS.REJECTED
+              : RESPONSE_STATUS.REVISION_REQUIRED;
+
+        const label =
+          decision === REVIEW_DECISION.APPROVE
+            ? 'Kuesioner disetujui'
+            : decision === REVIEW_DECISION.REJECT
+              ? 'Kuesioner ditolak'
+              : `Revisi diminta untuk ${flagged.length} pertanyaan`;
+
+        dispatch({
+          type: 'PATCH_RESPONSE',
+          id: responseId,
+          patch: { status, reviews: [...(response.reviews ?? []), review] },
+          historyEntry: { at: now(), label, actor: actor?.name ?? '' },
+        });
+
+        log(actor, `review.${decision}`, 'response', responseId, response.status, status);
+
+        notify(
+          `review.${decision}`,
+          'supplier',
+          label,
+          decision === REVIEW_DECISION.REVISION
+            ? 'Sebagian jawaban perlu diperbaiki. Buka kuesioner untuk melihat catatannya.'
+            : note || 'Buka kuesioner untuk melihat rinciannya.',
+          '/portal/kuesioner',
+        );
+
+        return { ok: true };
+      },
+
+      markNotificationRead(id) {
+        dispatch({ type: 'READ_NOTIFICATION', id });
+      },
+
+      markAllNotificationsRead() {
+        dispatch({ type: 'READ_ALL_NOTIFICATIONS' });
       },
 
       /* ----------------------- Builder ------------------------ */
@@ -379,7 +525,7 @@ export function QuestionnaireStoreProvider({ children }) {
         return next;
       },
     }),
-    [log, state.templates, state.versions, state.questionLibrary],
+    [log, notify, state.templates, state.versions, state.questionLibrary, state.responses],
   );
 
   return (

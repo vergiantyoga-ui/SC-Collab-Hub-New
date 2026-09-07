@@ -197,3 +197,21 @@
   margin-top: 0;
   width: 160px;
 }
+
+.qfield--flagged {
+  border-left: 3px solid var(--warn);
+  padding-left: var(--sp-4);
+  margin-left: calc(var(--sp-4) * -1);
+}
+.qfield__comments {
+  background: var(--warn-bg);
+  border-radius: var(--radius-sm);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  color: var(--warn-ink, #7a5311);
+}
+.qfield__commentstitle {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  margin-bottom: 4px;
+}

@@ -16,6 +16,11 @@ import {
 import {
   RESPONSE_STATUS,
   calculateCompletion,
+  canSupplierEdit,
+  commentsFor,
+  latestReview,
+  questionsNeedingRevision,
+  revisionBlockers,
   emptyAnswersFor,
   isVersionExpired,
   pruneHiddenAnswers,
@@ -67,12 +72,27 @@ export default function ResponseWizard() {
   }, [response?.id]);
 
   if (!response || !view?.version) return <Navigate to="/portal/kuesioner" replace />;
-  if (response.status === RESPONSE_STATUS.SUBMITTED) {
-    return <Navigate to="/portal/kuesioner" replace />;
-  }
+
+  // Kuesioner yang sedang ditinjau atau sudah selesai tidak dapat dibuka lagi.
+  const closed = [
+    RESPONSE_STATUS.SUBMITTED,
+    RESPONSE_STATUS.UNDER_REVIEW,
+    RESPONSE_STATUS.APPROVED,
+    RESPONSE_STATUS.REJECTED,
+  ].includes(response.status);
+  if (closed) return <Navigate to="/portal/kuesioner" replace />;
 
   const { version, template, assignment } = view;
   const expired = isVersionExpired(version);
+
+  // Mode revisi: hanya pertanyaan bertanda peninjau yang boleh disunting,
+  // dan pengiriman ulang menuntut semuanya benar-benar berubah.
+  const inRevision = response.status === RESPONSE_STATUS.REVISION_REQUIRED;
+  const needsFix = questionsNeedingRevision(response);
+  const review = latestReview(response);
+  const pendingFixes = inRevision
+    ? revisionBlockers({ ...response, answers, attachments }, version)
+    : [];
   const completion = calculateCompletion(version, answers, attachments);
   const errors = validateResponse(version, answers, attachments);
   const section = version.sections[stepIndex];
@@ -102,11 +122,8 @@ export default function ResponseWizard() {
   }
 
   function handleSubmit() {
-    const blockers = submissionBlockers(version, answers, attachments);
-    if (blockers.length > 0) {
+    if (submissionBlockers(version, answers, attachments).length > 0 || pendingFixes.length > 0) {
       setShowErrors(true);
-      setConfirming(true);
-      return;
     }
     setConfirming(true);
   }
@@ -120,6 +137,15 @@ export default function ResponseWizard() {
   }
 
   const blockers = submissionBlockers(version, answers, attachments);
+  const allBlockers = [
+    ...blockers,
+    ...pendingFixes.map((fix) => ({
+      questionId: fix.questionId,
+      sectionName: 'Perlu perbaikan',
+      questionText: fix.comment,
+      message: 'Jawaban ini belum berubah sejak diminta revisi.',
+    })),
+  ];
 
   return (
     <>
@@ -142,6 +168,15 @@ export default function ResponseWizard() {
           <span className="notice__title">Kuesioner ini sudah kedaluwarsa</span>
           Masa berlaku versi ini berakhir {formatDate(version.expiryDate)}. Hubungi tim
           procurement untuk memperoleh penugasan versi terbaru.
+        </div>
+      )}
+
+      {inRevision && (
+        <div className="notice notice--danger" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span className="notice__title">
+            {needsFix.size} pertanyaan perlu diperbaiki
+          </span>
+          {review?.note || 'Peninjau menandai sebagian jawaban Anda. Hanya pertanyaan bertanda yang dapat disunting.'}
         </div>
       )}
 
@@ -205,7 +240,9 @@ export default function ResponseWizard() {
                   value={answers[question.id]}
                   files={attachments[question.id] ?? []}
                   error={showErrors ? errors[question.id] : undefined}
-                  readOnly={expired}
+                  readOnly={expired || !canSupplierEdit(response, question.id)}
+                  comments={commentsFor(response, question.id)}
+                  highlighted={needsFix.has(question.id)}
                   onChange={(value) => setAnswer(question.id, value)}
                   onFilesChange={(files) => setFiles(question.id, files)}
                 />
@@ -243,7 +280,7 @@ export default function ResponseWizard() {
 
               {isLast ? (
                 <Button onClick={handleSubmit} disabled={expired}>
-                  Kirim kuesioner
+                  {inRevision ? 'Kirim revisi' : 'Kirim kuesioner'}
                 </Button>
               ) : (
                 <Button onClick={() => goToStep(stepIndex + 1)}>
@@ -259,14 +296,14 @@ export default function ResponseWizard() {
       <Modal
         open={confirming}
         onClose={() => setConfirming(false)}
-        title={blockers.length > 0 ? 'Belum dapat dikirim' : 'Kirim kuesioner?'}
+        title={allBlockers.length > 0 ? 'Belum dapat dikirim' : inRevision ? 'Kirim revisi?' : 'Kirim kuesioner?'}
         description={
-          blockers.length > 0
+          allBlockers.length > 0
             ? `Kuesioner terisi ${completion.percent}%. Lengkapi hal berikut terlebih dahulu.`
             : `Kuesioner terisi ${completion.percent}%. Setelah dikirim, jawaban tidak dapat diubah kecuali tim procurement meminta revisi.`
         }
         footer={
-          blockers.length > 0 ? (
+          allBlockers.length > 0 ? (
             <Button onClick={() => setConfirming(false)}>Kembali melengkapi</Button>
           ) : (
             <>
@@ -278,9 +315,9 @@ export default function ResponseWizard() {
           )
         }
       >
-        {blockers.length > 0 && (
+        {allBlockers.length > 0 && (
           <ul className="stack-sm" style={{ margin: 0, paddingLeft: '1.1em' }}>
-            {blockers.map((blocker) => (
+            {allBlockers.map((blocker) => (
               <li key={blocker.questionId} className="text-sm">
                 <strong>{blocker.sectionName}</strong> — {blocker.questionText}
                 <br />

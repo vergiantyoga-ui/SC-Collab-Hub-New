@@ -18,6 +18,8 @@ export default function QuestionRenderer({
   files = [],
   error,
   readOnly,
+  comments = [],
+  highlighted = false,
   onChange,
   onFilesChange,
 }) {
@@ -25,7 +27,15 @@ export default function QuestionRenderer({
   const labelId = `q-${question.id}-label`;
 
   return (
-    <div className={`qfield ${error ? 'qfield--error' : ''}`.trim()}>
+    <div
+      className={[
+        'qfield',
+        error ? 'qfield--error' : '',
+        highlighted ? 'qfield--flagged' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <div className="qfield__head">
         <p className="qfield__label" id={labelId}>
           {question.text}
@@ -39,6 +49,18 @@ export default function QuestionRenderer({
       </div>
 
       {question.guidance && <p className="qfield__guidance">{question.guidance}</p>}
+
+      {comments.length > 0 && (
+        <div className="qfield__comments">
+          <p className="qfield__commentstitle">Catatan peninjau</p>
+          {comments.map((item, index) => (
+            <p key={index} className="text-sm">
+              {item.comment}
+              <span className="muted"> — {item.reviewer}, putaran {item.revision}</span>
+            </p>
+          ))}
+        </div>
+      )}
 
       <Input
         question={question}
