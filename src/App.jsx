@@ -15,7 +15,8 @@ import InternalLayout from './components/layout/InternalLayout.jsx';
 import InternalHome from './pages/internal/InternalHome.jsx';
 import QueueDashboard from './pages/internal/QueueDashboard.jsx';
 import InternalRegistration from './pages/internal/InternalRegistration.jsx';
-import ManagerApprovals from './pages/internal/ManagerApprovals.jsx';
+import PreferredQueue from './pages/internal/PreferredQueue.jsx';
+import PreferredReview from './pages/internal/PreferredReview.jsx';
 import DocumentVerification from './pages/internal/DocumentVerification.jsx';
 
 import TemplateList from './questionnaire/pages/internal/TemplateList.jsx';
@@ -71,7 +72,8 @@ export default function App() {
         <Route path="beranda" element={<InternalHome />} />
         <Route path="antrian" element={<QueueDashboard />} />
         <Route path="registrasi/:id" element={<InternalRegistration />} />
-        <Route path="approval" element={<ManagerApprovals />} />
+        <Route path="preferred" element={<PreferredQueue />} />
+        <Route path="preferred/:supplierId" element={<PreferredReview />} />
         <Route path="verifikasi" element={<DocumentVerification />} />
         <Route path="kualifikasi" element={<QualificationList />} />
         <Route path="kualifikasi/:supplierId" element={<QualificationForm />} />

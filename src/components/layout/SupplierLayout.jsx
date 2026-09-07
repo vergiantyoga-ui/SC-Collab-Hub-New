@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState, useCurrentSubmission } from '../../store/AppStore.jsx';
-import { STATUS } from '../../lib/constants.js';
+import { hasFinishedRegistration } from '../../lib/constants.js';
 import { useQuestionnaireState } from '../../questionnaire/store/QuestionnaireStore.jsx';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
@@ -19,7 +19,8 @@ export default function SupplierLayout() {
 
   if (session?.kind !== 'supplier' || !submission) return <Navigate to="/masuk" replace />;
 
-  const isActive = submission.status === STATUS.ACTIVE;
+  // Portal terbuka penuh begitu dokumen lolos periksa, bukan hanya saat preferred.
+  const isActive = hasFinishedRegistration(submission.status);
   const profileDone = Object.values(submission.profile.completed).every(Boolean);
 
   const myAssignments = questionnaireState.assignments.filter(

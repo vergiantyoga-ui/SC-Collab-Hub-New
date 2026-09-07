@@ -97,7 +97,7 @@ const filledProfile = (overrides = {}) => ({
 export const SUBMISSIONS = [
   {
     id: 'SUP-2026-0148',
-    status: STATUS.PENDING,
+    status: STATUS.SUPPLIER_REQUEST,
     submittedAt: daysAgo(2),
     general: {
       legalStatus: 'Badan Usaha',
@@ -139,7 +139,7 @@ export const SUBMISSIONS = [
   },
   {
     id: 'SUP-2026-0149',
-    status: STATUS.PENDING,
+    status: STATUS.SUPPLIER_REQUEST,
     submittedAt: daysAgo(1),
     general: {
       legalStatus: 'Badan Usaha',
@@ -275,7 +275,7 @@ export const SUBMISSIONS = [
   },
   {
     id: 'SUP-2026-0135',
-    status: STATUS.AWAITING_MANAGER,
+    status: STATUS.QUALIFICATION,
     submittedAt: daysAgo(14),
     decidedAt: daysAgo(12),
     onboardingPath: PATH.INTERNAL,
@@ -328,17 +328,17 @@ export const SUBMISSIONS = [
     }),
     consent: null,
     verification: null,
-    managerReview: { status: 'pending' },
     timeline: [
       { at: daysAgo(14), label: 'Registrasi dikirim pemasok', actor: 'Sekar Ayu Pratiwi' },
       { at: daysAgo(12), label: 'Registrasi disetujui', actor: 'Dewi Anggraini' },
       { at: daysAgo(11), label: 'Jalur registrasi internal dipilih', actor: 'Rangga Prasetyo' },
-      { at: daysAgo(3), label: 'Profil diajukan ke manager', actor: 'Rangga Prasetyo' },
+      { at: daysAgo(3), label: 'Registrasi internal selesai, akun dikirim', actor: 'Rangga Prasetyo' },
+      { at: daysAgo(2), label: 'Dokumen lolos periksa, lanjut ke qualification', actor: 'Dewi Anggraini' },
     ],
   },
   {
     id: 'SUP-2026-0131',
-    status: STATUS.AWAITING_VERIFICATION,
+    status: STATUS.REGISTRATION,
     submittedAt: daysAgo(24),
     decidedAt: daysAgo(22),
     onboardingPath: PATH.INVITE,
@@ -405,10 +405,18 @@ export const SUBMISSIONS = [
   },
   {
     id: 'SUP-2026-0118',
-    status: STATUS.ACTIVE,
+    status: STATUS.PREFERRED,
     submittedAt: daysAgo(60),
     decidedAt: daysAgo(58),
-    activatedAt: daysAgo(40),
+    registeredAt: daysAgo(40),
+    preferredSubmittedAt: daysAgo(20),
+    preferredSubmittedBy: 'Dewi Anggraini',
+    preferredDecision: {
+      decision: 'approved',
+      note: 'Rekam jejak mutu baik dan kualifikasi komoditas sesuai kebutuhan.',
+      decidedAt: daysAgo(18),
+      decidedBy: 'Lestari Handayani',
+    },
     onboardingPath: PATH.INVITE,
     account: {
       accountId: 'SUP-RAW-0118',
@@ -493,7 +501,9 @@ export const SUBMISSIONS = [
       { at: daysAgo(58), label: 'Registrasi disetujui', actor: 'Dewi Anggraini' },
       { at: daysAgo(55), label: 'Undangan portal dikirim', actor: 'Dewi Anggraini' },
       { at: daysAgo(42), label: 'Persetujuan ditandatangani pemasok', actor: 'Hendra Wijaya' },
-      { at: daysAgo(40), label: 'Dokumen diverifikasi, akun aktif', actor: 'Dewi Anggraini' },
+      { at: daysAgo(40), label: 'Dokumen lolos periksa, lanjut ke qualification', actor: 'Dewi Anggraini' },
+      { at: daysAgo(20), label: 'Diajukan sebagai preferred supplier', actor: 'Dewi Anggraini' },
+      { at: daysAgo(18), label: 'Ditetapkan sebagai preferred supplier', actor: 'Lestari Handayani' },
     ],
   },
 ];

@@ -4,21 +4,57 @@
  * Satu sumber kebenaran untuk label status, opsi dropdown, dan aturan validasi.
  */
 
-/* Status lifecycle (Section 5) */
+/**
+ * Tahapan pemasok, berurutan sesuai perjalanannya:
+ *
+ *   Supplier Request → Registrasi → Qualification → Preferred
+ *                           ↘ Perlu perbaikan dokumen   ↘ Disqualification
+ *
+ * `SUPPLIER_REQUEST` menampung pendaftaran yang baru masuk. `REGISTRATION`
+ * adalah tahap pemeriksaan dokumen. `QUALIFICATION` berjalan ketika staf
+ * mengisi kualifikasi dan pemasok mengisi kuesioner. `AWAITING_PREFERRED`
+ * adalah antrean persetujuan manager, yang berakhir pada `PREFERRED` atau
+ * `DISQUALIFIED`.
+ */
 export const STATUS = {
-  PENDING: 'pending',
+  SUPPLIER_REQUEST: 'supplier_request',
   REJECTED: 'rejected',
   APPROVED: 'approved',
   INVITED: 'invited',
   INTERNAL_DRAFT: 'internal_draft',
-  AWAITING_MANAGER: 'awaiting_manager',
   CONNECTED: 'connected',
   ONBOARDING: 'onboarding',
-  AWAITING_CONSENT: 'awaiting_consent',
-  AWAITING_VERIFICATION: 'awaiting_verification',
+  REGISTRATION: 'registration',
   NEEDS_DOCUMENT_FIX: 'needs_document_fix',
-  ACTIVE: 'active',
+  QUALIFICATION: 'qualification',
+  AWAITING_PREFERRED: 'awaiting_preferred',
+  PREFERRED: 'preferred',
+  DISQUALIFIED: 'disqualified',
 };
+
+/**
+ * Tahapan setelah dokumen lolos periksa. Pada titik ini profil pemasok sudah
+ * tuntas, sehingga portal pemasok terbuka penuh dan kuesioner boleh ditugaskan.
+ */
+export const POST_REGISTRATION_STATUSES = [
+  STATUS.QUALIFICATION,
+  STATUS.AWAITING_PREFERRED,
+  STATUS.PREFERRED,
+];
+
+/** Profil pemasok sudah tuntas dan lolos periksa dokumen. */
+export function hasFinishedRegistration(status) {
+  return POST_REGISTRATION_STATUSES.includes(status);
+}
+
+/** Urutan tahapan untuk ringkasan dan penomoran langkah. */
+export const STATUS_PIPELINE = [
+  STATUS.SUPPLIER_REQUEST,
+  STATUS.REGISTRATION,
+  STATUS.QUALIFICATION,
+  STATUS.AWAITING_PREFERRED,
+  STATUS.PREFERRED,
+];
 
 /**
  * Label acuan bahasa Indonesia. Antarmuka membaca terjemahan lewat
@@ -26,34 +62,36 @@ export const STATUS = {
  * non-antarmuka seperti berkas ekspor dan catatan uji.
  */
 export const STATUS_LABEL = {
-  [STATUS.PENDING]: 'Menunggu ditinjau',
+  [STATUS.SUPPLIER_REQUEST]: 'Supplier request',
   [STATUS.REJECTED]: 'Ditolak',
   [STATUS.APPROVED]: 'Disetujui',
   [STATUS.INVITED]: 'Diundang',
   [STATUS.INTERNAL_DRAFT]: 'Registrasi internal',
-  [STATUS.AWAITING_MANAGER]: 'Menunggu approval manager',
   [STATUS.CONNECTED]: 'Terhubung',
   [STATUS.ONBOARDING]: 'Melengkapi profil',
-  [STATUS.AWAITING_CONSENT]: 'Menunggu persetujuan',
-  [STATUS.AWAITING_VERIFICATION]: 'Menunggu verifikasi dokumen',
+  [STATUS.REGISTRATION]: 'Registrasi',
   [STATUS.NEEDS_DOCUMENT_FIX]: 'Perlu perbaikan dokumen',
-  [STATUS.ACTIVE]: 'Aktif',
+  [STATUS.QUALIFICATION]: 'Qualification',
+  [STATUS.AWAITING_PREFERRED]: 'Menunggu preferred',
+  [STATUS.PREFERRED]: 'Preferred supplier',
+  [STATUS.DISQUALIFIED]: 'Disqualification',
 };
 
 /** Memetakan status ke varian visual pill. */
 export const STATUS_TONE = {
-  [STATUS.PENDING]: 'pending',
+  [STATUS.SUPPLIER_REQUEST]: 'pending',
   [STATUS.REJECTED]: 'danger',
   [STATUS.APPROVED]: 'success',
   [STATUS.INVITED]: 'progress',
   [STATUS.INTERNAL_DRAFT]: 'progress',
-  [STATUS.AWAITING_MANAGER]: 'pending',
   [STATUS.CONNECTED]: 'progress',
   [STATUS.ONBOARDING]: 'progress',
-  [STATUS.AWAITING_CONSENT]: 'pending',
-  [STATUS.AWAITING_VERIFICATION]: 'pending',
+  [STATUS.REGISTRATION]: 'pending',
   [STATUS.NEEDS_DOCUMENT_FIX]: 'danger',
-  [STATUS.ACTIVE]: 'success',
+  [STATUS.QUALIFICATION]: 'progress',
+  [STATUS.AWAITING_PREFERRED]: 'pending',
+  [STATUS.PREFERRED]: 'success',
+  [STATUS.DISQUALIFIED]: 'danger',
 };
 
 /* Role internal (Section 2 & 6.1) */

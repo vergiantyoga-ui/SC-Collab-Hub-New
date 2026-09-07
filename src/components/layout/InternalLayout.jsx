@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
-import { ROLE, STATUS } from '../../lib/constants.js';
+import { STATUS } from '../../lib/constants.js';
 import { useQuestionnaireState } from '../../questionnaire/store/QuestionnaireStore.jsx';
 import { QUALIFIABLE_STATUSES } from '../../qualification/qualificationRules.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
@@ -26,6 +26,9 @@ export default function InternalLayout() {
     (item) =>
       QUALIFIABLE_STATUSES.includes(item.status) &&
       qualifications[item.id]?.status !== 'completed',
+  ).length;
+  const awaitingPreferred = submissions.filter(
+    (item) => item.status === STATUS.AWAITING_PREFERRED,
   ).length;
   const unreadNotifications = questionnaireState.notifications.filter(
     (item) => item.audience === 'internal' && !item.read,
@@ -55,13 +58,13 @@ export default function InternalLayout() {
           to: '/internal/antrian',
           label: t('nav.queue'),
           icon: 'queue',
-          count: count(STATUS.PENDING),
+          count: count(STATUS.SUPPLIER_REQUEST),
         },
         {
           to: '/internal/verifikasi',
           label: t('nav.verification'),
           icon: 'verify',
-          count: count(STATUS.AWAITING_VERIFICATION),
+          count: count(STATUS.REGISTRATION),
         },
         {
           to: '/internal/kualifikasi',
@@ -83,21 +86,17 @@ export default function InternalLayout() {
         { to: '/internal/jejak-audit', label: 'Jejak audit', icon: 'document' },
       ],
     },
-    ...(user.role === ROLE.MANAGER
-      ? [
-          {
-            label: t('nav.group.approval'),
-            items: [
-              {
-                to: '/internal/approval',
-                label: t('nav.managerApproval'),
-                icon: 'approval',
-                count: count(STATUS.AWAITING_MANAGER),
-              },
-            ],
-          },
-        ]
-      : []),
+    {
+      label: t('nav.group.approval'),
+      items: [
+        {
+          to: '/internal/preferred',
+          label: 'Preferred supplier',
+          icon: 'approval',
+          count: awaitingPreferred,
+        },
+      ],
+    },
   ];
 
   return (
