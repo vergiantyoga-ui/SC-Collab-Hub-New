@@ -19,6 +19,7 @@ import {
 import { COUNTRIES, commoditiesBySegment, segmentNameOf } from '../data/referenceData.js';
 import { formatDate } from '../../lib/format.js';
 import './qualification.css';
+import { VENDOR_TYPES, labelOf } from '../../lib/masterData.js';
 
 /**
  * Pengisian kualifikasi pemasok.
@@ -281,7 +282,7 @@ export default function QualificationForm() {
             <DataList
               items={[
                 { label: 'Nomor', value: submission.id },
-                { label: 'Jenis pasokan', value: submission.general.vendorType },
+                { label: 'Jenis pasokan', value: labelOf(VENDOR_TYPES, submission.general.vendorType) },
                 { label: 'Negara terdaftar', value: submission.address.country },
                 { label: 'Aktif sejak', value: formatDate(submission.activatedAt) },
               ]}

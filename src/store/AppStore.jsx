@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useReducer } from 'rea
 import { PATH, ROLE, STATUS } from '../lib/constants.js';
 import { INTERNAL_USERS, SUBMISSIONS } from '../lib/mockData.js';
 import { buildAccountId, buildInviteToken, buildTempPassword } from '../lib/format.js';
+import { VENDOR_TYPES, labelOf } from '../lib/masterData.js';
 
 /**
  * Store tunggal untuk seluruh aplikasi. Tanpa backend: setiap aksi
@@ -145,7 +146,7 @@ export function AppStoreProvider({ children }) {
       inviteSupplier(id, actor) {
         const submission = state.submissions.find((s) => s.id === id);
         const account = {
-          accountId: buildAccountId(submission.general.vendorType, id),
+          accountId: buildAccountId(labelOf(VENDOR_TYPES, submission.general.vendorType), id),
           temporaryPassword: buildTempPassword(),
           inviteToken: buildInviteToken(),
           emailSentAt: now(),
@@ -207,7 +208,7 @@ export function AppStoreProvider({ children }) {
       finishInternalRegistration(id, actor) {
         const submission = state.submissions.find((s) => s.id === id);
         const account = {
-          accountId: buildAccountId(submission.general.vendorType, id),
+          accountId: buildAccountId(labelOf(VENDOR_TYPES, submission.general.vendorType), id),
           temporaryPassword: buildTempPassword(),
           inviteToken: buildInviteToken(),
           emailSentAt: now(),

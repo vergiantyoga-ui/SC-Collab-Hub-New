@@ -15,6 +15,7 @@ import { TEMPLATE_STATUS, MATERIAL_TYPES } from '../../engine/index.js';
 import { PRIORITIES } from '../../store/assignmentMockData.js';
 import { INTERNAL_USERS } from '../../../lib/mockData.js';
 import { hasFinishedRegistration } from '../../../lib/constants.js';
+import { VENDOR_TYPES, labelOf } from '../../../lib/masterData.js';
 import { collectErrors, required } from '../../../lib/validation.js';
 
 /**
@@ -92,7 +93,7 @@ export default function AssignmentCreate() {
         supplierId: supplier.id,
         supplierName: supplier.general.vendorName,
         supplierSite: `${supplier.address.city}, ${supplier.address.province}`,
-        materialCategory: values.materialCategory || supplier.general.vendorType,
+        materialCategory: values.materialCategory || labelOf(VENDOR_TYPES, supplier.general.vendorType),
         materialName: values.materialName,
         dueDate: new Date(values.dueDate).toISOString(),
         reviewerId: reviewer.id,
