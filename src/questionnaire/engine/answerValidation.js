@@ -32,12 +32,18 @@ export function validateResponse(version, answers, attachments = {}) {
 export function validateAnswer(question, value, files = []) {
   const type = getType(question.type);
 
-  if (question.required && !type.isAnswered(value)) {
-    return 'Pertanyaan ini wajib dijawab.';
+  // Tipe berkas tidak menyimpan apa pun di kolom jawaban; daftar lampirannya
+  // yang menentukan apakah pertanyaan sudah terjawab.
+  const effective = type.answerIsAttachment ? files : value;
+
+  if (question.required && !type.isAnswered(effective)) {
+    return type.answerIsAttachment
+      ? 'Dokumen pendukung wajib diunggah.'
+      : 'Pertanyaan ini wajib dijawab.';
   }
 
   // Aturan khas tipe hanya berlaku bila sudah ada isian.
-  if (type.isAnswered(value)) {
+  if (!type.answerIsAttachment && type.isAnswered(value)) {
     const problem = type.validate(question, value);
     if (problem) return problem;
   }

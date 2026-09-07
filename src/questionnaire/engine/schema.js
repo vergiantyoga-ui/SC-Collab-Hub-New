@@ -276,12 +276,19 @@ export function makeTemplate(overrides = {}) {
 /* ------------------------------------------------------------------ */
 
 /**
- * Memeriksa bahwa sebuah versi berbentuk benar. Dipanggil saat memuat data
- * contoh atau mengimpor template dari luar — bukan pada setiap render, karena
- * biayanya sia-sia untuk data yang sudah lolos sekali.
+ * Memeriksa keutuhan struktur sebuah versi: id yang ada dan unik, daftar yang
+ * berbentuk array, serta kondisi yang tidak menunjuk pertanyaan tak dikenal.
+ *
+ * Sengaja TIDAK memeriksa kelengkapan isi seperti teks pertanyaan yang masih
+ * kosong. Draf yang sedang disusun memang wajar setengah jadi, dan kesiapan
+ * terbit adalah urusan `publishBlockers()`. Mencampur keduanya membuat builder
+ * melaporkan "rusak" pada keadaan yang sebenarnya normal.
+ *
+ * Dipanggil pada batas masuk data — memuat data contoh, mengimpor template —
+ * bukan pada setiap render.
  *
  * @param {QuestionnaireVersion} version
- * @returns {string[]} daftar masalah; kosong berarti sehat
+ * @returns {string[]} daftar masalah; kosong berarti struktur utuh
  */
 export function assertShape(version) {
   const problems = [];
@@ -308,7 +315,6 @@ export function assertShape(version) {
       if (seenQuestionIds.has(question.id)) problems.push(`${where} memakai id ganda.`);
       seenQuestionIds.add(question.id);
 
-      if (!question.text) problems.push(`${where} tidak memiliki teks.`);
       if (!question.type) problems.push(`${where} tidak memiliki tipe.`);
     });
   });

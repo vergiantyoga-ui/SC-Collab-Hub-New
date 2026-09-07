@@ -28,6 +28,7 @@ export default function InternalLayout() {
       label: 'Questionnaire',
       items: [
         { to: '/internal/questionnaire', label: 'Template', icon: 'consent' },
+        { to: '/internal/penugasan', label: 'Penugasan', icon: 'queue' },
       ],
     },
     {

@@ -61,6 +61,20 @@ const PATHS = {
       <path d="M17 8.5 20.5 12 17 15.5M20 12H9" />
     </>
   ),
+  chevronUp: <path d="M5.5 14.5 12 8l6.5 6.5" />,
+  chevronDown: <path d="M5.5 9.5 12 16l6.5-6.5" />,
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M6 15H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v1" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16M9.5 7V5.5a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7" />
+      <path d="M6.5 7 7.4 19a1 1 0 0 0 1 .9h7.2a1 1 0 0 0 1-.9L17.5 7" />
+    </>
+  ),
   chevronLeft: <path d="M14.5 5.5 8 12l6.5 6.5" />,
   chevronRight: <path d="M9.5 5.5 16 12l-6.5 6.5" />,
   sun: (

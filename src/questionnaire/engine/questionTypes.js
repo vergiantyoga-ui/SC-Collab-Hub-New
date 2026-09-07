@@ -211,6 +211,10 @@ export const QUESTION_TYPES = {
     label: 'Unggah berkas',
     group: 'file',
     emptyValue: [],
+    // Pada tipe berkas, lampiran itulah jawabannya. Penanda ini dibaca mesin
+    // validasi dan kelengkapan supaya keduanya memeriksa daftar berkas, bukan
+    // kolom jawaban yang memang selalu kosong untuk tipe ini.
+    answerIsAttachment: true,
     isAnswered: (value) => Array.isArray(value) && value.length > 0,
     validate: () => null,
     defaultAttachmentRule: () => makeAttachmentRule({ required: true, maxFiles: 1 }),
@@ -220,6 +224,7 @@ export const QUESTION_TYPES = {
     label: 'Unggah beberapa berkas',
     group: 'file',
     emptyValue: [],
+    answerIsAttachment: true,
     isAnswered: (value) => Array.isArray(value) && value.length > 0,
     validate: () => null,
     defaultAttachmentRule: () => makeAttachmentRule({ required: true, maxFiles: 5 }),

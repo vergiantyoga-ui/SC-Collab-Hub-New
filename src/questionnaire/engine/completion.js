@@ -65,7 +65,10 @@ export function calculateCompletion(version, answers, attachments = {}) {
 
 /** Sebuah pertanyaan dianggap lengkap bila jawabannya ada dan lampirannya cukup. */
 function isComplete(question, value, files, type) {
-  if (!type.isAnswered(value)) return false;
+  // Untuk tipe berkas, lampiran itulah jawabannya (lihat questionTypes.js).
+  const effective = type.answerIsAttachment ? files : value;
+  if (!type.isAnswered(effective)) return false;
+
   const rule = question.attachmentRule;
   if (rule?.required && (files ?? []).length === 0) return false;
   return true;

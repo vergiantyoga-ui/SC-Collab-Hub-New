@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
+import { ASSIGNMENTS, RESPONSES } from './assignmentMockData.js';
 import {
   QUESTIONNAIRE_TEMPLATES,
   QUESTIONNAIRE_VERSIONS,
@@ -6,14 +7,32 @@ import {
   SECTION_LIBRARY,
 } from './questionnaireMockData.js';
 import {
+  RESPONSE_STATUS,
   TEMPLATE_STATUS,
+  addQuestion,
+  addSection,
   archive,
+  canEdit,
+  changeQuestionType,
   createNextVersion,
+  deleteQuestion,
+  deleteSection,
+  duplicateQuestion,
+  duplicateSection,
+  insertQuestion,
   makeId,
   makeTemplate,
   makeVersion,
+  moveQuestion,
+  moveSection,
   publish,
   unpublish,
+  updateQuestion,
+  updateSection,
+  updateVersionSettings,
+  updateRiskBand,
+  addSectionFromLibrary,
+  copyFromLibrary,
 } from '../engine/index.js';
 
 /**
@@ -35,6 +54,8 @@ const initialState = {
   versions: QUESTIONNAIRE_VERSIONS,
   questionLibrary: QUESTION_LIBRARY,
   sectionLibrary: SECTION_LIBRARY,
+  assignments: ASSIGNMENTS,
+  responses: RESPONSES,
   auditLog: [],
 };
 
@@ -67,6 +88,29 @@ function reducer(state, action) {
 
     case 'ADD_VERSION':
       return { ...state, versions: [action.version, ...state.versions] };
+
+    case 'ADD_ASSIGNMENT':
+      return {
+        ...state,
+        assignments: [action.assignment, ...state.assignments],
+        responses: [action.response, ...state.responses],
+      };
+
+    case 'PATCH_RESPONSE':
+      return {
+        ...state,
+        responses: state.responses.map((response) =>
+          response.id === action.id
+            ? {
+                ...response,
+                ...action.patch,
+                history: action.historyEntry
+                  ? [...response.history, action.historyEntry]
+                  : response.history,
+              }
+            : response,
+        ),
+      };
 
     case 'LOG':
       return { ...state, auditLog: [action.entry, ...state.auditLog] };
@@ -146,6 +190,84 @@ export function QuestionnaireStoreProvider({ children }) {
         return { template, version };
       },
 
+      /* ---------------------- Penugasan ----------------------- */
+      createAssignment(input, actor) {
+        const assignment = {
+          id: makeId('asg'),
+          ...input,
+          assignedBy: actor?.name ?? '',
+          assignedAt: now(),
+        };
+        const response = {
+          id: makeId('res'),
+          assignmentId: assignment.id,
+          status: RESPONSE_STATUS.NOT_STARTED,
+          startedAt: null,
+          submittedAt: null,
+          answers: {},
+          attachments: {},
+          revision: 1,
+          history: [],
+        };
+
+        dispatch({ type: 'ADD_ASSIGNMENT', assignment, response });
+        log(actor, 'questionnaire.assigned', 'assignment', assignment.id, null, input.supplierName);
+
+        return { assignment, response };
+      },
+
+      /* --------------------- Respons pemasok ------------------- */
+      startResponse(responseId, actorName) {
+        dispatch({
+          type: 'PATCH_RESPONSE',
+          id: responseId,
+          patch: { status: RESPONSE_STATUS.IN_PROGRESS, startedAt: now() },
+          historyEntry: { at: now(), label: 'Pengisian dimulai', actor: actorName },
+        });
+      },
+
+      /**
+       * Menyimpan draf. Jawaban pada cabang yang menjadi tersembunyi ikut
+       * dibuang di sini, supaya data yang tidak lagi relevan tidak terbawa
+       * sampai pengiriman maupun perhitungan skor.
+       */
+      saveDraft(responseId, answers, attachments) {
+        dispatch({
+          type: 'PATCH_RESPONSE',
+          id: responseId,
+          patch: { answers, attachments, status: RESPONSE_STATUS.IN_PROGRESS },
+        });
+      },
+
+      submitResponse(responseId, actorName) {
+        dispatch({
+          type: 'PATCH_RESPONSE',
+          id: responseId,
+          patch: { status: RESPONSE_STATUS.SUBMITTED, submittedAt: now() },
+          historyEntry: { at: now(), label: 'Kuesioner dikirim', actor: actorName },
+        });
+      },
+
+      /* ----------------------- Builder ------------------------ */
+      /**
+       * Seluruh penyuntingan struktur lewat satu pintu. Versi yang bukan draf
+       * ditolak di sini, sehingga aturan "versi terbit tidak dapat disunting"
+       * tidak bergantung pada tombol yang kebetulan disembunyikan di antarmuka.
+       */
+      editVersion(versionId, operation, actor, logLabel) {
+        const version = state.versions.find((v) => v.id === versionId);
+        if (!version) return { ok: false, message: 'Versi tidak ditemukan.' };
+        if (!canEdit(version)) {
+          return { ok: false, message: 'Versi yang sudah terbit tidak dapat disunting.' };
+        }
+
+        const next = operation(version);
+        dispatch({ type: 'REPLACE_VERSION', version: next });
+        if (logLabel) log(actor, logLabel, 'version', versionId, null, null);
+
+        return { ok: true, version: next };
+      },
+
       /* ------------------------ Versi ------------------------- */
       saveVersion(version, actor) {
         dispatch({ type: 'REPLACE_VERSION', version: { ...version } });
@@ -180,6 +302,65 @@ export function QuestionnaireStoreProvider({ children }) {
         log(actor, 'questionnaire.archived', 'version', versionId, version.status, 'archived');
       },
 
+      /* Pembungkus tipis agar halaman builder tidak perlu mengenal engine. */
+      addSection(versionId, actor) {
+        return this.editVersion(versionId, (v) => addSection(v), actor, 'question.section_added');
+      },
+      updateSection(versionId, sectionId, patch, actor) {
+        return this.editVersion(versionId, (v) => updateSection(v, sectionId, patch), actor);
+      },
+      moveSection(versionId, sectionId, direction, actor) {
+        return this.editVersion(versionId, (v) => moveSection(v, sectionId, direction), actor);
+      },
+      deleteSection(versionId, sectionId, actor) {
+        return this.editVersion(versionId, (v) => deleteSection(v, sectionId), actor, 'question.section_deleted');
+      },
+      duplicateSection(versionId, sectionId, actor) {
+        return this.editVersion(versionId, (v) => duplicateSection(v, sectionId), actor, 'question.section_duplicated');
+      },
+
+      updateVersionSettings(versionId, patch, actor) {
+        return this.editVersion(versionId, (v) => updateVersionSettings(v, patch), actor, 'questionnaire.settings_changed');
+      },
+      updateRiskBand(versionId, bandId, patch, actor) {
+        return this.editVersion(versionId, (v) => updateRiskBand(v, bandId, patch), actor);
+      },
+      addSectionFromLibrary(versionId, sectionTemplate, actor) {
+        return this.editVersion(
+          versionId,
+          (v) => addSectionFromLibrary(v, sectionTemplate, state.questionLibrary),
+          actor,
+          'question.section_added_from_library',
+        );
+      },
+
+      addQuestion(versionId, sectionId, typeId, actor) {
+        return this.editVersion(versionId, (v) => addQuestion(v, sectionId, typeId), actor, 'question.added');
+      },
+      addFromLibrary(versionId, sectionId, libraryItem, actor) {
+        return this.editVersion(
+          versionId,
+          (v) => insertQuestion(v, sectionId, copyFromLibrary(libraryItem)),
+          actor,
+          'question.added_from_library',
+        );
+      },
+      updateQuestion(versionId, questionId, patch, actor) {
+        return this.editVersion(versionId, (v) => updateQuestion(v, questionId, patch), actor);
+      },
+      changeQuestionType(versionId, questionId, typeId, actor) {
+        return this.editVersion(versionId, (v) => changeQuestionType(v, questionId, typeId), actor);
+      },
+      moveQuestion(versionId, sectionId, questionId, direction, actor) {
+        return this.editVersion(versionId, (v) => moveQuestion(v, sectionId, questionId, direction), actor);
+      },
+      deleteQuestion(versionId, questionId, actor) {
+        return this.editVersion(versionId, (v) => deleteQuestion(v, questionId), actor, 'question.deleted');
+      },
+      duplicateQuestion(versionId, sectionId, questionId, actor) {
+        return this.editVersion(versionId, (v) => duplicateQuestion(v, sectionId, questionId), actor, 'question.duplicated');
+      },
+
       createNewVersion(versionId, actor) {
         const version = state.versions.find((v) => v.id === versionId);
         if (!version) return null;
@@ -198,7 +379,7 @@ export function QuestionnaireStoreProvider({ children }) {
         return next;
       },
     }),
-    [log, state.templates, state.versions],
+    [log, state.templates, state.versions, state.questionLibrary],
   );
 
   return (
@@ -221,6 +402,26 @@ export function useQuestionnaireActions() {
 }
 
 /* -------------------------- Pembantu -------------------------- */
+
+/** Menggabungkan penugasan dengan respons dan versinya. */
+export function assignmentView(state, assignmentId) {
+  const assignment = state.assignments.find((item) => item.id === assignmentId);
+  if (!assignment) return null;
+
+  return {
+    assignment,
+    response: state.responses.find((item) => item.assignmentId === assignmentId) ?? null,
+    version: state.versions.find((item) => item.id === assignment.versionId) ?? null,
+    template: state.templates.find((item) => item.id === assignment.templateId) ?? null,
+  };
+}
+
+/** Seluruh penugasan milik satu pemasok, lengkap dengan respons dan versinya. */
+export function assignmentsForSupplier(state, supplierId) {
+  return state.assignments
+    .filter((assignment) => assignment.supplierId === supplierId)
+    .map((assignment) => assignmentView(state, assignment.id));
+}
 
 export function versionsOf(versions, templateId) {
   return versions

@@ -21,7 +21,11 @@ import DocumentVerification from './pages/internal/DocumentVerification.jsx';
 import TemplateList from './questionnaire/pages/internal/TemplateList.jsx';
 import TemplateDetail from './questionnaire/pages/internal/TemplateDetail.jsx';
 import TemplateCreate from './questionnaire/pages/internal/TemplateCreate.jsx';
-import BuilderPlaceholder from './questionnaire/pages/internal/BuilderPlaceholder.jsx';
+import QuestionnaireBuilder from './questionnaire/pages/internal/QuestionnaireBuilder.jsx';
+import AssignmentList from './questionnaire/pages/internal/AssignmentList.jsx';
+import AssignmentCreate from './questionnaire/pages/internal/AssignmentCreate.jsx';
+import MyQuestionnaires from './questionnaire/pages/supplier/MyQuestionnaires.jsx';
+import ResponseWizard from './questionnaire/pages/supplier/ResponseWizard.jsx';
 
 import NotFound from './pages/NotFound.jsx';
 
@@ -43,6 +47,8 @@ export default function App() {
         <Route path="status" element={<SupplierStatus />} />
         <Route path="profil" element={<SupplierProfile />} />
         <Route path="persetujuan" element={<ConsentPage />} />
+        <Route path="kuesioner" element={<MyQuestionnaires />} />
+        <Route path="kuesioner/:responseId" element={<ResponseWizard />} />
         {/* Tautan lama dari email undangan tetap berfungsi */}
         <Route path="profil-onboarding" element={<Navigate to="/portal/profil" replace />} />
       </Route>
@@ -60,8 +66,10 @@ export default function App() {
         <Route path="questionnaire/:templateId" element={<TemplateDetail />} />
         <Route
           path="questionnaire/:templateId/v/:versionId"
-          element={<BuilderPlaceholder />}
+          element={<QuestionnaireBuilder />}
         />
+        <Route path="penugasan" element={<AssignmentList />} />
+        <Route path="penugasan/baru" element={<AssignmentCreate />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

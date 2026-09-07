@@ -2,6 +2,7 @@ import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState, useCurrentSubmission } from '../../store/AppStore.jsx';
 import { STATUS } from '../../lib/constants.js';
+import { useQuestionnaireState } from '../../questionnaire/store/QuestionnaireStore.jsx';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
@@ -12,6 +13,7 @@ export default function SupplierLayout() {
   const t = useT();
   const { session } = useAppState();
   const submission = useCurrentSubmission();
+  const questionnaireState = useQuestionnaireState();
   const { signOut } = useAppActions();
   const navigate = useNavigate();
 
@@ -19,6 +21,15 @@ export default function SupplierLayout() {
 
   const isActive = submission.status === STATUS.ACTIVE;
   const profileDone = Object.values(submission.profile.completed).every(Boolean);
+
+  const myAssignments = questionnaireState.assignments.filter(
+    (item) => item.supplierId === submission.id,
+  );
+  const assignedCount = myAssignments.length;
+  const openCount = myAssignments.filter((item) => {
+    const response = questionnaireState.responses.find((r) => r.assignmentId === item.id);
+    return response && response.status !== 'submitted';
+  }).length;
 
   const groups = [
     {
@@ -34,6 +45,18 @@ export default function SupplierLayout() {
           : []),
       ],
     },
+    // Menu kuesioner hanya muncul bila memang ada yang ditugaskan,
+    // supaya pemasok tanpa penugasan tidak melihat halaman kosong.
+    ...(assignedCount > 0
+      ? [
+          {
+            label: 'Kuesioner',
+            items: [
+              { to: '/portal/kuesioner', label: 'Kuesioner saya', icon: 'consent', count: openCount },
+            ],
+          },
+        ]
+      : []),
   ];
 
   return (
