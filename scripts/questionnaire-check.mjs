@@ -4,6 +4,18 @@
  * memastikan fungsi berjalan.
  */
 import {
+  REVIEW_DECISION,
+  RESPONSE_STATUS,
+  awaitsReview,
+  canSupplierEdit,
+  commentsFor,
+  isSettled,
+  latestReview,
+  questionsNeedingRevision,
+  responseRate,
+  revisionBlockers,
+  riskDistribution,
+  summarise,
   addSectionFromLibrary,
   updateVersionSettings,
   updateRiskBand,
@@ -347,7 +359,7 @@ check('P9 pita lain tidak ikut berubah', banded.riskBands.find((b) => b.id === '
 const versionIds = new Set(QUESTIONNAIRE_VERSIONS.map((v) => v.id));
 const templateIds = new Set(QUESTIONNAIRE_TEMPLATES.map((t) => t.id));
 
-check('A1 tiga penugasan tersedia', ASSIGNMENTS.length, 3);
+check('A1 empat penugasan tersedia', ASSIGNMENTS.length, 4);
 check('A2 setiap penugasan menunjuk versi yang ada', ASSIGNMENTS.every((a) => versionIds.has(a.versionId)), true);
 check('A3 setiap penugasan menunjuk template yang ada', ASSIGNMENTS.every((a) => templateIds.has(a.templateId)), true);
 
@@ -394,6 +406,84 @@ check('A11 respons setengah jalan masih terhalang', submissionBlockers(partialVe
 const beforePrune = { ...partialResponse.answers, q_audit_iso_doc: ['berkas lama'] };
 const afterPrune = pruneHiddenAnswers(partialVersion, { ...beforePrune, q_audit_iso: 'no' });
 check('A12 jawaban cabang tersembunyi tidak ikut terkirim', 'q_audit_iso_doc' in afterPrune, false);
+
+/* ---------------- Tinjauan & revisi (Fase 6) ---------------- */
+const reviewVersion = QUESTIONNAIRE_VERSIONS.find((v) => v.id === 'ver_audit_v1');
+
+const baseResponse = {
+  id: 'r1',
+  status: RESPONSE_STATUS.SUBMITTED,
+  revision: 1,
+  answers: { q_audit_legal: 'PT Contoh', q_audit_iso: 'yes' },
+  attachments: {},
+  reviews: [],
+};
+
+check('T1 respons terkirim menunggu tinjauan', awaitsReview(baseResponse), true);
+check('T2 respons terkirim belum final', isSettled(baseResponse), false);
+
+// Meminta revisi menandai sebagian pertanyaan saja.
+const revised = {
+  ...baseResponse,
+  status: RESPONSE_STATUS.REVISION_REQUIRED,
+  reviews: [
+    {
+      id: 'rv1',
+      revision: 1,
+      decision: REVIEW_DECISION.REVISION,
+      reviewerName: 'Dewi',
+      decidedAt: new Date().toISOString(),
+      note: 'Sebagian perlu diperbaiki.',
+      flagged: [{ questionId: 'q_audit_legal', comment: 'Nama belum sesuai akta.', attachmentSnapshot: [] }],
+      comments: [],
+      answerSnapshot: { ...baseResponse.answers },
+    },
+  ],
+};
+
+const needing = questionsNeedingRevision(revised);
+check('T3 hanya pertanyaan bertanda yang perlu diperbaiki', needing.size, 1);
+check('T4 pertanyaan bertanda dapat disunting pemasok', canSupplierEdit(revised, 'q_audit_legal'), true);
+check('T5 pertanyaan lain terkunci saat revisi', canSupplierEdit(revised, 'q_audit_iso'), false);
+check('T6 respons terkirim tidak dapat disunting pemasok', canSupplierEdit(baseResponse, 'q_audit_legal'), false);
+
+// Kirim ulang tanpa memperbaiki apa pun harus tertahan.
+check('T7 revisi tanpa perubahan tertahan', revisionBlockers(revised, reviewVersion).length, 1);
+
+const fixed = { ...revised, answers: { ...revised.answers, q_audit_legal: 'PT Contoh Sejahtera' } };
+check('T8 revisi yang benar-benar diperbaiki lolos', revisionBlockers(fixed, reviewVersion).length, 0);
+
+check('T9 komentar peninjau tercatat per pertanyaan', commentsFor(revised, 'q_audit_legal').length, 1);
+check('T10 riwayat tinjauan tidak hilang', latestReview(revised).revision, 1);
+
+const approved = { ...baseResponse, status: RESPONSE_STATUS.APPROVED };
+check('T11 respons disetujui dianggap final', isSettled(approved), true);
+check('T12 respons final tidak lagi menunggu tinjauan', awaitsReview(approved), false);
+
+/* ---------------- Dashboard (Fase 7) ---------------- */
+const kpi = summarise({
+  templates: QUESTIONNAIRE_TEMPLATES,
+  versions: QUESTIONNAIRE_VERSIONS,
+  assignments: ASSIGNMENTS,
+  responses: RESPONSES,
+});
+
+check('K1 jumlah template terhitung', kpi.templates, QUESTIONNAIRE_TEMPLATES.length);
+check('K2 versi terbit terhitung', kpi.published, QUESTIONNAIRE_VERSIONS.filter((v) => v.status === 'published').length);
+check('K3 penugasan terhitung', kpi.assigned, ASSIGNMENTS.length);
+check('K4 seluruh respons masuk salah satu status', kpi.notStarted + kpi.inProgress + kpi.submitted + kpi.underReview + kpi.revisionRequired + kpi.approved + kpi.rejected, RESPONSES.length);
+check('K5 penugasan lewat tenggat terdeteksi', kpi.overdue > 0, true);
+
+const rate = responseRate(ASSIGNMENTS, RESPONSES);
+check('K6 tingkat respons berada di 0–100', rate >= 0 && rate <= 100, true);
+
+const dist = riskDistribution([
+  { total: 95, riskLevel: 'low' },
+  { total: 65, riskLevel: 'medium' },
+  { total: null },
+]);
+check('K7 sebaran risiko menghitung tiap tingkat', dist.low + dist.medium + dist.unscored, 3);
+check('K8 respons tanpa skor masuk kategori sendiri', dist.unscored, 1);
 
 console.log(`\n${failures === 0 ? 'Seluruh pemeriksaan questionnaire lolos.' : `${failures} pemeriksaan gagal.`}`);
 process.exit(failures === 0 ? 0 : 1);

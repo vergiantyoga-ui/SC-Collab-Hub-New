@@ -122,9 +122,14 @@ src/
                 ConsentPage, SupplierStatus
     internal/   InternalHome, QueueDashboard, SubmissionReview,
                 InternalRegistration, ManagerApprovals, DocumentVerification
+  qualification/
+    data/       referenceData.js  UNSPSC (subset) dan negara ISO 3166-1
+    qualificationRules.js         kelayakan, hak akses, validasi baris
+    pages/      QualificationList.jsx, QualificationForm.jsx
   questionnaire/
     engine/     schema.js        entitas, JSDoc typedef, pembekuan versi
                 builderOps.js    operasi penyuntingan struktur (murni)
+                reviewRules.js   tinjauan, revisi, ringkasan dashboard
                 questionTypes.js registri 18 tipe soal
                 conditions.js    percabangan pertanyaan
                 answerValidation.js  wajib, format, aturan lampiran
@@ -137,17 +142,55 @@ src/
                           PropertiesPanel, ConditionEditor,
                           AttachmentRulePanel, ScoringPanel, LibraryPicker)
                 render/  (QuestionRenderer + lampiran & tanda tangan)
-                shared/  (status, skor, bilah kemajuan)
+                shared/  (status, skor, bilah kemajuan, grafik SVG)
     pages/      internal/ (TemplateList, TemplateDetail, TemplateCreate,
                           QuestionnaireBuilder, AssignmentList,
-                          AssignmentCreate)
+                          AssignmentCreate, ReviewQueue, ReviewDetail,
+                          QuestionnaireDashboard, NotificationList,
+                          AuditTrail)
                 supplier/ (MyQuestionnaires, ResponseWizard)
   styles/       global.css   token warna, tipografi, komponen dasar
                 patterns.css pola tata letak lintas halaman
 scripts/        flow-check.mjs — pemeriksaan transisi status
 ```
 
-## Modul Questionnaire (Fase 1–5)
+## Modul Kualifikasi Pemasok
+
+Setelah pemasok mengirimkan profilnya, staf procurement menentukan kategori
+komoditas dan negara asal pasokannya.
+
+- **Akses** — Staf Procurement dan Staf Procurement Admin dapat mengisi; Manager
+  Procurement dapat meninjau tanpa menyunting.
+- **Kelayakan** — gerbangnya adalah **profil yang sudah dikirim pemasok**, bukan
+  dokumen yang sudah diverifikasi, sehingga kualifikasi berjalan berdampingan
+  dengan verifikasi dokumen alih-alih mengantre di belakangnya. Kedua jalur
+  onboarding bertemu di titik ini: pada jalur undangan pemasok mengirim profilnya
+  sendiri, sedangkan pada registrasi internal manager menyetujui isian admin
+  lebih dahulu sebelum pemasok meninjau dan mengirimkannya. Status yang memenuhi
+  syarat: `Menunggu verifikasi dokumen`, `Perlu perbaikan dokumen`, dan `Aktif`.
+  Daftar menampilkan status onboarding tiap pemasok agar staf punya konteks, dan
+  pemasok yang belum layak tetap menampilkan alasannya secara spesifik.
+- **Baris ganda** — satu baris mewakili satu pasangan komoditas dan negara.
+  Baris dapat ditambah satuan atau lima sekaligus, disalin untuk negara lain,
+  dan dihapus. Pasangan komoditas–negara yang berulang ditolak.
+- **Kategori komoditas** memakai dropdown bertingkat berdasarkan segmen UNSPSC;
+  **negara pemasok** memakai daftar ISO 3166-1.
+- Draf dapat disimpan tanpa kelengkapan; menyelesaikan kualifikasi menuntut
+  seluruh baris terisi sah.
+
+⚠️ **Daftar komoditas memuat 42 butir yang relevan bagi manufaktur kosmetik**,
+dikurasi dari taksonomi UNSPSC — bukan salinan lengkapnya. Ini disengaja: daftar
+resmi berisi lebih dari 150.000 kode yang sebagian besar tidak akan pernah dipakai
+Paragon, sehingga menampilkan seluruhnya justru menyulitkan staf menemukan
+kategori yang tepat.
+
+Kode segmen dua digit mengikuti taksonomi resmi. Kode delapan digit tiap
+komoditas **belum dicocokkan dengan daftar UNSPSC resmi** — nomor inilah yang
+terbawa ke sistem pengadaan dan pelaporan, jadi mintalah tim master data
+memverifikasinya sebelum dipakai di produksi. Menambah atau mengoreksi butir
+cukup dilakukan pada `UNSPSC_COMMODITIES`.
+
+## Modul Questionnaire (Fase 1–7)
 
 Mesin kuesioner modular untuk audit pemasok, pernyataan kepatuhan, dan
 asesmen lain. Tipe kuesioner tidak di-hardcode: menambah jenis baru cukup
@@ -190,7 +233,22 @@ Yang sudah berjalan:
   unggahan dokumen sesuai aturan tiap soal, serta prapemeriksaan sebelum kirim
   yang menyebutkan persis apa yang masih kurang.
 
-Belum dikerjakan: tinjauan dan revisi (Fase 6), dashboard dan notifikasi (Fase 7).
+- **Tinjauan** — peninjau melihat jawaban per seksi beserta lampirannya, skor,
+  dan kelengkapan; menandai pertanyaan yang perlu diperbaiki satu per satu
+  dengan alasannya; lalu menyetujui, menolak, atau meminta revisi.
+- **Revisi** — pemasok hanya dapat menyunting pertanyaan yang ditandai; jawaban
+  lain tetap terkunci. Pengiriman ulang tertahan bila jawaban bertanda belum
+  benar-benar berubah. Setiap putaran tersimpan sebagai riwayat yang tidak
+  pernah dihapus.
+- **Dashboard** — dua belas KPI, tingkat respons, sebaran risiko, sebaran tipe
+  kuesioner, status pengisian, dan skor per respons. Grafik digambar dengan SVG
+  sendiri, tanpa pustaka grafik tambahan, dan setiap grafik disertai tabel angka
+  tersembunyi agar terbaca pembaca layar.
+- **Notifikasi dalam aplikasi** untuk penugasan baru, pengiriman, dan keputusan
+  tinjauan, dengan penanda belum dibaca pada menu samping.
+- **Jejak audit** — setiap tindakan penting beserta pelaku, waktu, dan objeknya.
+
+Seluruh tujuh fase selesai.
 
 Rancangan lengkap termasuk skema basis data dan spesifikasi API ada pada
 dokumen proposal terpisah; keduanya artefak rancangan untuk tim backend,
@@ -281,12 +339,21 @@ keadaan terkini.
 | 3 | Builder: seksi, pertanyaan, panel properti | **Selesai** |
 | 4 | Lampiran, kondisi, skoring, pustaka soal & seksi | **Selesai** |
 | 5 | Penugasan dan portal pemasok | **Selesai** |
-| 6 | Tinjauan, revisi, riwayat | Belum |
-| 7 | Dashboard, notifikasi, penyempurnaan i18n | Belum |
+| 6 | Tinjauan, revisi, riwayat | **Selesai** |
+| 7 | Dashboard, notifikasi | **Selesai** |
 
-Tipe soal **tabel/matriks** belum tersedia pada antarmuka pengisian; pemasok
-melihat catatan yang mengarahkan memakai teks panjang atau lampiran. Tanda tangan
-berupa kanvas gambar tangan, bukan tanda tangan elektronik tersertifikasi.
+Yang masih terbuka setelah tujuh fase:
+
+- **Tipe soal tabel/matriks** belum punya perender di sisi pengisian; pemasok
+  melihat catatan yang mengarahkan memakai teks panjang atau lampiran.
+- **Halaman kelola pustaka** soal dan seksi belum ada. Pustakanya sudah dapat
+  dipakai di builder, tetapi isinya masih data tetap.
+- **Pengiriman email** berada di sisi server. Yang tersedia hanya notifikasi
+  dalam aplikasi beserta pemicunya.
+- **Terjemahan** modul kuesioner masih Bahasa Indonesia; kunci EN dan ZH
+  menyusul dengan pola fallback yang sudah ada.
+- **Tanda tangan** berupa kanvas gambar tangan, bukan tanda tangan elektronik
+  tersertifikasi.
 
 ## Keputusan yang sudah diambil
 
