@@ -1,4 +1,9 @@
-import { LEGAL_STATUS_ENTITY } from './masterData.js';
+import {
+  LEGAL_STATUS_ENTITY,
+  TAX_DOCUMENTS,
+  TRANSACTION_TYPES,
+  isTaxDocumentTouched,
+} from './masterData.js';
 import {
   collectErrors,
   normalizeNpwp,
@@ -66,12 +71,25 @@ export function validateSection(sectionId, values) {
   }
 
   if (sectionId === 'tax') {
-    return collectErrors({
+    const found = collectErrors({
+      taxName: required(values.taxName, 'Tax name'),
+      taxAddress: required(values.taxAddress, 'Tax address'),
       nik: validateNik(values.nik),
       npwp: validateNpwp(values.npwp),
       ktpDocument: values.ktpDocument ? null : 'Scan KTP wajib diunggah.',
-      siupDocument: values.siupDocument ? null : 'Scan SIUP wajib diunggah.',
+      npwpDocument: values.npwpDocument ? null : 'Scan NPWP wajib diunggah.',
+      transactionType: TRANSACTION_TYPES.some((t) => t.code === values.transactionType)
+        ? null
+        : 'Pilih transaction type.',
+      tin: required(values.tin, 'TIN'),
+      tinDocument: values.tinDocument ? null : 'Dokumen TIN wajib diunggah.',
+      brn: required(values.brn, 'BRN'),
+      brnDocument: values.brnDocument ? null : 'Dokumen BRN wajib diunggah.',
+      gstNumber: required(values.gstNumber, 'Nomor GST'),
     });
+
+    Object.assign(found, validateTaxDocuments(values.documents ?? {}));
+    return found;
   }
 
   if (sectionId === 'documents') {
@@ -138,6 +156,41 @@ export function validateSection(sectionId, values) {
   }
 
   return {};
+}
+
+/**
+ * Dokumen perpajakan berjangka waktu.
+ *
+ * Dokumen wajib harus lengkap. Dokumen opsional boleh dikosongkan seluruhnya,
+ * tetapi begitu satu kolomnya diisi, sisanya ikut diwajibkan — dokumen setengah
+ * terisi menyimpan nomor tanpa berkas atau berkas tanpa masa berlaku, dan
+ * keduanya tidak berguna saat verifikasi.
+ */
+export function validateTaxDocuments(documents) {
+  const found = {};
+
+  TAX_DOCUMENTS.forEach(({ key, label, required: isRequired }) => {
+    const doc = documents[key] ?? {};
+    const touched = isTaxDocumentTouched(doc);
+
+    if (!isRequired && !touched) return;
+
+    const prefix = `documents.${key}`;
+
+    if (!doc.number?.trim()) found[`${prefix}.number`] = `Nomor ${label} wajib diisi.`;
+    if (!doc.file) found[`${prefix}.file`] = `Berkas ${label} wajib diunggah.`;
+    if (!doc.validFrom) found[`${prefix}.validFrom`] = 'Tanggal mulai berlaku wajib diisi.';
+    if (!doc.validUntil) {
+      found[`${prefix}.validUntil`] = 'Tanggal akhir berlaku wajib diisi.';
+    } else if (doc.validFrom && new Date(doc.validUntil) < new Date(doc.validFrom)) {
+      found[`${prefix}.validUntil`] = 'Tanggal akhir mendahului tanggal mulai.';
+    } else {
+      const expiry = validateExpiry(doc.validUntil, { required: true });
+      if (expiry) found[`${prefix}.validUntil`] = expiry;
+    }
+  });
+
+  return found;
 }
 
 /** NPWP 15 digit disimpan dalam format 16 digit. */

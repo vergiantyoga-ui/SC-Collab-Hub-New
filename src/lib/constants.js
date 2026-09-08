@@ -153,6 +153,12 @@ export {
   labelOf,
   labelWithCode,
   asOptions,
+  TRANSACTION_TYPES,
+  TAX_DOCUMENTS,
+  eInvoiceFor,
+  makeTaxDocument,
+  makeTaxDocuments,
+  isTaxDocumentTouched,
 } from './masterData.js';
 
 export const COUNTRIES = ['Indonesia', 'Malaysia'];

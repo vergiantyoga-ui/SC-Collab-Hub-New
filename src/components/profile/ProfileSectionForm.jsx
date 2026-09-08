@@ -20,10 +20,14 @@ import {
   OTV_STATUSES,
   TARGET_COMPANIES,
   TERMS_OF_PAYMENT,
+  TAX_DOCUMENTS,
+  TRANSACTION_TYPES,
   VENDOR_DIRECT_TYPES,
   VENDOR_TYPES,
   asOptions,
   detailsForVendorType,
+  eInvoiceFor,
+  makeTaxDocument,
 } from '../../lib/constants.js';
 import { formatNpwp, wasNpwpNormalized } from '../../lib/validation.js';
 import { LICENSES, normalizeSection, validateSection } from '../../lib/profileRules.js';
@@ -86,53 +90,225 @@ export default function ProfileSectionForm({ sectionId, value, onSubmit, onCance
 /* ------------------------------------------------------------------ */
 function TaxSection({ values, set, errors }) {
   const npwpNormalised = wasNpwpNormalized(values.npwp);
+  const documents = values.documents ?? {};
+
+  const setDocument = (key, patch) =>
+    set({
+      documents: {
+        ...documents,
+        [key]: { ...(documents[key] ?? makeTaxDocument()), ...patch },
+      },
+    });
 
   return (
-    <>
-      <div className="field-grid">
-        <TextField
-          label="Nomor NIK"
-          inputMode="numeric"
-          maxLength={16}
-          value={values.nik}
-          onChange={(e) => set({ nik: e.target.value.replace(/\D/g, '') })}
-          error={errors.nik}
-          hint="16 digit sesuai KTP penanggung jawab."
-          required
-        />
-        <TextField
-          label="Nomor NPWP"
-          inputMode="numeric"
-          maxLength={16}
-          value={values.npwp}
-          onChange={(e) => set({ npwp: e.target.value.replace(/\D/g, '') })}
-          error={errors.npwp}
-          hint={
-            npwpNormalised
-              ? `NPWP 15 digit akan disimpan sebagai ${formatNpwp(values.npwp)}.`
-              : '16 digit sesuai format NPWP terbaru.'
-          }
-          required
-        />
-      </div>
+    <div className="stack-lg">
+      {/* --- Identitas pajak --- */}
+      <section>
+        <h3 className="taxgroup__title">Identitas pajak</h3>
+
+        <div className="field-grid">
+          <TextField
+            label="Tax name"
+            className="span-full"
+            value={values.taxName}
+            onChange={(e) => set({ taxName: e.target.value })}
+            error={errors.taxName}
+            hint="Nama wajib pajak sesuai dokumen NPWP."
+            required
+          />
+          <TextAreaField
+            label="Tax address"
+            className="span-full"
+            rows={2}
+            value={values.taxAddress}
+            onChange={(e) => set({ taxAddress: e.target.value })}
+            error={errors.taxAddress}
+            hint="Alamat wajib pajak sesuai dokumen NPWP."
+            required
+          />
+          <TextField
+            label="Nomor NIK"
+            inputMode="numeric"
+            maxLength={16}
+            value={values.nik}
+            onChange={(e) => set({ nik: e.target.value.replace(/\D/g, '') })}
+            error={errors.nik}
+            hint="16 digit sesuai KTP penanggung jawab."
+            required
+          />
+          <TextField
+            label="Nomor NPWP"
+            inputMode="numeric"
+            maxLength={16}
+            value={values.npwp}
+            onChange={(e) => set({ npwp: e.target.value.replace(/\D/g, '') })}
+            error={errors.npwp}
+            hint={
+              npwpNormalised
+                ? `NPWP 15 digit akan disimpan sebagai ${formatNpwp(values.npwp)}.`
+                : '16 digit sesuai format NPWP terbaru.'
+            }
+            required
+          />
+          <SelectField
+            label="Transaction type"
+            options={asOptions(TRANSACTION_TYPES)}
+            value={values.transactionType}
+            onChange={(e) => set({ transactionType: e.target.value })}
+            error={errors.transactionType}
+            required
+          />
+          <div className="field">
+            <span className="field__label">E-invoice provided</span>
+            <p className="taxgroup__derived">
+              {eInvoiceFor(values.transactionType)}
+            </p>
+            <p className="field__hint">
+              Ditentukan otomatis: bernilai Yes bila transaction type adalah Goods.
+            </p>
+          </div>
+        </div>
+
+        <div className="field-grid">
+          <FileField
+            label="Scan KTP"
+            value={values.ktpDocument}
+            onChange={(file) => set({ ktpDocument: file })}
+            error={errors.ktpDocument}
+            required
+          />
+          <FileField
+            label="Scan NPWP"
+            value={values.npwpDocument}
+            onChange={(file) => set({ npwpDocument: file })}
+            error={errors.npwpDocument}
+            required
+          />
+        </div>
+      </section>
+
+      {/* --- Dokumen perpajakan berjangka waktu --- */}
+      <section>
+        <h3 className="taxgroup__title">Dokumen perpajakan</h3>
+        <p className="taxgroup__lede">
+          Isi nomor, unggah berkasnya, lalu tentukan masa berlakunya. Dokumen selain
+          SIUP boleh dikosongkan bila perusahaan Anda tidak memilikinya — namun bila
+          sebuah dokumen mulai diisi, seluruh kolomnya harus dilengkapi.
+        </p>
+
+        {TAX_DOCUMENTS.map((item) => (
+          <TaxDocumentBlock
+            key={item.key}
+            meta={item}
+            value={documents[item.key] ?? makeTaxDocument()}
+            errors={errors}
+            onChange={(patch) => setDocument(item.key, patch)}
+          />
+        ))}
+      </section>
+
+      {/* --- Identitas pajak luar negeri --- */}
+      <section>
+        <h3 className="taxgroup__title">Identitas pajak lainnya</h3>
+
+        <div className="field-grid">
+          <TextField
+            label="TIN"
+            value={values.tin}
+            onChange={(e) => set({ tin: e.target.value })}
+            error={errors.tin}
+            hint="Tax Identification Number."
+            required
+          />
+          <FileField
+            label="Dokumen TIN"
+            value={values.tinDocument}
+            onChange={(file) => set({ tinDocument: file })}
+            error={errors.tinDocument}
+            required
+          />
+          <TextField
+            label="BRN"
+            value={values.brn}
+            onChange={(e) => set({ brn: e.target.value })}
+            error={errors.brn}
+            hint="Business Registration Number."
+            required
+          />
+          <FileField
+            label="Dokumen BRN"
+            value={values.brnDocument}
+            onChange={(file) => set({ brnDocument: file })}
+            error={errors.brnDocument}
+            required
+          />
+          <TextField
+            label="Nomor GST"
+            className="span-full"
+            value={values.gstNumber}
+            onChange={(e) => set({ gstNumber: e.target.value })}
+            error={errors.gstNumber}
+            required
+          />
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/**
+ * Satu dokumen perpajakan: nomor, berkas, dan masa berlakunya.
+ * Bentuknya sama untuk keenam dokumen, jadi cukup satu komponen.
+ */
+function TaxDocumentBlock({ meta, value, errors, onChange }) {
+  const prefix = `documents.${meta.key}`;
+
+  return (
+    <fieldset className="taxdoc">
+      <legend className="taxdoc__legend">
+        {meta.label}
+        {meta.required ? (
+          <span className="field__req" aria-hidden="true">
+            *
+          </span>
+        ) : (
+          <span className="taxdoc__optional">opsional</span>
+        )}
+      </legend>
 
       <div className="field-grid">
-        <FileField
-          label="Scan KTP"
-          value={values.ktpDocument}
-          onChange={(file) => set({ ktpDocument: file })}
-          error={errors.ktpDocument}
-          required
+        <TextField
+          label="Nomor"
+          value={value.number}
+          onChange={(e) => onChange({ number: e.target.value })}
+          error={errors[`${prefix}.number`]}
+          required={meta.required}
         />
         <FileField
-          label="Scan SIUP"
-          value={values.siupDocument}
-          onChange={(file) => set({ siupDocument: file })}
-          error={errors.siupDocument}
-          required
+          label="Berkas"
+          value={value.file}
+          onChange={(file) => onChange({ file })}
+          error={errors[`${prefix}.file`]}
+          required={meta.required}
+        />
+        <TextField
+          label="Berlaku mulai"
+          type="date"
+          value={value.validFrom}
+          onChange={(e) => onChange({ validFrom: e.target.value })}
+          error={errors[`${prefix}.validFrom`]}
+          required={meta.required}
+        />
+        <TextField
+          label="Berlaku sampai"
+          type="date"
+          value={value.validUntil}
+          onChange={(e) => onChange({ validUntil: e.target.value })}
+          error={errors[`${prefix}.validUntil`]}
+          required={meta.required}
         />
       </div>
-    </>
+    </fieldset>
   );
 }
 

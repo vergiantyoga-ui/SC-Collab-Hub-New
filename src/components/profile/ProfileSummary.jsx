@@ -8,6 +8,9 @@ import {
   VENDOR_DIRECT_TYPES,
   VENDOR_TYPES,
   VENDOR_TYPE_DETAILS,
+  TAX_DOCUMENTS,
+  TRANSACTION_TYPES,
+  eInvoiceFor,
   labelOf,
 } from '../../lib/masterData.js';
 
@@ -102,12 +105,53 @@ export default function ProfileSummary({
         <Block title="Data pajak" visible={showHeadings}>
           <DataList
             items={[
+              { label: 'Tax name', value: profile.tax.taxName, full: true },
+              { label: 'Tax address', value: profile.tax.taxAddress, full: true },
               { label: 'NIK', value: profile.tax.nik },
               { label: 'NPWP', value: profile.tax.npwp ? formatNpwp(profile.tax.npwp) : null },
+              {
+                label: 'Transaction type',
+                value: labelOf(TRANSACTION_TYPES, profile.tax.transactionType),
+              },
+              { label: 'E-invoice provided', value: eInvoiceFor(profile.tax.transactionType) },
+              { label: 'TIN', value: profile.tax.tin },
+              { label: 'BRN', value: profile.tax.brn },
+              { label: 'Nomor GST', value: profile.tax.gstNumber, full: true },
             ]}
           />
+
           <FileRow label="Scan KTP" file={profile.tax.ktpDocument} />
-          <FileRow label="Scan SIUP" file={profile.tax.siupDocument} />
+          <FileRow label="Scan NPWP" file={profile.tax.npwpDocument} />
+          <FileRow label="Dokumen TIN" file={profile.tax.tinDocument} />
+          <FileRow label="Dokumen BRN" file={profile.tax.brnDocument} />
+
+          <div style={{ marginTop: 'var(--sp-4)' }}>
+            {TAX_DOCUMENTS.map(({ key, label }) => {
+              const doc = profile.tax.documents?.[key];
+              if (!doc?.number && !doc?.file) {
+                return (
+                  <p key={key} className="text-sm muted" style={{ marginBottom: 'var(--sp-2)' }}>
+                    {label} — tidak diisi
+                  </p>
+                );
+              }
+
+              return (
+                <div key={key} style={{ marginBottom: 'var(--sp-4)' }}>
+                  <DataList
+                    items={[
+                      { label: `${label} — nomor`, value: doc.number },
+                      {
+                        label: 'Masa berlaku',
+                        value: `${formatDate(doc.validFrom)} sampai ${formatDate(doc.validUntil)}`,
+                      },
+                    ]}
+                  />
+                  <FileRow label={`Berkas ${label}`} file={doc.file} />
+                </div>
+              );
+            })}
+          </div>
         </Block>
       )}
 

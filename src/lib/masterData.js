@@ -133,6 +133,60 @@ export const VENDOR_DIRECT_TYPES = [
 ];
 
 /* ------------------------------------------------------------------ */
+/* Data pajak                                                         */
+/* ------------------------------------------------------------------ */
+
+export const TRANSACTION_TYPES = [
+  { code: 'T01', name: 'Goods' },
+  { code: 'T02', name: 'CSR Cash Money' },
+  { code: 'T03', name: 'Rent' },
+  { code: 'T04', name: 'Other' },
+];
+
+/** Jenis transaksi yang mengaktifkan e-invoice. */
+export const EINVOICE_TRANSACTION_TYPE = 'T01';
+
+/**
+ * Penanda e-invoice diturunkan dari jenis transaksi, bukan diisi pengguna dan
+ * bukan disimpan. Menyimpan nilai turunan membuka peluang datanya menyimpang
+ * bila aturannya berubah; menghitungnya saat dibutuhkan selalu benar.
+ */
+export function eInvoiceFor(transactionTypeCode) {
+  return transactionTypeCode === EINVOICE_TRANSACTION_TYPE ? 'Yes' : 'No';
+}
+
+/**
+ * Dokumen perpajakan yang menyimpan nomor, berkas, dan masa berlaku.
+ * `required` menandai dokumen yang wajib dimiliki setiap pemasok.
+ */
+export const TAX_DOCUMENTS = [
+  { key: 'siup', label: 'SIUP', required: true },
+  { key: 'pkp', label: 'PKP', required: false },
+  { key: 'sbu', label: 'SBU', required: false },
+  { key: 'skb', label: 'SKB', required: false },
+  { key: 'suratKeteranganPp', label: 'Surat Keterangan PP', required: false },
+  { key: 'codCor', label: 'COD/COR', required: false },
+];
+
+/** Bentuk kosong satu dokumen perpajakan. */
+export function makeTaxDocument() {
+  return { number: '', file: null, validFrom: '', validUntil: '' };
+}
+
+/** Seluruh dokumen perpajakan dalam keadaan kosong. */
+export function makeTaxDocuments() {
+  return TAX_DOCUMENTS.reduce((acc, item) => {
+    acc[item.key] = makeTaxDocument();
+    return acc;
+  }, {});
+}
+
+/** Sebuah dokumen dianggap tersentuh bila salah satu kolomnya terisi. */
+export function isTaxDocumentTouched(doc) {
+  return Boolean(doc?.number?.trim() || doc?.file || doc?.validFrom || doc?.validUntil);
+}
+
+/* ------------------------------------------------------------------ */
 /* Pembantu tampilan                                                  */
 /* ------------------------------------------------------------------ */
 

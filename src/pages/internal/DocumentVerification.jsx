@@ -20,7 +20,15 @@ import { useT } from '../../i18n/LanguageContext.jsx';
  */
 const CHECKABLE_DOCUMENTS = [
   { id: 'ktp', label: 'Scan KTP' },
-  { id: 'siup', label: 'Scan SIUP' },
+  { id: 'npwp', label: 'Scan NPWP' },
+  { id: 'siup', label: 'SIUP' },
+  { id: 'pkp', label: 'PKP' },
+  { id: 'sbu', label: 'SBU' },
+  { id: 'skb', label: 'SKB' },
+  { id: 'suratKeteranganPp', label: 'Surat Keterangan PP' },
+  { id: 'codCor', label: 'COD/COR' },
+  { id: 'tin', label: 'Dokumen TIN' },
+  { id: 'brn', label: 'Dokumen BRN' },
   { id: 'akta', label: 'Akta pendirian' },
   { id: 'sk', label: 'SK pendirian' },
   { id: 'izin', label: 'Surat izin usaha' },

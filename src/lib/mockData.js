@@ -1,4 +1,5 @@
 import { PATH, ROLE, STATUS } from './constants.js';
+import { makeTaxDocuments } from './masterData.js';
 
 /**
  * Data contoh untuk demo front-end. Tidak ada backend:
@@ -33,8 +34,24 @@ export const INTERNAL_USERS = [
   },
 ];
 
+const emptyTax = () => ({
+  taxName: '',
+  taxAddress: '',
+  nik: '',
+  npwp: '',
+  ktpDocument: null,
+  npwpDocument: null,
+  transactionType: '',
+  tin: '',
+  tinDocument: null,
+  brn: '',
+  brnDocument: null,
+  gstNumber: '',
+  documents: makeTaxDocuments(),
+});
+
 const emptyProfile = () => ({
-  tax: { nik: '', npwp: '', ktpDocument: null, siupDocument: null },
+  tax: emptyTax(),
   documents: { aktaPendirian: null, skPendirian: null, suratIzinUsaha: null },
   licenses: {
     gmp: { number: '', expiryDate: '', file: null, notApplicable: false },
@@ -55,10 +72,33 @@ const emptyProfile = () => ({
 const filledProfile = (overrides = {}) => ({
   ...emptyProfile(),
   tax: {
+    taxName: 'PT Sumber Makmur Sejahtera',
+    taxAddress: 'Jl. Industri Raya No. 45, Cikarang Utara, Bekasi 17530',
     nik: '3175094401900002',
     npwp: '0123456789012345',
     ktpDocument: { name: 'ktp-direktur.pdf', size: 842_112, type: 'application/pdf' },
-    siupDocument: { name: 'siup-2026.pdf', size: 1_204_880, type: 'application/pdf' },
+    npwpDocument: { name: 'npwp-perusahaan.pdf', size: 640_000, type: 'application/pdf' },
+    transactionType: 'T01',
+    tin: 'TIN-2026-004512',
+    tinDocument: { name: 'dokumen.pdf', size: 842_112, type: 'application/pdf' },
+    brn: 'BRN-880231-K',
+    brnDocument: { name: 'dokumen.pdf', size: 842_112, type: 'application/pdf' },
+    gstNumber: 'GST-0099-2026',
+    documents: {
+      ...makeTaxDocuments(),
+      siup: {
+        number: 'SIUP-503/2026',
+        file: { name: 'siup-2026.pdf', size: 1_204_880, type: 'application/pdf' },
+        validFrom: '2026-01-01',
+        validUntil: '2029-12-31',
+      },
+      pkp: {
+        number: 'PKP-77120',
+        file: { name: 'dokumen.pdf', size: 842_112, type: 'application/pdf' },
+        validFrom: '2026-02-01',
+        validUntil: '2028-01-31',
+      },
+    },
   },
   documents: {
     aktaPendirian: { name: 'akta-pendirian.pdf', size: 1_640_320, type: 'application/pdf' },
