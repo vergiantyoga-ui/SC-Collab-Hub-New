@@ -286,6 +286,98 @@ nomor untuk diisi dan profilnya tertahan di bagian ini. Bila kelak diputuskan
 bahwa ketiganya hanya berlaku bagi pemasok luar negeri, aturannya cukup diubah
 di satu tempat pada `validateSection('tax', …)`.
 
+## Bagian Dokumen Legalitas
+
+Terbagi dua kelompok, seluruhnya menerima PDF, JPG, atau PNG maksimal 2 MB.
+
+**Document upload** — sembilan berkas:
+
+| Dokumen | Wajib |
+|---|:---:|
+| Akta Pendirian | ✅ |
+| SK Pendirian MENKUMHAM | ✅ |
+| NIB | ✅ |
+| Akta Perubahan SK/SP MENKUMHAM | Opsional |
+| Akta Susunan Direksi dan Komisaris SK MENKUMHAM | Opsional |
+| Surat Izin Usaha / Sertifikat Standar | Opsional |
+| Izin Lokasi | Opsional |
+| PKKPR | Opsional |
+| Surat Kuasa | Opsional |
+
+**Other documents** — empat berkas ditambah satu isian teks:
+
+| Dokumen | Wajib |
+|---|:---:|
+| Conflict of Interest | ✅ |
+| Business License | ✅ |
+| Others documents (SPK, PU, dll) | Opsional |
+| Deed of Establishment (DoE) | Opsional |
+| Reason for No DOE attachment | Bersyarat |
+
+### Alasan tanpa DoE bersifat bersyarat
+
+Rancangan menandai kolom ini wajib tanpa syarat. Diterapkan begitu saja, pemasok
+yang **sudah** melampirkan Deed of Establishment tetap harus menjelaskan mengapa
+tidak melampirkannya. Karena itu kolomnya hanya diwajibkan selama DoE belum
+diunggah, dan otomatis dinonaktifkan begitu berkasnya dilampirkan.
+
+### Nama berkas
+
+Rancangan mencantumkan pesan *"File names should not contain unusual
+characters"* pada setiap kolom unggah. Pesan itu diterapkan sebagai **validasi
+sungguhan**, bukan sekadar keterangan: nama berkas hanya boleh memuat huruf,
+angka, spasi, titik, tanda hubung, garis bawah, dan tanda kurung. Nama yang
+memuat karakter lain ditolak saat diunggah — kerusakannya baru terasa jauh
+setelah berkas berpindah antar sistem, jadi lebih baik dicegah sejak awal.
+Aturan ini berlaku untuk seluruh unggahan di aplikasi, termasuk yang opsional.
+
+## Bagian Pembayaran & Tagihan
+
+Terbagi dua tingkat: ketentuan yang berlaku menyeluruh, dan daftar rekening yang
+dapat diisi lebih dari satu.
+
+### Tingkat header
+
+| Field | Wajib | Isi |
+|---|:---:|---|
+| Mata uang transaksi | ✅ | IDR, MYR, USD, SGD, EUR |
+| Set agreement rate | ✅ | Active / Inactive |
+| Termin pembayaran 1 | ✅ | 7, 14, 15, 45, 60, 90, atau 120 Days |
+| Termin pembayaran 2 | Opsional | Pilihan sama |
+| Termin pembayaran 3 | Opsional | Pilihan sama |
+| Fiscal position | Opsional | Absolut (PRM), Absolut (PTI), Free Trade Zone, Has NPWP no PKP, Individual non NPWP |
+
+Termin kedua dan ketiga tidak boleh mengulang termin yang sudah dipilih —
+mendaftarkan termin yang sama dua kali tidak menambah keterangan apa pun.
+
+### Tingkat baris — rekening bank
+
+Satu baris mewakili satu rekening, dan pemasok dapat menambah baris untuk
+mendaftarkan beberapa rekening sekaligus.
+
+| Field | Wajib | Catatan |
+|---|:---:|---|
+| Account type | ✅ | Virtual Account, Bank Account, Batch Upload, Billing ID |
+| Nama bank | ✅ | 30 bank |
+| Bank identifier code | — | Terisi sendiri dari bank yang dipilih |
+| Bank country | — | Terisi sendiri dari bank yang dipilih |
+| Nomor rekening | ✅ | |
+| Nama pemilik rekening | ✅ | |
+| Bank account statement | ✅ | PDF, JPG, atau PNG — maks. 2 MB |
+
+Rekening dengan nomor sama pada bank yang sama ditolak. Baris kedua dan
+seterusnya boleh dikosongkan seluruhnya, tetapi begitu satu kolomnya diisi,
+sisanya ikut diwajibkan — rekening setengah terisi tidak dapat dipakai membayar.
+
+**Kode BIC dan negara tidak disimpan pada baris**, melainkan diturunkan dari bank
+yang dipilih setiap kali ditampilkan. Alasannya sama dengan penanda e-invoice:
+menyimpan nilai turunan membuka peluang datanya menyimpang bila daftar bank
+diperbarui.
+
+⚠️ Tiga puluh bank ini kurasi awal, dan **kode BIC-nya belum dicocokkan dengan
+direktori SWIFT resmi**. Mintalah tim master data memverifikasinya sebelum
+dipakai untuk pembayaran sungguhan.
+
 ## Tahapan pemasok
 
 Perjalanan pemasok mengikuti lima langkah berurutan, ditampilkan pada ringkasan beranda:
