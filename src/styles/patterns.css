@@ -413,3 +413,48 @@
   white-space: pre-wrap;
   color: var(--ink-700);
 }
+
+/* ------------------------------------------------------------
+   Kelompok dan dokumen pada bagian Data Pajak
+   ------------------------------------------------------------ */
+.taxgroup__title {
+  font-size: var(--text-md);
+  font-weight: 700;
+  margin-bottom: var(--sp-2);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--line-soft);
+}
+.taxgroup__lede {
+  font-size: var(--text-sm);
+  color: var(--ink-500);
+  margin-bottom: var(--sp-4);
+  max-width: 72ch;
+}
+.taxgroup__derived {
+  font-weight: 600;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  color: var(--ink-700);
+}
+
+.taxdoc {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--sp-4);
+  margin-bottom: var(--sp-4);
+  background: var(--surface-sunk);
+}
+.taxdoc__legend {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--ink-700);
+  padding: 0 var(--sp-2);
+}
+.taxdoc__optional {
+  font-weight: 400;
+  color: var(--ink-400);
+  margin-left: var(--sp-2);
+  font-size: var(--text-xs);
+}
