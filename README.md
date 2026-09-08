@@ -228,6 +228,64 @@ pendaftaran sebagai baris "Kode korporat untuk SAP".
 dan menunggu keputusan tim integrasi. Yang sudah pasti hanyalah kodenya tersimpan
 apa adanya di sisi aplikasi.
 
+## Bagian Data Pajak
+
+Bagian ini terbagi tiga kelompok dalam satu layar.
+
+**Identitas pajak** — tax name, tax address, NIK, NPWP, transaction type,
+penanda e-invoice, serta unggahan KTP dan NPWP.
+
+**Dokumen perpajakan** — enam dokumen dengan bentuk yang sama: nomor, berkas,
+tanggal mulai berlaku, dan tanggal akhir berlaku.
+
+| Dokumen | Wajib |
+|---|:---:|
+| SIUP | ✅ |
+| PKP, SBU, SKB, Surat Keterangan PP, COD/COR | Opsional |
+
+Hanya SIUP yang diwajibkan. Lima dokumen lain tidak dimiliki setiap pemasok —
+SBU misalnya khusus badan usaha jasa konstruksi — sehingga mewajibkan seluruhnya
+akan mengunci pemasok yang sah. Namun **begitu satu kolom sebuah dokumen diisi,
+seluruh kolomnya ikut diwajibkan**: nomor tanpa berkas, atau berkas tanpa masa
+berlaku, sama-sama tidak berguna saat verifikasi.
+
+**Identitas pajak lainnya** — TIN, BRN, nomor GST, beserta unggahan TIN dan BRN.
+
+### Transaction type dan e-invoice
+
+Transaction type disimpan sebagai kode, mengikuti pola master data Data Umum:
+
+| Kode | Nama | E-invoice provided |
+|---|---|---|
+| `T01` | Goods | Yes |
+| `T02` | CSR Cash Money | No |
+| `T03` | Rent | No |
+| `T04` | Other | No |
+
+Penanda **e-invoice provided tidak disimpan**, melainkan dihitung dari
+transaction type lewat `eInvoiceFor()` setiap kali dibutuhkan. Menyimpan nilai
+turunan membuka peluang datanya menyimpang bila aturannya berubah kelak.
+Di formulir, nilainya tampil sebagai kolom baca-saja yang ikut berubah begitu
+transaction type diganti.
+
+⚠️ Kode `T01`–`T04` adalah usulan; bila tim SAP sudah punya kode resminya,
+cukup ganti nilai `code` pada `TRANSACTION_TYPES` di `masterData.js`.
+
+### Aturan masa berlaku
+
+Tanggal akhir tidak boleh mendahului tanggal mulai, dan dokumen yang sudah
+kedaluwarsa ditolak saat diunggah — sejalan dengan aturan sertifikat pada
+bagian Lisensi & Sertifikat.
+
+### Catatan tentang TIN, BRN, dan GST
+
+Ketiganya diwajibkan untuk semua pemasok sesuai permintaan. Perlu diketahui:
+ketiganya adalah identitas pajak luar negeri — BRN dan GST lazim dipakai di
+Malaysia — sehingga pemasok Indonesia yang hanya memiliki NPWP tidak akan punya
+nomor untuk diisi dan profilnya tertahan di bagian ini. Bila kelak diputuskan
+bahwa ketiganya hanya berlaku bagi pemasok luar negeri, aturannya cukup diubah
+di satu tempat pada `validateSection('tax', …)`.
+
 ## Tahapan pemasok
 
 Perjalanan pemasok mengikuti lima langkah berurutan, ditampilkan pada ringkasan beranda:
