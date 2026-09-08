@@ -187,18 +187,36 @@ const isian = {
       codCor: { number: '', file: null, validFrom: '', validUntil: '' },
     },
   },
-  documents: { aktaPendirian: berkas, skPendirian: berkas, suratIzinUsaha: berkas },
+  documents: {
+    aktaPendirian: berkas,
+    skPendirian: berkas,
+    nib: berkas,
+    conflictOfInterest: berkas,
+    businessLicense: berkas,
+    reasonNoDoe: 'Dokumen setara sudah tercakup pada akta pendirian.',
+  },
   licenses: {
     gmp: { number: '', expiryDate: '', file: null, notApplicable: true },
     cpkb: { number: '', expiryDate: '', file: null, notApplicable: true },
     halal: { number: '', expiryDate: '', file: null, notApplicable: true },
   },
   banking: {
-    bankName: 'Bank Uji',
-    accountNumber: '1234567890',
-    accountHolder: 'PT Uji Alur Registrasi',
     currency: 'IDR',
-    termsOfPayment: '30 Net Days',
+    setAgreementRate: 'active',
+    termsOfPayment1: 'D014',
+    termsOfPayment2: '',
+    termsOfPayment3: '',
+    fiscalPosition: 'FP04',
+    lines: [
+      {
+        id: 'bank-uji-1',
+        accountType: 'AT02',
+        bankCode: 'BMRI',
+        accountNumber: '1234567890',
+        accountHolder: 'PT Uji Alur Registrasi',
+        statement: berkas,
+      },
+    ],
   },
   contacts: [
     {
