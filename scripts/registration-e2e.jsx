@@ -165,7 +165,28 @@ check('A14 kata sandi sementara dihapus', a.supplier(idA).account.temporaryPassw
 
 // Mengisi kelima bagian wajib.
 const isian = {
-  tax: { nik: '3175094401900002', npwp: '0123456789012345', ktpDocument: berkas, siupDocument: berkas },
+  tax: {
+    taxName: 'PT Uji Alur Registrasi',
+    taxAddress: 'Jl. Uji No. 1, Jakarta Selatan',
+    nik: '3175094401900002',
+    npwp: '0123456789012345',
+    ktpDocument: berkas,
+    npwpDocument: berkas,
+    transactionType: 'T01',
+    tin: 'TIN-UJI-1',
+    tinDocument: berkas,
+    brn: 'BRN-UJI-1',
+    brnDocument: berkas,
+    gstNumber: 'GST-UJI-1',
+    documents: {
+      siup: { number: 'SIUP-1', file: berkas, validFrom: '2026-01-01', validUntil: '2030-01-01' },
+      pkp: { number: '', file: null, validFrom: '', validUntil: '' },
+      sbu: { number: '', file: null, validFrom: '', validUntil: '' },
+      skb: { number: '', file: null, validFrom: '', validUntil: '' },
+      suratKeteranganPp: { number: '', file: null, validFrom: '', validUntil: '' },
+      codCor: { number: '', file: null, validFrom: '', validUntil: '' },
+    },
+  },
   documents: { aktaPendirian: berkas, skPendirian: berkas, suratIzinUsaha: berkas },
   licenses: {
     gmp: { number: '', expiryDate: '', file: null, notApplicable: true },

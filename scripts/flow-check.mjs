@@ -90,29 +90,37 @@ b = {
 check('B4 akun dibuat begitu registrasi internal selesai', Boolean(b.account.accountId), true);
 
 /* --- Validasi field --- */
-const taxOk = validateSection('tax', {
+const berkas = { name: 'a.pdf', size: 1000, type: 'application/pdf' };
+
+/** Data pajak lengkap sesuai bentuk terbaru; tiap uji mengubah satu kolom saja. */
+const taxLengkap = {
+  taxName: 'PT Uji',
+  taxAddress: 'Jl. Uji No. 1',
   nik: '3175094401900002',
   npwp: '0123456789012345',
-  ktpDocument: { name: 'a.pdf' },
-  siupDocument: { name: 'b.pdf' },
-});
-check('V1 data pajak valid lolos', Object.keys(taxOk).length, 0);
+  ktpDocument: berkas,
+  npwpDocument: berkas,
+  transactionType: 'T01',
+  tin: 'TIN-1',
+  tinDocument: berkas,
+  brn: 'BRN-1',
+  brnDocument: berkas,
+  gstNumber: 'GST-1',
+  documents: {
+    siup: { number: 'S-1', file: berkas, validFrom: '2026-01-01', validUntil: '2030-01-01' },
+    pkp: { number: '', file: null, validFrom: '', validUntil: '' },
+    sbu: { number: '', file: null, validFrom: '', validUntil: '' },
+    skb: { number: '', file: null, validFrom: '', validUntil: '' },
+    suratKeteranganPp: { number: '', file: null, validFrom: '', validUntil: '' },
+    codCor: { number: '', file: null, validFrom: '', validUntil: '' },
+  },
+};
 
-const nikShort = validateSection('tax', {
-  nik: '317509440190',
-  npwp: '0123456789012345',
-  ktpDocument: { name: 'a.pdf' },
-  siupDocument: { name: 'b.pdf' },
-});
-check('V2 NIK kurang dari 16 digit ditolak', Boolean(nikShort.nik), true);
-
-const npwp15 = validateSection('tax', {
-  nik: '3175094401900002',
-  npwp: '123456789012345',
-  ktpDocument: { name: 'a.pdf' },
-  siupDocument: { name: 'b.pdf' },
-});
-check('V3 NPWP 15 digit diterima untuk dinormalisasi', Boolean(npwp15.npwp), false);
+check('V1 data pajak valid lolos', Object.keys(validateSection('tax', taxLengkap)).length, 0);
+check('V2 NIK kurang dari 16 digit ditolak',
+  Boolean(validateSection('tax', { ...taxLengkap, nik: '317509440190' }).nik), true);
+check('V3 NPWP 15 digit diterima untuk dinormalisasi',
+  Boolean(validateSection('tax', { ...taxLengkap, npwp: '123456789012345' }).npwp), false);
 
 const noPrimary = validateSection('contacts', [
   { id: 'c1', name: 'A', title: 'Mr', jobPosition: 'Sales', email: 'a@b.com', mobile: '081234567', phone: '', isPrimary: false },
