@@ -59,7 +59,23 @@ export function required(value, label = 'Kolom ini') {
   return null;
 }
 
-/** Berkas: PDF/JPG/PNG maksimal 2 MB (Section 7.2). */
+/**
+ * Nama berkas hanya boleh memuat huruf, angka, spasi, titik, tanda hubung,
+ * garis bawah, dan tanda kurung. Karakter di luar itu kerap membuat berkas
+ * gagal dibuka setelah dipindahkan antar sistem, dan masalahnya baru ketahuan
+ * jauh setelah diunggah — jadi ditolak sejak awal.
+ */
+const SAFE_FILE_NAME = /^[A-Za-z0-9 ._()-]+$/;
+
+export function validateFileName(name) {
+  if (!name) return 'Berkas tidak memiliki nama.';
+  if (!SAFE_FILE_NAME.test(name)) {
+    return 'Nama berkas hanya boleh memuat huruf, angka, spasi, titik, tanda hubung, garis bawah, dan tanda kurung.';
+  }
+  return null;
+}
+
+/** Berkas: PDF/JPG/PNG maksimal 2 MB, dengan nama yang aman. */
 export function validateFile(file) {
   if (!file) return 'Dokumen wajib diunggah.';
   if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
@@ -68,7 +84,7 @@ export function validateFile(file) {
   if (file.size > MAX_FILE_BYTES) {
     return `Ukuran berkas ${formatBytes(file.size)} melebihi batas 2 MB.`;
   }
-  return null;
+  return validateFileName(file.name);
 }
 
 export function formatBytes(bytes) {

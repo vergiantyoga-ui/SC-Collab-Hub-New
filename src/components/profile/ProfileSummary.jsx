@@ -8,7 +8,13 @@ import {
   VENDOR_DIRECT_TYPES,
   VENDOR_TYPES,
   VENDOR_TYPE_DETAILS,
+  ACCOUNT_TYPES,
+  AGREEMENT_RATE_OPTIONS,
+  FISCAL_POSITIONS,
+  LEGAL_DOCUMENTS,
   TAX_DOCUMENTS,
+  TERMS_OF_PAYMENT,
+  findBank,
   TRANSACTION_TYPES,
   eInvoiceFor,
   labelOf,
@@ -157,9 +163,24 @@ export default function ProfileSummary({
 
       {show('documents') && profile && (
         <Block title="Dokumen legalitas" visible={showHeadings}>
-          <FileRow label="Akta pendirian" file={profile.documents.aktaPendirian} />
-          <FileRow label="SK pendirian" file={profile.documents.skPendirian} />
-          <FileRow label="Surat izin usaha" file={profile.documents.suratIzinUsaha} />
+          {LEGAL_DOCUMENTS.map(({ key, label, required }) => {
+            const file = profile.documents?.[key];
+            if (!file && !required) {
+              return (
+                <p key={key} className="text-sm muted" style={{ marginTop: 'var(--sp-2)' }}>
+                  {label} — tidak dilampirkan
+                </p>
+              );
+            }
+            return <FileRow key={key} label={label} file={file} />;
+          })}
+
+          {profile.documents?.reasonNoDoe && (
+            <p className="text-sm" style={{ marginTop: 'var(--sp-3)' }}>
+              <span className="muted">Alasan tanpa DoE: </span>
+              {profile.documents.reasonNoDoe}
+            </p>
+          )}
         </Block>
       )}
 
@@ -196,13 +217,51 @@ export default function ProfileSummary({
         <Block title="Pembayaran & tagihan" visible={showHeadings}>
           <DataList
             items={[
-              { label: 'Bank', value: profile.banking.bankName },
-              { label: 'Nomor rekening', value: profile.banking.accountNumber },
-              { label: 'Pemilik rekening', value: profile.banking.accountHolder, full: true },
               { label: 'Mata uang', value: profile.banking.currency },
-              { label: 'Termin pembayaran', value: profile.banking.termsOfPayment },
+              {
+                label: 'Set agreement rate',
+                value: labelOf(AGREEMENT_RATE_OPTIONS, profile.banking.setAgreementRate),
+              },
+              {
+                label: 'Termin pembayaran 1',
+                value: labelOf(TERMS_OF_PAYMENT, profile.banking.termsOfPayment1),
+              },
+              {
+                label: 'Termin pembayaran 2',
+                value: labelOf(TERMS_OF_PAYMENT, profile.banking.termsOfPayment2),
+              },
+              {
+                label: 'Termin pembayaran 3',
+                value: labelOf(TERMS_OF_PAYMENT, profile.banking.termsOfPayment3),
+              },
+              {
+                label: 'Fiscal position',
+                value: labelOf(FISCAL_POSITIONS, profile.banking.fiscalPosition),
+              },
             ]}
           />
+
+          {(profile.banking.lines ?? []).map((line, index) => {
+            const bank = findBank(line.bankCode);
+            return (
+              <div key={line.id} style={{ marginTop: 'var(--sp-4)' }}>
+                <p className="text-sm" style={{ fontWeight: 600, marginBottom: 'var(--sp-2)' }}>
+                  Rekening {index + 1}
+                </p>
+                <DataList
+                  items={[
+                    { label: 'Account type', value: labelOf(ACCOUNT_TYPES, line.accountType) },
+                    { label: 'Bank', value: bank?.name },
+                    { label: 'Bank identifier code', value: bank?.bic },
+                    { label: 'Bank country', value: bank?.country },
+                    { label: 'Nomor rekening', value: line.accountNumber },
+                    { label: 'Pemilik rekening', value: line.accountHolder },
+                  ]}
+                />
+                <FileRow label="Bank account statement" file={line.statement} />
+              </div>
+            );
+          })}
         </Block>
       )}
 

@@ -20,6 +20,12 @@ import {
   OTV_STATUSES,
   TARGET_COMPANIES,
   TERMS_OF_PAYMENT,
+  ACCOUNT_TYPES,
+  AGREEMENT_RATE_OPTIONS,
+  BANKS,
+  FISCAL_POSITIONS,
+  LEGAL_DOCUMENTS,
+  LEGAL_DOCUMENT_GROUPS,
   TAX_DOCUMENTS,
   TRANSACTION_TYPES,
   VENDOR_DIRECT_TYPES,
@@ -27,6 +33,9 @@ import {
   asOptions,
   detailsForVendorType,
   eInvoiceFor,
+  findBank,
+  legalDocumentsOf,
+  makeBankLine,
   makeTaxDocument,
 } from '../../lib/constants.js';
 import { formatNpwp, wasNpwpNormalized } from '../../lib/validation.js';
@@ -316,29 +325,49 @@ function TaxDocumentBlock({ meta, value, errors, onChange }) {
 /* Bagian 2 — Dokumen legalitas                                       */
 /* ------------------------------------------------------------------ */
 function DocumentsSection({ values, set, errors }) {
+  // Alasan hanya diminta bila Deed of Establishment memang tidak dilampirkan.
+  // Mewajibkannya tanpa syarat berarti pemasok yang sudah melampirkan DoE tetap
+  // harus menjelaskan mengapa tidak melampirkannya.
+  const doeMissing = !values.deedOfEstablishment;
+
   return (
-    <div className="field-grid">
-      <FileField
-        label="Akta pendirian"
-        value={values.aktaPendirian}
-        onChange={(file) => set({ aktaPendirian: file })}
-        error={errors.aktaPendirian}
-        required
-      />
-      <FileField
-        label="SK pendirian Kemenkumham"
-        value={values.skPendirian}
-        onChange={(file) => set({ skPendirian: file })}
-        error={errors.skPendirian}
-        required
-      />
-      <FileField
-        label="Surat izin usaha atau NIB"
-        value={values.suratIzinUsaha}
-        onChange={(file) => set({ suratIzinUsaha: file })}
-        error={errors.suratIzinUsaha}
-        required
-      />
+    <div className="stack-lg">
+      {LEGAL_DOCUMENT_GROUPS.map((group) => (
+        <section key={group.id}>
+          <h3 className="taxgroup__title">{group.label}</h3>
+
+          <div className="field-grid">
+            {legalDocumentsOf(group.id).map((doc) => (
+              <FileField
+                key={doc.key}
+                label={doc.label}
+                value={values[doc.key]}
+                onChange={(file) => set({ [doc.key]: file })}
+                error={errors[doc.key]}
+                required={doc.required}
+                hint="PDF, JPG, atau PNG — maks. 2 MB. Nama berkas tanpa karakter tidak lazim."
+              />
+            ))}
+          </div>
+
+          {group.id === 'other' && (
+            <TextAreaField
+              label="Reason for No DOE attachment"
+              rows={3}
+              value={values.reasonNoDoe}
+              onChange={(e) => set({ reasonNoDoe: e.target.value })}
+              error={errors.reasonNoDoe}
+              required={doeMissing}
+              hint={
+                doeMissing
+                  ? 'Wajib diisi selama Deed of Establishment belum dilampirkan.'
+                  : 'Tidak diperlukan karena Deed of Establishment sudah dilampirkan.'
+              }
+              disabled={!doeMissing}
+            />
+          )}
+        </section>
+      ))}
     </div>
   );
 }
@@ -415,56 +444,184 @@ function LicensesSection({ values, set, errors }) {
 /* Bagian 4 — Pembayaran & tagihan                                    */
 /* ------------------------------------------------------------------ */
 function BankingSection({ values, set, errors }) {
+  const lines = values.lines?.length ? values.lines : [makeBankLine()];
+
+  const updateLine = (id, patch) =>
+    set({ lines: lines.map((line) => (line.id === id ? { ...line, ...patch } : line)) });
+
+  const addLine = () => set({ lines: [...lines, makeBankLine()] });
+
+  const removeLine = (id) => {
+    const rest = lines.filter((line) => line.id !== id);
+    set({ lines: rest.length > 0 ? rest : [makeBankLine()] });
+  };
+
   return (
-    <>
-      <div className="notice notice--info" style={{ marginBottom: 'var(--sp-5)' }}>
-        Nama pemilik rekening harus sama dengan nama badan usaha yang terdaftar. Rekening atas nama
-        perorangan akan ditolak saat verifikasi.
-      </div>
+    <div className="stack-lg">
+      {/* --- Tingkat header --- */}
+      <section>
+        <h3 className="taxgroup__title">Ketentuan umum</h3>
+
+        <div className="field-grid">
+          <SelectField
+            label="Mata uang transaksi"
+            options={CURRENCIES}
+            value={values.currency}
+            onChange={(e) => set({ currency: e.target.value })}
+            error={errors.currency}
+            required
+          />
+          <SelectField
+            label="Set agreement rate"
+            options={asOptions(AGREEMENT_RATE_OPTIONS)}
+            value={values.setAgreementRate}
+            onChange={(e) => set({ setAgreementRate: e.target.value })}
+            error={errors.setAgreementRate}
+            required
+          />
+          <SelectField
+            label="Termin pembayaran 1"
+            options={asOptions(TERMS_OF_PAYMENT)}
+            value={values.termsOfPayment1}
+            onChange={(e) => set({ termsOfPayment1: e.target.value })}
+            error={errors.termsOfPayment1}
+            hint="Termin utama yang dipakai bila tidak disepakati lain."
+            required
+          />
+          <SelectField
+            label="Termin pembayaran 2"
+            options={asOptions(TERMS_OF_PAYMENT)}
+            value={values.termsOfPayment2}
+            onChange={(e) => set({ termsOfPayment2: e.target.value })}
+            error={errors.termsOfPayment2}
+            hint="Opsional."
+          />
+          <SelectField
+            label="Termin pembayaran 3"
+            options={asOptions(TERMS_OF_PAYMENT)}
+            value={values.termsOfPayment3}
+            onChange={(e) => set({ termsOfPayment3: e.target.value })}
+            error={errors.termsOfPayment3}
+            hint="Opsional."
+          />
+          <SelectField
+            label="Fiscal position"
+            options={asOptions(FISCAL_POSITIONS)}
+            value={values.fiscalPosition}
+            onChange={(e) => set({ fiscalPosition: e.target.value })}
+            error={errors.fiscalPosition}
+            hint="Opsional."
+          />
+        </div>
+      </section>
+
+      {/* --- Tingkat baris --- */}
+      <section>
+        <div className="row row--between" style={{ marginBottom: 'var(--sp-3)' }}>
+          <h3 className="taxgroup__title" style={{ marginBottom: 0, border: 0 }}>
+            Rekening bank
+          </h3>
+          <Button variant="secondary" size="sm" onClick={addLine}>
+            Tambah rekening
+          </Button>
+        </div>
+
+        <div className="notice notice--info" style={{ marginBottom: 'var(--sp-4)' }}>
+          Nama pemilik rekening harus sama dengan nama badan usaha yang terdaftar. Rekening
+          atas nama perorangan akan ditolak saat verifikasi.
+        </div>
+
+        {lines.map((line, index) => (
+          <BankLineBlock
+            key={line.id}
+            line={line}
+            index={index}
+            errors={errors}
+            canRemove={lines.length > 1}
+            onChange={(patch) => updateLine(line.id, patch)}
+            onRemove={() => removeLine(line.id)}
+          />
+        ))}
+      </section>
+    </div>
+  );
+}
+
+/**
+ * Satu rekening bank. Kode BIC dan negara tidak diisi pengguna maupun disimpan
+ * pada baris: keduanya diturunkan dari bank yang dipilih, sehingga selalu
+ * sejalan dengan daftar bank meski daftarnya kelak diperbarui.
+ */
+function BankLineBlock({ line, index, errors, canRemove, onChange, onRemove }) {
+  const bank = findBank(line.bankCode);
+  const prefix = `lines.${line.id}`;
+
+  return (
+    <fieldset className="taxdoc">
+      <legend className="taxdoc__legend">Rekening {index + 1}</legend>
 
       <div className="field-grid">
-        <TextField
-          label="Nama bank"
-          value={values.bankName}
-          onChange={(e) => set({ bankName: e.target.value })}
-          error={errors.bankName}
+        <SelectField
+          label="Account type"
+          options={asOptions(ACCOUNT_TYPES)}
+          value={line.accountType}
+          onChange={(e) => onChange({ accountType: e.target.value })}
+          error={errors[`${prefix}.accountType`]}
           required
         />
+        <SelectField
+          label="Nama bank"
+          options={BANKS.map((item) => ({ value: item.code, label: item.name }))}
+          value={line.bankCode}
+          onChange={(e) => onChange({ bankCode: e.target.value })}
+          error={errors[`${prefix}.bankCode`]}
+          required
+        />
+
+        <div className="field">
+          <span className="field__label">Bank identifier code</span>
+          <p className="taxgroup__derived">{bank?.bic ?? '—'}</p>
+          <p className="field__hint">Terisi otomatis dari bank yang dipilih.</p>
+        </div>
+        <div className="field">
+          <span className="field__label">Bank country</span>
+          <p className="taxgroup__derived">{bank?.country ?? '—'}</p>
+          <p className="field__hint">Terisi otomatis dari bank yang dipilih.</p>
+        </div>
+
         <TextField
           label="Nomor rekening"
           inputMode="numeric"
-          value={values.accountNumber}
-          onChange={(e) => set({ accountNumber: e.target.value.replace(/[^\d-]/g, '') })}
-          error={errors.accountNumber}
+          value={line.accountNumber}
+          onChange={(e) => onChange({ accountNumber: e.target.value.replace(/[^\d-]/g, '') })}
+          error={errors[`${prefix}.accountNumber`]}
           required
         />
         <TextField
           label="Nama pemilik rekening"
-          className="span-full"
-          value={values.accountHolder}
-          onChange={(e) => set({ accountHolder: e.target.value })}
-          error={errors.accountHolder}
+          value={line.accountHolder}
+          onChange={(e) => onChange({ accountHolder: e.target.value })}
+          error={errors[`${prefix}.accountHolder`]}
           required
         />
-        <SelectField
-          label="Mata uang transaksi"
-          options={CURRENCIES}
-          value={values.currency}
-          onChange={(e) => set({ currency: e.target.value })}
-          error={errors.currency}
-          required
-        />
-        <SelectField
-          label="Termin pembayaran"
-          options={TERMS_OF_PAYMENT}
-          value={values.termsOfPayment}
-          onChange={(e) => set({ termsOfPayment: e.target.value })}
-          error={errors.termsOfPayment}
-          hint="Dihitung sejak tagihan diterima dan disetujui."
-          required
-        />
+
+        <div className="span-full">
+          <FileField
+            label="Bank account statement"
+            value={line.statement}
+            onChange={(file) => onChange({ statement: file })}
+            error={errors[`${prefix}.statement`]}
+            required
+          />
+        </div>
       </div>
-    </>
+
+      {canRemove && (
+        <Button variant="quiet" size="sm" onClick={onRemove}>
+          Hapus rekening ini
+        </Button>
+      )}
+    </fieldset>
   );
 }
 

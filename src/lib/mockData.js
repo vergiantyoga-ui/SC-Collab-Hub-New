@@ -1,5 +1,5 @@
 import { PATH, ROLE, STATUS } from './constants.js';
-import { makeTaxDocuments } from './masterData.js';
+import { makeBankLine, makeLegalDocuments, makeTaxDocuments } from './masterData.js';
 
 /**
  * Data contoh untuk demo front-end. Tidak ada backend:
@@ -52,18 +52,20 @@ const emptyTax = () => ({
 
 const emptyProfile = () => ({
   tax: emptyTax(),
-  documents: { aktaPendirian: null, skPendirian: null, suratIzinUsaha: null },
+  documents: { ...makeLegalDocuments(), reasonNoDoe: '' },
   licenses: {
     gmp: { number: '', expiryDate: '', file: null, notApplicable: false },
     cpkb: { number: '', expiryDate: '', file: null, notApplicable: false },
     halal: { number: '', expiryDate: '', file: null, notApplicable: false },
   },
   banking: {
-    bankName: '',
-    accountNumber: '',
-    accountHolder: '',
     currency: 'IDR',
-    termsOfPayment: '',
+    setAgreementRate: '',
+    termsOfPayment1: '',
+    termsOfPayment2: '',
+    termsOfPayment3: '',
+    fiscalPosition: '',
+    lines: [makeBankLine()],
   },
   contacts: [],
   completed: { tax: false, documents: false, licenses: false, banking: false, contacts: false },
@@ -101,9 +103,15 @@ const filledProfile = (overrides = {}) => ({
     },
   },
   documents: {
+    ...makeLegalDocuments(),
     aktaPendirian: { name: 'akta-pendirian.pdf', size: 1_640_320, type: 'application/pdf' },
     skPendirian: { name: 'sk-kemenkumham.pdf', size: 986_112, type: 'application/pdf' },
-    suratIzinUsaha: { name: 'nib-oss.pdf', size: 742_400, type: 'application/pdf' },
+    aktaPerubahan: { name: 'akta-perubahan-2025.pdf', size: 820_000, type: 'application/pdf' },
+    nib: { name: 'nib-oss.pdf', size: 742_400, type: 'application/pdf' },
+    suratIzinUsaha: { name: 'sertifikat-standar.pdf', size: 610_000, type: 'application/pdf' },
+    conflictOfInterest: { name: 'conflict-of-interest.pdf', size: 340_000, type: 'application/pdf' },
+    businessLicense: { name: 'business-license.pdf', size: 520_000, type: 'application/pdf' },
+    reasonNoDoe: 'Perusahaan berdiri sebelum ketentuan DoE berlaku, dokumen setara terlampir pada akta pendirian.',
   },
   licenses: {
     gmp: { number: 'GMP-2025-8841', expiryDate: '2028-03-31', file: { name: 'gmp.pdf', size: 512_000, type: 'application/pdf' }, notApplicable: false },
@@ -111,11 +119,21 @@ const filledProfile = (overrides = {}) => ({
     halal: { number: 'ID-HAL-77120', expiryDate: '2027-11-20', file: { name: 'halal.pdf', size: 623_104, type: 'application/pdf' }, notApplicable: false },
   },
   banking: {
-    bankName: 'Bank Mandiri',
-    accountNumber: '1370011223344',
-    accountHolder: 'PT Sumber Makmur Sejahtera',
     currency: 'IDR',
-    termsOfPayment: '30 Net Days',
+    setAgreementRate: 'active',
+    termsOfPayment1: 'D045',
+    termsOfPayment2: '',
+    termsOfPayment3: '',
+    fiscalPosition: 'FP04',
+    lines: [
+      makeBankLine({
+        accountType: 'AT02',
+        bankCode: 'BMRI',
+        accountNumber: '1370011223344',
+        accountHolder: 'PT Sumber Makmur Sejahtera',
+        statement: { name: 'rekening-koran.pdf', size: 480_000, type: 'application/pdf' },
+      }),
+    ],
   },
   contacts: [
     {
@@ -364,12 +382,22 @@ export const SUBMISSIONS = [
     account: null,
     profile: filledProfile({
       banking: {
-        bankName: 'Bank Central Asia',
-        accountNumber: '0451122334',
-        accountHolder: 'PT Aroma Esensia Nusantara',
-        currency: 'IDR',
-        termsOfPayment: '45 Net Days',
-      },
+          currency: 'IDR',
+          setAgreementRate: 'active',
+          termsOfPayment1: 'D045',
+          termsOfPayment2: '',
+          termsOfPayment3: '',
+          fiscalPosition: 'FP04',
+          lines: [
+            makeBankLine({
+              accountType: 'AT02',
+              bankCode: 'BCA',
+              accountNumber: '0451122334',
+              accountHolder: 'PT Aroma Esensia Nusantara',
+              statement: { name: 'rekening-koran.pdf', size: 480_000, type: 'application/pdf' },
+            }),
+          ],
+        },
     }),
     consent: null,
     verification: null,
@@ -427,12 +455,22 @@ export const SUBMISSIONS = [
     },
     profile: filledProfile({
       banking: {
-        bankName: 'Bank Negara Indonesia',
-        accountNumber: '0889977665',
-        accountHolder: 'PT Karton Sejati Abadi',
-        currency: 'IDR',
-        termsOfPayment: '30 Net Days',
-      },
+          currency: 'IDR',
+          setAgreementRate: 'active',
+          termsOfPayment1: 'D060',
+          termsOfPayment2: '',
+          termsOfPayment3: '',
+          fiscalPosition: 'FP04',
+          lines: [
+            makeBankLine({
+              accountType: 'AT02',
+              bankCode: 'BNI',
+              accountNumber: '0889977665',
+              accountHolder: 'PT Karton Sejati Abadi',
+              statement: { name: 'rekening-koran.pdf', size: 480_000, type: 'application/pdf' },
+            }),
+          ],
+        },
     }),
     consent: {
       gtcAcceptedAt: daysAgo(2),
@@ -504,12 +542,22 @@ export const SUBMISSIONS = [
     },
     profile: filledProfile({
       banking: {
-        bankName: 'Bank Mandiri',
-        accountNumber: '1220099887',
-        accountHolder: 'PT Kimia Prima Lestari',
-        currency: 'IDR',
-        termsOfPayment: '60 Net Days',
-      },
+          currency: 'IDR',
+          setAgreementRate: 'active',
+          termsOfPayment1: 'D090',
+          termsOfPayment2: '',
+          termsOfPayment3: '',
+          fiscalPosition: 'FP04',
+          lines: [
+            makeBankLine({
+              accountType: 'AT02',
+              bankCode: 'BMRI',
+              accountNumber: '1220099887',
+              accountHolder: 'PT Kimia Prima Lestari',
+              statement: { name: 'rekening-koran.pdf', size: 480_000, type: 'application/pdf' },
+            }),
+          ],
+        },
       contacts: [
         {
           id: 'ct-a',

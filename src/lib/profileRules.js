@@ -1,6 +1,13 @@
 import {
   LEGAL_STATUS_ENTITY,
+  ACCOUNT_TYPES,
+  AGREEMENT_RATE_OPTIONS,
+  BANKS,
+  FISCAL_POSITIONS,
+  LEGAL_DOCUMENTS,
   TAX_DOCUMENTS,
+  TERMS_OF_PAYMENT,
+  isBankLineTouched,
   TRANSACTION_TYPES,
   isTaxDocumentTouched,
 } from './masterData.js';
@@ -11,6 +18,7 @@ import {
   validateEmail,
   validateExpiry,
   validateNik,
+  validateFileName,
   validateNpwp,
   validatePhone,
 } from './validation.js';
@@ -93,11 +101,28 @@ export function validateSection(sectionId, values) {
   }
 
   if (sectionId === 'documents') {
-    return collectErrors({
-      aktaPendirian: values.aktaPendirian ? null : 'Akta pendirian wajib diunggah.',
-      skPendirian: values.skPendirian ? null : 'SK pendirian wajib diunggah.',
-      suratIzinUsaha: values.suratIzinUsaha ? null : 'Surat izin usaha wajib diunggah.',
+    const found = {};
+
+    LEGAL_DOCUMENTS.forEach(({ key, label, required: isRequired }) => {
+      if (isRequired && !values[key]) {
+        found[key] = `${label} wajib diunggah.`;
+        return;
+      }
+      // Berkas opsional yang telanjur diunggah tetap harus memenuhi aturan.
+      const file = values[key];
+      if (file?.name) {
+        const nameProblem = validateFileName(file.name);
+        if (nameProblem) found[key] = nameProblem;
+      }
     });
+
+    // Alasan hanya wajib selama DoE belum dilampirkan.
+    if (!values.deedOfEstablishment) {
+      const reason = required(values.reasonNoDoe, 'Alasan tidak melampirkan DoE');
+      if (reason) found.reasonNoDoe = reason;
+    }
+
+    return found;
   }
 
   if (sectionId === 'licenses') {
@@ -117,13 +142,40 @@ export function validateSection(sectionId, values) {
   }
 
   if (sectionId === 'banking') {
-    return collectErrors({
-      bankName: required(values.bankName, 'Nama bank'),
-      accountNumber: required(values.accountNumber, 'Nomor rekening'),
-      accountHolder: required(values.accountHolder, 'Nama pemilik rekening'),
+    const inList = (list, code) => list.some((item) => item.code === code);
+
+    const found = collectErrors({
       currency: required(values.currency, 'Mata uang'),
-      termsOfPayment: required(values.termsOfPayment, 'Termin pembayaran'),
+      setAgreementRate: inList(AGREEMENT_RATE_OPTIONS, values.setAgreementRate)
+        ? null
+        : 'Pilih set agreement rate.',
+      termsOfPayment1: inList(TERMS_OF_PAYMENT, values.termsOfPayment1)
+        ? null
+        : 'Termin pembayaran pertama wajib dipilih.',
+      // Termin kedua dan ketiga opsional, tetapi bila diisi harus dikenal
+      // dan tidak boleh mengulang termin yang sudah dipilih.
+      termsOfPayment2: values.termsOfPayment2
+        ? inList(TERMS_OF_PAYMENT, values.termsOfPayment2)
+          ? values.termsOfPayment2 === values.termsOfPayment1
+            ? 'Termin ini sama dengan termin pertama.'
+            : null
+          : 'Termin pembayaran tidak dikenal.'
+        : null,
+      termsOfPayment3: values.termsOfPayment3
+        ? inList(TERMS_OF_PAYMENT, values.termsOfPayment3)
+          ? [values.termsOfPayment1, values.termsOfPayment2].includes(values.termsOfPayment3)
+            ? 'Termin ini sudah dipilih sebelumnya.'
+            : null
+          : 'Termin pembayaran tidak dikenal.'
+        : null,
+      fiscalPosition:
+        values.fiscalPosition && !inList(FISCAL_POSITIONS, values.fiscalPosition)
+          ? 'Fiscal position tidak dikenal.'
+          : null,
     });
+
+    Object.assign(found, validateBankLines(values.lines ?? []));
+    return found;
   }
 
   if (sectionId === 'contacts') {
@@ -156,6 +208,60 @@ export function validateSection(sectionId, values) {
   }
 
   return {};
+}
+
+/**
+ * Baris rekening bank.
+ *
+ * Minimal satu rekening wajib ada. Baris kedua dan seterusnya boleh dikosongkan
+ * seluruhnya, tetapi begitu satu kolomnya diisi, sisanya ikut diwajibkan —
+ * rekening setengah terisi tidak dapat dipakai membayar.
+ */
+export function validateBankLines(lines) {
+  const found = {};
+  const meaningful = lines.filter(isBankLineTouched);
+
+  if (meaningful.length === 0) {
+    found['lines'] = 'Tambahkan minimal satu rekening bank.';
+    return found;
+  }
+
+  const seen = new Set();
+
+  meaningful.forEach((line) => {
+    const prefix = `lines.${line.id}`;
+
+    if (!ACCOUNT_TYPES.some((item) => item.code === line.accountType)) {
+      found[`${prefix}.accountType`] = 'Pilih account type.';
+    }
+    if (!BANKS.some((item) => item.code === line.bankCode)) {
+      found[`${prefix}.bankCode`] = 'Pilih nama bank.';
+    }
+    if (!line.accountNumber?.trim()) {
+      found[`${prefix}.accountNumber`] = 'Nomor rekening wajib diisi.';
+    }
+    if (!line.accountHolder?.trim()) {
+      found[`${prefix}.accountHolder`] = 'Nama pemilik rekening wajib diisi.';
+    }
+    if (!line.statement) {
+      found[`${prefix}.statement`] = 'Bank account statement wajib diunggah.';
+    } else {
+      const nameProblem = validateFileName(line.statement.name);
+      if (nameProblem) found[`${prefix}.statement`] = nameProblem;
+    }
+
+    // Rekening yang sama pada bank yang sama tidak perlu didaftarkan dua kali.
+    if (line.bankCode && line.accountNumber?.trim()) {
+      const key = `${line.bankCode}|${line.accountNumber.trim()}`;
+      if (seen.has(key)) {
+        found[`${prefix}.accountNumber`] = 'Rekening ini sudah didaftarkan.';
+      } else {
+        seen.add(key);
+      }
+    }
+  });
+
+  return found;
 }
 
 /**

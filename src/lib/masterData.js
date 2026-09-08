@@ -187,6 +187,190 @@ export function isTaxDocumentTouched(doc) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Dokumen legalitas                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Dokumen legalitas yang diunggah pemasok, terbagi dua kelompok sesuai
+ * rancangan formulir. `required` menandai dokumen yang wajib bagi setiap
+ * pemasok; sisanya menyesuaikan bentuk badan usaha dan perizinannya.
+ */
+export const LEGAL_DOCUMENTS = [
+  /* Kelompok 1 — Document upload */
+  { key: 'aktaPendirian', label: 'Akta Pendirian', group: 'upload', required: true },
+  { key: 'skPendirian', label: 'SK Pendirian MENKUMHAM', group: 'upload', required: true },
+  { key: 'aktaPerubahan', label: 'Akta Perubahan SK/SP MENKUMHAM', group: 'upload', required: false },
+  {
+    key: 'aktaSusunanDireksi',
+    label: 'Akta Susunan Direksi dan Komisaris SK MENKUMHAM',
+    group: 'upload',
+    required: false,
+  },
+  { key: 'nib', label: 'NIB', group: 'upload', required: true },
+  {
+    key: 'suratIzinUsaha',
+    label: 'Surat Izin Usaha / Sertifikat Standar',
+    group: 'upload',
+    required: false,
+  },
+  { key: 'izinLokasi', label: 'Izin Lokasi', group: 'upload', required: false },
+  { key: 'pkkpr', label: 'PKKPR', group: 'upload', required: false },
+  { key: 'suratKuasa', label: 'Surat Kuasa', group: 'upload', required: false },
+
+  /* Kelompok 2 — Other documents */
+  { key: 'conflictOfInterest', label: 'Conflict of Interest', group: 'other', required: true },
+  {
+    key: 'othersDocuments',
+    label: 'Others documents (SPK, PU, dll)',
+    group: 'other',
+    required: false,
+  },
+  {
+    key: 'deedOfEstablishment',
+    label: 'Deed of Establishment (DoE)',
+    group: 'other',
+    required: false,
+  },
+  { key: 'businessLicense', label: 'Business License', group: 'other', required: true },
+];
+
+export const LEGAL_DOCUMENT_GROUPS = [
+  { id: 'upload', label: 'Document upload' },
+  { id: 'other', label: 'Other documents' },
+];
+
+export function legalDocumentsOf(groupId) {
+  return LEGAL_DOCUMENTS.filter((item) => item.group === groupId);
+}
+
+/** Seluruh berkas legalitas dalam keadaan kosong. */
+export function makeLegalDocuments() {
+  return LEGAL_DOCUMENTS.reduce((acc, item) => {
+    acc[item.key] = null;
+    return acc;
+  }, {});
+}
+
+/* ------------------------------------------------------------------ */
+/* Pembayaran dan tagihan                                             */
+/* ------------------------------------------------------------------ */
+
+/** Sakelar set agreement rate pada tingkat header. */
+export const AGREEMENT_RATE_OPTIONS = [
+  { code: 'active', name: 'Active' },
+  { code: 'inactive', name: 'Inactive' },
+];
+
+export const TERMS_OF_PAYMENT = [
+  { code: 'D007', name: '7 Days' },
+  { code: 'D014', name: '14 Days' },
+  { code: 'D015', name: '15 Days' },
+  { code: 'D045', name: '45 Days' },
+  { code: 'D060', name: '60 Days' },
+  { code: 'D090', name: '90 Days' },
+  { code: 'D120', name: '120 Days' },
+];
+
+export const FISCAL_POSITIONS = [
+  { code: 'FP01', name: 'Absolut (PRM)' },
+  { code: 'FP02', name: 'Absolut (PTI)' },
+  { code: 'FP03', name: 'Free Trade Zone' },
+  { code: 'FP04', name: 'Has NPWP no PKP' },
+  { code: 'FP05', name: 'Individual non NPWP' },
+];
+
+export const ACCOUNT_TYPES = [
+  { code: 'AT01', name: 'Virtual Account' },
+  { code: 'AT02', name: 'Bank Account' },
+  { code: 'AT03', name: 'Batch Upload' },
+  { code: 'AT04', name: 'Billing ID' },
+];
+
+/**
+ * Daftar bank beserta kode BIC/SWIFT dan negaranya.
+ *
+ * Memilih bank mengisi sendiri kode BIC dan negaranya, sehingga pemasok tidak
+ * perlu menghafal kode dan tidak ada peluang salah ketik. Keduanya diturunkan
+ * dari kode bank saat ditampilkan, bukan disimpan ulang pada tiap baris —
+ * menyimpan nilai turunan membuka peluang datanya menyimpang bila daftar bank
+ * diperbarui.
+ *
+ * ⚠️ Tiga puluh bank ini kurasi awal untuk keperluan demo, dan kode BIC-nya
+ * **belum dicocokkan dengan direktori SWIFT resmi**. Mintalah tim master data
+ * memverifikasinya sebelum dipakai untuk pembayaran sungguhan.
+ */
+export const BANKS = [
+  /* Indonesia */
+  { code: 'BMRI', name: 'Bank Mandiri', bic: 'BMRIIDJA', country: 'Indonesia' },
+  { code: 'BCA', name: 'Bank Central Asia', bic: 'CENAIDJA', country: 'Indonesia' },
+  { code: 'BNI', name: 'Bank Negara Indonesia', bic: 'BNINIDJA', country: 'Indonesia' },
+  { code: 'BRI', name: 'Bank Rakyat Indonesia', bic: 'BRINIDJA', country: 'Indonesia' },
+  { code: 'BNIA', name: 'Bank CIMB Niaga', bic: 'BNIAIDJA', country: 'Indonesia' },
+  { code: 'BDIN', name: 'Bank Danamon', bic: 'BDINIDJA', country: 'Indonesia' },
+  { code: 'BBBA', name: 'Bank Permata', bic: 'BBBAIDJA', country: 'Indonesia' },
+  { code: 'PINB', name: 'Bank Panin', bic: 'PINBIDJA', country: 'Indonesia' },
+  { code: 'IBBK', name: 'Bank Maybank Indonesia', bic: 'IBBKIDJA', country: 'Indonesia' },
+  { code: 'NISP', name: 'Bank OCBC NISP', bic: 'NISPIDJA', country: 'Indonesia' },
+  { code: 'BSMD', name: 'Bank Syariah Indonesia', bic: 'BSMDIDJA', country: 'Indonesia' },
+
+  /* Malaysia */
+  { code: 'MBBE', name: 'Maybank', bic: 'MBBEMYKL', country: 'Malaysia' },
+  { code: 'CIBB', name: 'CIMB Bank Berhad', bic: 'CIBBMYKL', country: 'Malaysia' },
+  { code: 'PBBE', name: 'Public Bank Berhad', bic: 'PBBEMYKL', country: 'Malaysia' },
+  { code: 'RHBB', name: 'RHB Bank Berhad', bic: 'RHBBMYKL', country: 'Malaysia' },
+  { code: 'HLBB', name: 'Hong Leong Bank', bic: 'HLBBMYKL', country: 'Malaysia' },
+
+  /* Singapura */
+  { code: 'DBSS', name: 'DBS Bank', bic: 'DBSSSGSG', country: 'Singapura' },
+  { code: 'OCBC', name: 'OCBC Bank', bic: 'OCBCSGSG', country: 'Singapura' },
+  { code: 'UOVB', name: 'United Overseas Bank', bic: 'UOVBSGSG', country: 'Singapura' },
+
+  /* Global */
+  { code: 'HBUK', name: 'HSBC Bank', bic: 'HBUKGB4B', country: 'Britania Raya' },
+  { code: 'SCBL', name: 'Standard Chartered Bank', bic: 'SCBLGB2L', country: 'Britania Raya' },
+  { code: 'BARC', name: 'Barclays Bank', bic: 'BARCGB22', country: 'Britania Raya' },
+  { code: 'CITI', name: 'Citibank', bic: 'CITIUS33', country: 'Amerika Serikat' },
+  { code: 'CHAS', name: 'JPMorgan Chase Bank', bic: 'CHASUS33', country: 'Amerika Serikat' },
+  { code: 'BOFA', name: 'Bank of America', bic: 'BOFAUS3N', country: 'Amerika Serikat' },
+  { code: 'DEUT', name: 'Deutsche Bank', bic: 'DEUTDEFF', country: 'Jerman' },
+  { code: 'BNPA', name: 'BNP Paribas', bic: 'BNPAFRPP', country: 'Prancis' },
+  { code: 'BOTK', name: 'MUFG Bank', bic: 'BOTKJPJT', country: 'Jepang' },
+  { code: 'SMBC', name: 'Sumitomo Mitsui Banking Corporation', bic: 'SMBCJPJT', country: 'Jepang' },
+  { code: 'BKCH', name: 'Bank of China', bic: 'BKCHCNBJ', country: 'Tiongkok' },
+];
+
+export function findBank(code) {
+  return BANKS.find((item) => item.code === code) ?? null;
+}
+
+let bankLineCounter = 0;
+
+/** Satu baris rekening pada bagian pembayaran. */
+export function makeBankLine(overrides = {}) {
+  bankLineCounter += 1;
+  return {
+    id: `bank_${Date.now().toString(36)}${bankLineCounter.toString(36)}`,
+    accountType: '',
+    bankCode: '',
+    accountNumber: '',
+    accountHolder: '',
+    statement: null,
+    ...overrides,
+  };
+}
+
+/** Baris dianggap tersentuh bila salah satu kolomnya terisi. */
+export function isBankLineTouched(line) {
+  return Boolean(
+    line?.accountType ||
+      line?.bankCode ||
+      line?.accountNumber?.trim() ||
+      line?.accountHolder?.trim() ||
+      line?.statement,
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Pembantu tampilan                                                  */
 /* ------------------------------------------------------------------ */
 

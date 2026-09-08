@@ -120,14 +120,6 @@ export const ACCEPTED_FILE_LABEL = 'PDF, JPG, atau PNG — maks. 2 MB';
 export const MAX_CONTACTS = 10;
 
 /* Opsi dropdown */
-export const TERMS_OF_PAYMENT = [
-  '7 Net Days',
-  '15 Net Days',
-  '30 Net Days',
-  '45 Net Days',
-  '60 Net Days',
-];
-
 export const CURRENCIES = ['IDR', 'MYR', 'USD', 'SGD', 'EUR'];
 
 export const CONTACT_TITLES = ['Mr', 'Miss', 'Madam'];
@@ -159,6 +151,18 @@ export {
   makeTaxDocument,
   makeTaxDocuments,
   isTaxDocumentTouched,
+  LEGAL_DOCUMENTS,
+  LEGAL_DOCUMENT_GROUPS,
+  legalDocumentsOf,
+  makeLegalDocuments,
+  AGREEMENT_RATE_OPTIONS,
+  TERMS_OF_PAYMENT,
+  FISCAL_POSITIONS,
+  ACCOUNT_TYPES,
+  BANKS,
+  findBank,
+  makeBankLine,
+  isBankLineTouched,
 } from './masterData.js';
 
 export const COUNTRIES = ['Indonesia', 'Malaysia'];
