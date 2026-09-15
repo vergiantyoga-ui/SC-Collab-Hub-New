@@ -458,3 +458,74 @@
   margin-left: var(--sp-2);
   font-size: var(--text-xs);
 }
+
+/* ------------------------------------------------------------
+   Checklist pemeriksaan lapangan (Verifikasi dokumen)
+   ------------------------------------------------------------ */
+.check-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: var(--sp-4);
+  overflow: hidden;
+}
+.check-group__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  cursor: pointer;
+  background: var(--surface-sunk);
+  list-style: none;
+}
+.check-group__summary::-webkit-details-marker {
+  display: none;
+}
+.check-group__title {
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--ink-700);
+}
+.check-group__body {
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
+}
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px dashed var(--line);
+}
+.check-row:last-child {
+  border-bottom: 0;
+}
+.check-row--flagged {
+  background: color-mix(in srgb, var(--red-500, #dc2626) 6%, transparent);
+  margin: 0 calc(-1 * var(--sp-2));
+  padding: var(--sp-2);
+  border-radius: var(--radius-sm);
+  border-bottom: 0;
+}
+.check-row__main {
+  min-width: 0;
+  flex: 1;
+}
+.check-row__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-700);
+}
+.check-row__value {
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+  margin-top: 2px;
+  word-break: break-word;
+}
+.check-row__action {
+  flex: none;
+}
+.check-row__note {
+  margin-top: var(--sp-3);
+  flex-basis: 100%;
+}

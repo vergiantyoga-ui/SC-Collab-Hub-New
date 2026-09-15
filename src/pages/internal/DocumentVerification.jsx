@@ -1,49 +1,223 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import DataList from '../../components/ui/DataList.jsx';
-import ProfileSummary from '../../components/profile/ProfileSummary.jsx';
-import { Checkbox, TextAreaField } from '../../components/ui/Field.jsx';
+import { TextAreaField, TextField } from '../../components/ui/Field.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { PATH, STATUS } from '../../lib/constants.js';
-import { formatDate } from '../../lib/format.js';
+import { formatDate, orDash } from '../../lib/format.js';
+import { formatBytes, formatNpwp } from '../../lib/validation.js';
+import {
+  ACCOUNT_TYPES,
+  AGREEMENT_RATE_OPTIONS,
+  ENTITY_TYPES,
+  FISCAL_POSITIONS,
+  LEGAL_DOCUMENTS,
+  LEGAL_STATUSES,
+  OTV_STATUSES,
+  TAX_DOCUMENTS,
+  TERMS_OF_PAYMENT,
+  TRANSACTION_TYPES,
+  VENDOR_DIRECT_TYPES,
+  VENDOR_TYPES,
+  VENDOR_TYPE_DETAILS,
+  eInvoiceFor,
+  findBank,
+  labelOf,
+} from '../../lib/masterData.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
  * Verifikasi dokumen — gerbang terakhir sebelum pemasok berstatus aktif.
- * Staf menandai dokumen yang bermasalah satu per satu, sehingga pemasok
- * tahu persis berkas mana yang harus diperbaiki.
+ *
+ * Pemeriksaan mencakup seluruh field profil pemasok, bukan hanya berkas
+ * unggahan: data umum, alamat, kontak, data pajak, dokumen legalitas,
+ * lisensi, pembayaran, dan kontak perusahaan. Staf menandai field yang
+ * bermasalah satu per satu lewat tombol catatan revisi di tiap baris,
+ * sehingga pemasok tahu persis apa yang harus diperbaiki dan di bagian mana.
  */
-const CHECKABLE_DOCUMENTS = [
-  { id: 'ktp', label: 'Scan KTP' },
-  { id: 'npwp', label: 'Scan NPWP' },
-  { id: 'siup', label: 'SIUP' },
-  { id: 'pkp', label: 'PKP' },
-  { id: 'sbu', label: 'SBU' },
-  { id: 'skb', label: 'SKB' },
-  { id: 'suratKeteranganPp', label: 'Surat Keterangan PP' },
-  { id: 'codCor', label: 'COD/COR' },
-  { id: 'tin', label: 'Dokumen TIN' },
-  { id: 'brn', label: 'Dokumen BRN' },
-  { id: 'aktaPendirian', label: 'Akta Pendirian' },
-  { id: 'skPendirian', label: 'SK Pendirian MENKUMHAM' },
-  { id: 'aktaPerubahan', label: 'Akta Perubahan SK/SP' },
-  { id: 'aktaSusunanDireksi', label: 'Akta Susunan Direksi' },
-  { id: 'nib', label: 'NIB' },
-  { id: 'suratIzinUsaha', label: 'Surat Izin Usaha / Sertifikat Standar' },
-  { id: 'izinLokasi', label: 'Izin Lokasi' },
-  { id: 'pkkpr', label: 'PKKPR' },
-  { id: 'suratKuasa', label: 'Surat Kuasa' },
-  { id: 'conflictOfInterest', label: 'Conflict of Interest' },
-  { id: 'businessLicense', label: 'Business License' },
-  { id: 'deedOfEstablishment', label: 'Deed of Establishment' },
-  { id: 'sertifikat', label: 'Lisensi & sertifikat' },
-  { id: 'bank', label: 'Data rekening bank' },
-];
+const fileLabel = (file) => (file ? `${file.name} (${formatBytes(file.size)})` : null);
+
+function buildFieldGroups(submission) {
+  const g = submission.general ?? {};
+  const a = submission.address ?? {};
+  const c = submission.contact ?? {};
+  const p = submission.profile ?? {};
+  const tax = p.tax ?? {};
+  const documents = p.documents ?? {};
+  const licenses = p.licenses ?? {};
+  const banking = p.banking ?? {};
+
+  const groups = [
+    {
+      id: 'general',
+      title: 'Data umum',
+      fields: [
+        { id: 'general.legalStatus', label: 'Status badan hukum', value: labelOf(LEGAL_STATUSES, g.legalStatus) },
+        { id: 'general.entityType', label: 'Bentuk badan usaha', value: labelOf(ENTITY_TYPES, g.entityType) },
+        { id: 'general.vendorName', label: 'Nama perusahaan', value: g.vendorName },
+        { id: 'general.vendorType', label: 'Jenis pasokan', value: labelOf(VENDOR_TYPES, g.vendorType) },
+        {
+          id: 'general.vendorTypeDetail',
+          label: 'Rincian pasokan',
+          value: labelOf(VENDOR_TYPE_DETAILS, g.vendorTypeDetail),
+        },
+        {
+          id: 'general.vendorDirectType',
+          label: 'Tipe vendor',
+          value: labelOf(VENDOR_DIRECT_TYPES, g.vendorDirectType),
+        },
+        {
+          id: 'general.targetCompanies',
+          label: 'Perusahaan dituju',
+          value: Array.isArray(g.targetCompanies) ? g.targetCompanies.join(', ') : g.targetCompanies,
+        },
+        { id: 'general.otvStatus', label: 'Rencana kerja sama', value: labelOf(OTV_STATUSES, g.otvStatus) },
+        { id: 'general.companyEmail', label: 'Email perusahaan', value: g.companyEmail },
+        { id: 'general.officePhone', label: 'Telepon kantor', value: g.officePhone },
+        { id: 'general.mobilePhone', label: 'Nomor ponsel', value: g.mobilePhone },
+        { id: 'general.website', label: 'Situs web', value: g.website },
+      ],
+    },
+    {
+      id: 'address',
+      title: 'Alamat perusahaan',
+      fields: [
+        { id: 'address.street', label: 'Alamat lengkap', value: a.street },
+        { id: 'address.country', label: 'Negara', value: a.country },
+        { id: 'address.province', label: 'Provinsi', value: a.province },
+        { id: 'address.city', label: 'Kota', value: a.city },
+        { id: 'address.postalCode', label: 'Kode pos', value: a.postalCode },
+        { id: 'address.district', label: 'Kecamatan', value: a.district },
+        { id: 'address.subdistrict', label: 'Kelurahan', value: a.subdistrict },
+      ],
+    },
+    {
+      id: 'contact',
+      title: 'Penanggung jawab',
+      fields: [
+        { id: 'contact.name', label: 'Nama', value: `${c.title ?? ''} ${c.name ?? ''}`.trim() },
+        { id: 'contact.jobPosition', label: 'Bidang pekerjaan', value: c.jobPosition },
+        { id: 'contact.email', label: 'Email', value: c.email },
+        { id: 'contact.phone', label: 'Telepon kantor', value: c.phone },
+        { id: 'contact.mobile', label: 'Nomor ponsel', value: c.mobile },
+        { id: 'contact.notes', label: 'Catatan', value: c.notes },
+      ],
+    },
+    {
+      id: 'tax',
+      title: 'Data pajak',
+      fields: [
+        { id: 'tax.taxName', label: 'Tax name', value: tax.taxName },
+        { id: 'tax.taxAddress', label: 'Tax address', value: tax.taxAddress },
+        { id: 'tax.nik', label: 'NIK', value: tax.nik },
+        { id: 'tax.npwp', label: 'NPWP', value: tax.npwp ? formatNpwp(tax.npwp) : null },
+        {
+          id: 'tax.transactionType',
+          label: 'Transaction type',
+          value: labelOf(TRANSACTION_TYPES, tax.transactionType),
+        },
+        { id: 'tax.eInvoice', label: 'E-invoice provided', value: eInvoiceFor(tax.transactionType) },
+        { id: 'tax.tin', label: 'TIN', value: tax.tin },
+        { id: 'tax.brn', label: 'BRN', value: tax.brn },
+        { id: 'tax.gstNumber', label: 'Nomor GST', value: tax.gstNumber },
+        { id: 'tax.ktpDocument', label: 'Scan KTP', value: fileLabel(tax.ktpDocument) },
+        { id: 'tax.npwpDocument', label: 'Scan NPWP', value: fileLabel(tax.npwpDocument) },
+        { id: 'tax.tinDocument', label: 'Dokumen TIN', value: fileLabel(tax.tinDocument) },
+        { id: 'tax.brnDocument', label: 'Dokumen BRN', value: fileLabel(tax.brnDocument) },
+        ...TAX_DOCUMENTS.map(({ key, label }) => {
+          const doc = tax.documents?.[key];
+          const detail = doc?.number
+            ? `No. ${doc.number} — ${fileLabel(doc.file) ?? 'tanpa berkas'} — berlaku sampai ${formatDate(doc.validUntil)}`
+            : null;
+          return { id: `tax.documents.${key}`, label, value: detail };
+        }),
+      ],
+    },
+    {
+      id: 'documents',
+      title: 'Dokumen legalitas',
+      fields: [
+        ...LEGAL_DOCUMENTS.map(({ key, label }) => ({
+          id: `documents.${key}`,
+          label,
+          value: fileLabel(documents[key]),
+        })),
+        { id: 'documents.reasonNoDoe', label: 'Alasan tanpa DoE', value: documents.reasonNoDoe },
+      ],
+    },
+    {
+      id: 'licenses',
+      title: 'Lisensi & sertifikat',
+      fields: ['gmp', 'cpkb', 'halal'].map((key) => {
+        const cert = licenses[key] ?? {};
+        const label = key === 'halal' ? 'Sertifikat halal' : key.toUpperCase();
+        const value = cert.notApplicable
+          ? 'Ditandai tidak berlaku'
+          : cert.number
+            ? `No. ${cert.number} — berlaku sampai ${formatDate(cert.expiryDate)} — ${fileLabel(cert.file) ?? 'tanpa berkas'}`
+            : null;
+        return { id: `licenses.${key}`, label, value };
+      }),
+    },
+    {
+      id: 'banking',
+      title: 'Pembayaran & tagihan',
+      fields: [
+        { id: 'banking.currency', label: 'Mata uang', value: banking.currency },
+        {
+          id: 'banking.setAgreementRate',
+          label: 'Set agreement rate',
+          value: labelOf(AGREEMENT_RATE_OPTIONS, banking.setAgreementRate),
+        },
+        {
+          id: 'banking.termsOfPayment1',
+          label: 'Termin pembayaran 1',
+          value: labelOf(TERMS_OF_PAYMENT, banking.termsOfPayment1),
+        },
+        {
+          id: 'banking.termsOfPayment2',
+          label: 'Termin pembayaran 2',
+          value: labelOf(TERMS_OF_PAYMENT, banking.termsOfPayment2),
+        },
+        {
+          id: 'banking.termsOfPayment3',
+          label: 'Termin pembayaran 3',
+          value: labelOf(TERMS_OF_PAYMENT, banking.termsOfPayment3),
+        },
+        {
+          id: 'banking.fiscalPosition',
+          label: 'Fiscal position',
+          value: labelOf(FISCAL_POSITIONS, banking.fiscalPosition),
+        },
+        ...(banking.lines ?? []).map((line, index) => {
+          const bank = findBank(line.bankCode);
+          return {
+            id: `banking.lines.${line.id ?? index}`,
+            label: `Rekening ${index + 1} — ${labelOf(ACCOUNT_TYPES, line.accountType) ?? ''} ${bank?.name ?? ''}`.trim(),
+            value: `${line.accountNumber ?? '—'} a.n. ${line.accountHolder ?? '—'} — ${fileLabel(line.statement) ?? 'tanpa berkas'}`,
+          };
+        }),
+      ],
+    },
+    {
+      id: 'contacts',
+      title: 'Kontak perusahaan',
+      fields: (p.contacts ?? []).map((contact) => ({
+        id: `contacts.${contact.id}`,
+        label: `${contact.title ?? ''} ${contact.name ?? ''}${contact.isPrimary ? ' (kontak utama)' : ''}`.trim(),
+        value: `${contact.jobPosition ?? '—'} · ${contact.email ?? '—'} · ${contact.mobile ?? '—'}`,
+      })),
+    },
+  ];
+
+  // Buang grup tanpa field sama sekali (mis. belum ada kontak tambahan).
+  return groups.map((group) => ({ ...group, fields: group.fields.filter(Boolean) }));
+}
 
 export default function DocumentVerification() {
   const t = useT();
@@ -53,25 +227,63 @@ export default function DocumentVerification() {
 
   const [selectedId, setSelectedId] = useState(null);
   const [flagged, setFlagged] = useState({});
+  const [openNote, setOpenNote] = useState(null);
+  const [query, setQuery] = useState('');
   const [rejecting, setRejecting] = useState(false);
   const [approving, setApproving] = useState(false);
 
   const queue = submissions.filter((s) => s.status === STATUS.REGISTRATION);
   const selected = queue.find((s) => s.id === selectedId) ?? queue[0] ?? null;
 
-  function toggleFlag(docId, checked) {
+  const fieldGroups = useMemo(() => (selected ? buildFieldGroups(selected) : []), [selected]);
+
+  const fieldLabelById = useMemo(() => {
+    const map = {};
+    fieldGroups.forEach((group) => group.fields.forEach((field) => { map[field.id] = field.label; }));
+    return map;
+  }, [fieldGroups]);
+
+  const filteredGroups = query.trim()
+    ? fieldGroups
+        .map((group) => ({
+          ...group,
+          fields: group.fields.filter((field) =>
+            `${group.title} ${field.label}`.toLowerCase().includes(query.trim().toLowerCase()),
+          ),
+        }))
+        .filter((group) => group.fields.length > 0)
+    : fieldGroups;
+
+  function selectSubmission(id) {
+    setSelectedId(id);
+    setFlagged({});
+    setOpenNote(null);
+    setQuery('');
+  }
+
+  function toggleFlag(fieldId) {
     setFlagged((current) => {
       const next = { ...current };
-      if (checked) next[docId] = next[docId] ?? '';
-      else delete next[docId];
+      if (fieldId in next) {
+        delete next[fieldId];
+        if (openNote === fieldId) setOpenNote(null);
+      } else {
+        next[fieldId] = '';
+        setOpenNote(fieldId);
+      }
       return next;
     });
+  }
+
+  function setNote(fieldId, reason) {
+    setFlagged((current) => ({ ...current, [fieldId]: reason }));
   }
 
   function handleApprove() {
     actions.verifyDocuments(selected.id, session.user);
     setApproving(false);
     setFlagged({});
+    setOpenNote(null);
     toast.success(`${selected.general.vendorName} kini berstatus aktif.`);
   }
 
@@ -79,8 +291,8 @@ export default function DocumentVerification() {
     event.preventDefault();
     const notes = Object.entries(flagged)
       .filter(([, reason]) => reason.trim())
-      .map(([docId, reason]) => ({
-        document: CHECKABLE_DOCUMENTS.find((d) => d.id === docId).label,
+      .map(([fieldId, reason]) => ({
+        field: fieldLabelById[fieldId] ?? fieldId,
         reason: reason.trim(),
       }));
 
@@ -89,18 +301,19 @@ export default function DocumentVerification() {
     actions.requestDocumentFix(selected.id, notes, session.user);
     setRejecting(false);
     setFlagged({});
+    setOpenNote(null);
     toast.notify('Permintaan perbaikan dikirim ke pemasok.');
   }
 
   if (queue.length === 0) {
     return (
       <>
-      <PageHeader
-        trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.verification') }]}
-        icon="verify"
-        title={t('verify.title')}
-        description="Periksa keterbacaan berkas, kesesuaian nomor identitas, masa berlaku sertifikat, dan kecocokan nama pemilik rekening dengan badan usaha."
-      />
+        <PageHeader
+          trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.verification') }]}
+          icon="verify"
+          title={t('verify.title')}
+          description="Periksa seluruh data pemasok — data umum, alamat, kontak, pajak, dokumen legalitas, lisensi, pembayaran, hingga kontak perusahaan."
+        />
         <div className="card">
           <EmptyState
             title="Tidak ada dokumen yang menunggu"
@@ -115,6 +328,7 @@ export default function DocumentVerification() {
   const flaggedCount = Object.keys(flagged).length;
   const hasEmptyReason = Object.values(flagged).some((reason) => !reason.trim());
   const preparedByStaff = selected.onboardingPath === PATH.INTERNAL;
+  const totalFieldCount = fieldGroups.reduce((sum, group) => sum + group.fields.length, 0);
 
   return (
     <>
@@ -122,7 +336,7 @@ export default function DocumentVerification() {
         trail={[{ label: t('common.home'), to: '/internal/beranda' }, { label: t('nav.verification') }]}
         icon="verify"
         title={t('verify.title')}
-        description="Periksa keterbacaan berkas, kesesuaian nomor identitas, masa berlaku sertifikat, dan kecocokan nama pemilik rekening dengan badan usaha."
+        description="Periksa seluruh data pemasok — data umum, alamat, kontak, pajak, dokumen legalitas, lisensi, pembayaran, hingga kontak perusahaan."
       />
 
       <div className="queue-layout">
@@ -137,10 +351,7 @@ export default function DocumentVerification() {
                   type="button"
                   className="queue-item"
                   aria-current={selected?.id === item.id}
-                  onClick={() => {
-                    setSelectedId(item.id);
-                    setFlagged({});
-                  }}
+                  onClick={() => selectSubmission(item.id)}
                 >
                   <span className="queue-item__name">{item.general.vendorName}</span>
                   <span className="queue-item__meta">
@@ -174,37 +385,97 @@ export default function DocumentVerification() {
             )}
           </Card>
 
-          <Card title="Dokumen pemasok">
-            <ProfileSummary profile={selected.profile} />
-          </Card>
-
           <Card
             title="Hasil pemeriksaan"
-            subtitle="Tandai dokumen yang bermasalah, atau setujui bila semuanya sesuai"
+            subtitle={`Seluruh ${totalFieldCount} field pada profil pemasok — tandai yang bermasalah lewat tombol catatan revisi, atau setujui bila semuanya sesuai`}
           >
-            <div className="stack-sm">
-              {CHECKABLE_DOCUMENTS.map((doc) => (
-                <div key={doc.id}>
-                  <Checkbox
-                    label={`${doc.label} perlu diperbaiki`}
-                    checked={doc.id in flagged}
-                    onChange={(checked) => toggleFlag(doc.id, checked)}
-                  />
-                  {doc.id in flagged && (
-                    <div style={{ marginTop: 'var(--sp-2)', marginLeft: 29 }}>
-                      <TextAreaField
-                        label={`Alasan — ${doc.label}`}
-                        rows={2}
-                        value={flagged[doc.id]}
-                        onChange={(e) =>
-                          setFlagged((current) => ({ ...current, [doc.id]: e.target.value }))
-                        }
-                        placeholder="Sebutkan apa yang harus diperbaiki pemasok."
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
+            <TextField
+              label="Cari field"
+              placeholder="Contoh: NPWP, rekening, kontak..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              hint={
+                flaggedCount > 0
+                  ? `${flaggedCount} field ditandai perlu revisi.`
+                  : 'Kosongkan untuk menampilkan seluruh field.'
+              }
+            />
+
+            <div style={{ marginTop: 'var(--sp-4)' }}>
+              {filteredGroups.length === 0 ? (
+                <p className="text-sm muted">Tidak ada field yang cocok dengan pencarian.</p>
+              ) : (
+                filteredGroups.map((group) => {
+                  const groupFlaggedCount = group.fields.filter((f) => f.id in flagged).length;
+                  return (
+                    <details key={group.id} className="check-group" open={groupFlaggedCount > 0 || Boolean(query.trim())}>
+                      <summary className="check-group__summary">
+                        <span className="check-group__title">{group.title}</span>
+                        <span className="text-xs muted">
+                          {groupFlaggedCount > 0
+                            ? `${groupFlaggedCount} dari ${group.fields.length} ditandai`
+                            : `${group.fields.length} field`}
+                        </span>
+                      </summary>
+                      <div className="check-group__body">
+                        {group.fields.map((field) => {
+                          const isFlagged = field.id in flagged;
+                          const isOpen = openNote === field.id;
+                          return (
+                            <div
+                              key={field.id}
+                              className={`check-row ${isFlagged ? 'check-row--flagged' : ''}`}
+                            >
+                              <div className="check-row__main">
+                                <p className="check-row__label">{field.label}</p>
+                                <p className="check-row__value">{orDash(field.value)}</p>
+                              </div>
+                              <div className="check-row__action">
+                                {!isFlagged ? (
+                                  <Button variant="secondary" size="sm" onClick={() => toggleFlag(field.id)}>
+                                    Catat revisi
+                                  </Button>
+                                ) : (
+                                  <div className="row" style={{ gap: 6 }}>
+                                    <Button
+                                      variant="quiet"
+                                      size="sm"
+                                      onClick={() => setOpenNote(isOpen ? null : field.id)}
+                                    >
+                                      {isOpen ? 'Tutup' : 'Ubah catatan'}
+                                    </Button>
+                                    <Button variant="danger" size="sm" onClick={() => toggleFlag(field.id)}>
+                                      Batalkan
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+
+                              {isFlagged && isOpen && (
+                                <div className="check-row__note">
+                                  <TextAreaField
+                                    label={`Catatan revisi — ${field.label}`}
+                                    rows={2}
+                                    value={flagged[field.id]}
+                                    onChange={(e) => setNote(field.id, e.target.value)}
+                                    placeholder="Sebutkan apa yang harus diperbaiki pemasok pada field ini."
+                                  />
+                                </div>
+                              )}
+                              {isFlagged && !isOpen && flagged[field.id].trim() && (
+                                <p className="check-row__note text-xs muted">&ldquo;{flagged[field.id]}&rdquo;</p>
+                              )}
+                              {isFlagged && !isOpen && !flagged[field.id].trim() && (
+                                <p className="check-row__note text-xs muted">Belum ada catatan revisi.</p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  );
+                })
+              )}
             </div>
 
             <div className="form-actions">
@@ -226,7 +497,7 @@ export default function DocumentVerification() {
 
             {flaggedCount > 0 && hasEmptyReason && (
               <p className="text-xs muted" style={{ textAlign: 'right', marginTop: 'var(--sp-2)' }}>
-                Isi alasan untuk setiap dokumen yang ditandai.
+                Isi catatan revisi untuk setiap field yang ditandai.
               </p>
             )}
           </Card>
@@ -254,13 +525,13 @@ export default function DocumentVerification() {
         open={rejecting}
         onClose={() => setRejecting(false)}
         title="Kirim permintaan perbaikan?"
-        description="Pemasok menerima daftar dokumen yang perlu diperbaiki beserta alasannya."
+        description="Pemasok menerima daftar field yang perlu diperbaiki beserta catatan revisinya."
       >
         <form onSubmit={handleRequestFix}>
           <ul className="stack-sm" style={{ margin: 0, paddingLeft: '1.1em' }}>
-            {Object.entries(flagged).map(([docId, reason]) => (
-              <li key={docId} className="text-sm">
-                <strong>{CHECKABLE_DOCUMENTS.find((d) => d.id === docId).label}</strong>
+            {Object.entries(flagged).map(([fieldId, reason]) => (
+              <li key={fieldId} className="text-sm">
+                <strong>{fieldLabelById[fieldId] ?? fieldId}</strong>
                 <br />
                 <span className="muted">{reason}</span>
               </li>

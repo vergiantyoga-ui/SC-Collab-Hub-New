@@ -111,8 +111,8 @@ export default function SupplierStatus() {
         <Card title="Catatan pemeriksaan">
           <ul className="stack-sm" style={{ margin: 0, paddingLeft: '1.1em' }}>
             {(submission.verification?.notes ?? []).map((note) => (
-              <li key={note.document}>
-                <strong>{note.document}</strong>
+              <li key={note.field ?? note.document}>
+                <strong>{note.field ?? note.document}</strong>
                 <br />
                 <span className="text-sm muted">{note.reason}</span>
               </li>

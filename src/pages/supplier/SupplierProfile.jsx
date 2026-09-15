@@ -111,8 +111,8 @@ export default function SupplierProfile() {
           <span className="notice__title">Tim procurement meminta perbaikan dokumen</span>
           <ul style={{ margin: '6px 0 0', paddingLeft: '1.1em' }}>
             {fixNotes.map((note) => (
-              <li key={note.document}>
-                <strong>{note.document}</strong> — {note.reason}
+              <li key={note.field ?? note.document}>
+                <strong>{note.field ?? note.document}</strong> — {note.reason}
               </li>
             ))}
           </ul>
