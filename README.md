@@ -25,8 +25,9 @@ rancangan**, bukan kode yang berjalan — proyek ini memang tanpa server.
 Perintah · Akun demo · Menelusuri kedua jalur
 
 **Bagian B — Cara kerja**
-Struktur berkas · Modul questionnaire · Bahasa antarmuka · Bahasa visual ·
-Aturan yang tercermin di kode · Catatan implementasi
+Struktur berkas · Modul questionnaire · Pokayoke penugasan kuesioner sebelum
+onboarding · Verifikasi dokumen sebagai checklist seluruh field · Bahasa
+antarmuka · Bahasa visual · Aturan yang tercermin di kode · Catatan implementasi
 
 **Bagian C — Rancangan modul questionnaire**
 Status pengerjaan · Keputusan yang sudah diambil · Penilaian arsitektur ·
@@ -96,23 +97,32 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 
 ## Menelusuri kedua jalur
 
+Setelah sebuah pengajuan disetujui, layar tinjauan menampilkan langkah **"Tugaskan
+kuesioner"** sebelum kedua tombol jalur onboarding aktif — lihat
+[Pokayoke penugasan kuesioner](#pokayoke-penugasan-kuesioner-sebelum-onboarding)
+di Bagian B. Kedua jalur di bawah ini sudah menyertakan langkah tersebut.
+
 **Jalur A — undang pemasok**
 
 1. Masuk sebagai Staf Procurement, buka antrian, pilih pengajuan berstatus menunggu.
 2. Buka ketiga tab (tombol keputusan terkunci sampai semuanya dibuka), lalu setujui.
-3. Tekan **Kirim undangan**. Salin ID akun dan kata sandi sementara dari dialog.
-4. Keluar, masuk ke portal pemasok dengan ID akun tersebut, ganti kata sandi.
-5. Isi kelima bagian profil, setujui kedua pernyataan pada layar persetujuan.
-6. Masuk kembali sebagai staf, buka **Verifikasi dokumen**, setujui atau minta perbaikan.
+3. Tekan **Tugaskan kuesioner**, pilih kuesioner terbit, tenggat, dan peninjau. Tanpa
+   langkah ini kedua kartu jalur onboarding tetap terkunci.
+4. Tekan **Kirim undangan**. Salin ID akun dan kata sandi sementara dari dialog.
+5. Keluar, masuk ke portal pemasok dengan ID akun tersebut, ganti kata sandi.
+6. Isi kelima bagian profil, setujui kedua pernyataan pada layar persetujuan.
+7. Masuk kembali sebagai staf, buka **Verifikasi dokumen**, setujui atau minta perbaikan
+   field yang bermasalah satu per satu.
 
 **Jalur B — registrasi internal**
 
 1. Masuk sebagai Staf Procurement atau Staf Procurement Admin — keduanya berwenang
    sama — lalu setujui sebuah pengajuan.
-2. Pilih **Mulai registrasi internal**, tentukan asal dokumen (email atau WhatsApp).
-3. Isi kelima bagian, lalu **Selesai dan kirim akun**. Tidak ada persetujuan
+2. Tekan **Tugaskan kuesioner** terlebih dahulu, seperti pada Jalur A.
+3. Pilih **Mulai registrasi internal**, tentukan asal dokumen (email atau WhatsApp).
+4. Isi kelima bagian, lalu **Selesai dan kirim akun**. Tidak ada persetujuan
    manager di tengah jalan; akun pemasok langsung dibuat.
-4. Masuk sebagai pemasok memakai ID akun tersebut untuk meninjau dan menyetujui.
+5. Masuk sebagai pemasok memakai ID akun tersebut untuk meninjau dan menyetujui.
 
 **Menelusuri preferred supplier**
 
@@ -485,9 +495,12 @@ Yang sudah berjalan:
   klasifikasi risiko yang dapat diubah sebutan maupun rentangnya.
 - **Pustaka soal dan seksi** — butir yang dipilih disalin nilainya, sehingga
   menyunting pustaka tidak mengubah kuesioner yang sudah memakainya.
-- **Penugasan** — menugaskan versi terbit kepada pemasok aktif beserta material,
-  tenggat, peninjau, prioritas, dan instruksi. Daftar penugasan memantau
-  kemajuan pengisian dan menandai yang lewat tenggat.
+- **Penugasan** — menugaskan versi terbit beserta material, tenggat, peninjau,
+  prioritas, dan instruksi. Daftar penugasan memantau kemajuan pengisian dan
+  menandai yang lewat tenggat. Ada dua titik masuk: menu **Penugasan** untuk
+  pemasok yang sudah aktif, dan dialog **Tugaskan kuesioner** pada layar
+  tinjauan pendaftaran untuk pengajuan yang baru disetujui — lihat
+  [Pokayoke penugasan kuesioner](#pokayoke-penugasan-kuesioner-sebelum-onboarding).
 - **Portal pemasok** — daftar kuesioner yang ditugaskan, dan wizard pengisian
   per seksi dengan simpan draf, pertanyaan bersyarat yang muncul seketika,
   unggahan dokumen sesuai aturan tiap soal, serta prapemeriksaan sebelum kirim
@@ -513,6 +526,77 @@ Seluruh tujuh fase selesai.
 Rancangan lengkap termasuk skema basis data dan spesifikasi API ada pada
 dokumen proposal terpisah; keduanya artefak rancangan untuk tim backend,
 karena proyek ini tanpa server.
+
+## Pokayoke penugasan kuesioner sebelum onboarding
+
+Sebelum aturan ini, kuesioner baru bisa ditugaskan setelah pemasok aktif —
+menu **Penugasan** hanya menampilkan pemasok yang sudah menyelesaikan
+registrasi (`hasFinishedRegistration`). Akibatnya pengisian kuesioner sering
+menyusul terlambat, karena baru terpikir setelah pemasok jauh masuk ke
+proses onboarding.
+
+Sekarang, begitu staf menyetujui sebuah pengajuan (`SubmissionReview.jsx`),
+layar "Pilih cara melanjutkan" memeriksa apakah pengajuan itu sudah punya
+minimal satu penugasan kuesioner lewat `assignmentsForSupplier()`. Selama
+belum ada:
+
+- Kedua kartu jalur onboarding (**Kirim undangan** dan **Mulai registrasi
+  internal**) tampil terkunci (`path-card--locked`) dan tombolnya `disabled`,
+  dengan pemeriksaan yang sama diulang di dalam `handleInvite` dan
+  `handleStartInternal` sebagai lapisan kedua.
+- Sebuah notice kuning menjelaskan alasannya dan menyediakan tombol
+  **Tugaskan kuesioner**, yang membuka dialog ringkas berisi pilihan
+  kuesioner terbit, versi, tenggat, peninjau, prioritas, dan instruksi —
+  memakai aksi `createAssignment` yang sama dengan menu Penugasan.
+
+Penugasan yang dibuat di sini memakai `submission.id` (mis. `SUP-2026-0135`)
+sebagai `supplierId`, bukan `account.accountId` yang baru terbit setelah
+undangan dikirim. Ini aman karena `submission.id` adalah pengenal yang sama
+sejak Supplier Request sampai Preferred Supplier — dipakai juga oleh
+`useCurrentSubmission()` di portal pemasok — sehingga kuesioner yang
+ditugaskan sebelum akun dibuat tetap muncul begitu pemasok pertama kali masuk.
+
+Setelah minimal satu kuesioner tertugaskan, notice berubah hijau berisi daftar
+kuesioner yang sudah ditugaskan beserta tenggat dan peninjaunya, dan kedua
+tombol jalur onboarding aktif kembali. Staf tetap bisa menugaskan kuesioner
+tambahan kapan saja lewat tombol **Tugaskan kuesioner lain**.
+
+Menu **Penugasan** yang lama tidak diubah dan tetap berguna untuk menugaskan
+kuesioner susulan kepada pemasok yang sudah aktif (mis. audit tahunan).
+
+## Verifikasi dokumen sebagai checklist seluruh field
+
+`DocumentVerification.jsx` semula hanya memeriksa ~24 berkas unggahan. Checklist
+sekarang dibangun oleh `buildFieldGroups()` dan mencakup **seluruh field profil
+pemasok** dalam delapan kelompok yang sama dengan halaman Profil: Data umum,
+Alamat perusahaan, Penanggung jawab, Data pajak, Dokumen legalitas, Lisensi &
+sertifikat, Pembayaran & tagihan, dan Kontak perusahaan — termasuk baris
+rekening dan kontak tambahan yang jumlahnya dinamis.
+
+Setiap kelompok dirender sebagai `<details>` yang dapat dilipat, menunjukkan
+berapa field yang sudah ditandai dari total di kelompok itu. Setiap field
+tampil sebagai satu baris berisi label, nilai yang tersimpan saat ini, dan
+tombol **Catat revisi**:
+
+- Menekan tombol menandai field itu perlu revisi dan langsung membuka kotak
+  catatan di tempat yang sama — bukan checklist besar dengan semua kotak
+  catatan terbuka sekaligus, supaya halaman tetap bisa ditelusuri meski
+  jumlah field jauh lebih banyak dari sebelumnya.
+- Field yang sudah ditandai menampilkan tombol **Ubah catatan** (buka/tutup
+  kotak catatan) dan **Batalkan** (melepas tanda), plus cuplikan catatan saat
+  kotaknya tertutup.
+- Kolom pencarian di atas checklist menyaring field lintas kelompok berdasarkan
+  labelnya, karena daftar penuh kini jauh lebih panjang daripada sebelumnya.
+
+Aturan lama tetap berlaku tanpa perubahan: **Minta perbaikan** hanya aktif bila
+ada field yang ditandai dan semua catatannya terisi; **Setujui dan aktifkan**
+terkunci selama masih ada field yang ditandai.
+
+Bentuk data catatan berganti dari `{ document, reason }` menjadi
+`{ field, reason }` supaya sesuai dengan cakupannya yang tidak lagi cuma
+dokumen. `SupplierProfile.jsx` dan `SupplierStatus.jsx` — dua layar yang
+menampilkan catatan ini kepada pemasok — dibaca lewat `note.field ?? note.document`
+supaya tetap kompatibel bila ada data lama berbentuk sebelumnya.
 
 ## Bahasa antarmuka
 
@@ -558,6 +642,8 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Kata sandi berlaku 7 hari sejak email terkirim | `format.passwordExpiryFrom`, diuji di `flow-check.mjs` |
 | Dua kotak centang persetujuan, tidak pre-checked | `ConsentPage.jsx` |
 | Verifikasi dokumen wajib sebelum aktif | `DocumentVerification.jsx` |
+| Undangan pemasok maupun registrasi internal terkunci sampai minimal satu kuesioner ditugaskan | `SubmissionReview.jsx` (`hasQuestionnaireAssigned`), `assignmentsForSupplier` |
+| Verifikasi dokumen memeriksa seluruh field profil, bukan hanya berkas unggahan, dengan catatan revisi per field | `DocumentVerification.buildFieldGroups`, `AppStore.requestDocumentFix` |
 | NIK 16 digit, NPWP 16 digit dengan normalisasi 15→16 | `validation.js` |
 | Unggahan PDF/JPG/PNG maksimal 2 MB | `validation.validateFile`, `FileField.jsx` |
 | Termin pembayaran 7/15/30/45/60 Net Days | `constants.TERMS_OF_PAYMENT` |

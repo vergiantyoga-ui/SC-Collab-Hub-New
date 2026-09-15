@@ -249,7 +249,7 @@ check('A18 kedua persetujuan tercatat', Boolean(
 
 // Staf meminta perbaikan dokumen lebih dahulu.
 a.run((actions) =>
-  actions.requestDocumentFix(idA, [{ document: 'Scan KTP', reason: 'Tidak terbaca.' }], STAFF),
+  actions.requestDocumentFix(idA, [{ field: 'Scan KTP', reason: 'Tidak terbaca.' }], STAFF),
 );
 check('A19 permintaan perbaikan mengubah status', a.supplier(idA).status, STATUS.NEEDS_DOCUMENT_FIX);
 check('A20 catatan perbaikan tersimpan', a.supplier(idA).verification.notes.length, 1);
