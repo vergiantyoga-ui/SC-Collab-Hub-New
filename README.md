@@ -817,13 +817,38 @@ integrasi tersedia.
 
 `/internal/update-vendor` menerima nomor ID pemasok — ID pengajuan
 (`SUP-2026-0135`) maupun ID akun portal (`SUP-RAW-0118`), karena staf lebih
-sering memegang salah satunya — lalu menampilkan data vendornya.
+sering memegang salah satunya — lalu membuka **seluruh data vendornya dalam tiga
+tab**, bukan sekadar ringkasan beberapa bidang.
+
+| Tab | Isi |
+|---|---|
+| **Profil vendor** | Kedelapan bagian: data umum, alamat perusahaan, penanggung jawab, data pajak, dokumen legalitas, lisensi & sertifikat, pembayaran & tagihan, kontak perusahaan |
+| **Kualifikasi** | Header, seluruh baris komoditas–negara, dan pintasan ke formulir kualifikasi |
+| **Kuesioner** | Kuesioner yang ditugaskan beserta tenggat, keadaan pengisian, dan pintasan ke layar tinjauan |
+
+Tiap bagian profil dapat **disunting langsung dari sini** lewat rail pemilih
+bagian, memakai `ProfileSectionForm` yang sama dengan portal pemasok — jadi
+seluruh validasinya ikut berlaku, termasuk pemeriksaan duplikasi NIK dan NPWP.
+
+Penyuntingan dari konsol internal memakai `updateVendorSection`, bukan
+`updateActiveProfile` yang dipakai pemasok. Bedanya satu hal dan disengaja:
+perubahan dari sisi internal **tidak memicu verifikasi ulang**, karena yang
+menyuntingnya justru tim yang akan memverifikasi — menahan datanya untuk
+diperiksa oleh orang yang baru saja mengubahnya hanya menambah putaran kosong.
+Setiap perubahan tetap tercatat pada linimasa pemasok.
+
+Percabangan tempat penyimpanan ditangani di dalam aksi itu: tiga bagian
+pendaftaran (`general`, `address`, `contact`) tinggal di akar pengajuan,
+sedangkan lima bagian sisanya di dalam `profile`. Pemanggilnya cukup menyebut
+nama bagian. Kedelapan formulirnya dirender pada `mdm-render-check.jsx` dengan
+data contoh yang sungguhan, supaya penyaluran nilai per bagian tidak diam-diam
+rusak.
 
 ⚠️ Penarikan sesungguhnya memakai transaksi SAP **MMI001** di sisi server, yang
 belum dibangun. Data yang ditampilkan berasal dari aplikasi ini, disusun dalam
 bentuk yang sama seperti balasan SAP nantinya. Yang sudah nyata adalah
-pencarian, penanganan ID tak dikenal, dan pencatatan setiap penarikan pada
-linimasa pemasok lewat `recordSapFetch`.
+pencarian, penanganan ID tak dikenal, penyuntingan seluruh bagian, dan
+pencatatan setiap penarikan pada linimasa pemasok lewat `recordSapFetch`.
 
 ## Duplikasi NIK & NPWP
 
@@ -864,6 +889,11 @@ Antarmuka mengikuti sistem desain konsol internal Paragon:
 - **Kepala halaman** — jejak navigasi, ikon berlatar biru muda, judul, lalu garis pemisah.
 - **Kartu menu** — petak dengan ikon indigo padat, dipakai pada beranda sebagai
   jalan pintas ke tugas yang menunggu.
+- **Pill status** — `StatusBadge` menerima dua bentuk: `status` untuk tahapan
+  pemasok (teksnya dari kamus i18n) atau `tone` + `label` untuk keadaan di luar
+  tahapan — status SAP, status akun, keadaan respons kuesioner — yang sudah
+  punya labelnya sendiri. Keduanya berbagi satu komponen supaya bentuk pill-nya
+  tidak bercabang.
 - **Isian kata sandi** — setiap isian kata sandi punya tombol lihat/sembunyikan
   yang dapat dicapai keyboard dan mengumumkan keadaannya lewat `aria-pressed`.
 - **Mode gelap** — mengikuti preferensi sistem saat pertama dibuka, dapat diubah
@@ -894,6 +924,7 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Dokumen lolos periksa menahan pemasok di `Menunggu validasi kuesioner` | `AppStore.verifyDocuments` |
 | Qualification terbuka hanya setelah seluruh kuesioner disetujui | `ReviewDetail.jsx`, `AppStore.advanceToQualification` |
 | Kualifikasi selesai langsung menjadikan pemasok preferred | `AppStore.saveQualification` |
+| Penyuntingan internal tidak memicu verifikasi ulang | `AppStore.updateVendorSection` |
 | Hanya role MDM yang dapat mengirim data ke SAP | `sapRules.canSubmitToSap`, `SapReview.jsx`, `PreferredReview.jsx` |
 | Kualifikasi tertutup sampai dokumen lolos periksa dan kuesioner tervalidasi | `qualificationRules.QUALIFIABLE_STATUSES` |
 | Daftar preferred hanya memuat pemasok preferred dan terdiskualifikasi | `PreferredQueue.TRACKED` |
