@@ -206,9 +206,9 @@ src/
                 assignmentMockData.js
     components/ builder/ (QuestionToolbox, SectionCard, QuestionCard,
                           PropertiesPanel, ConditionEditor,
-                          AttachmentRulePanel, ScoringPanel, ESignPanel,
-                          LibraryPicker)
-                render/  (QuestionRenderer, ESignBlock + lampiran)
+                          AttachmentRulePanel, ScoringPanel, LibraryPicker)
+                render/  (QuestionRenderer, ESignBlock ruang tanda tangan,
+                          + lampiran)
                 shared/  (status, skor, bilah kemajuan, grafik SVG)
     pages/      internal/ (TemplateList, TemplateDetail, TemplateCreate,
                           QuestionnaireBuilder, AssignmentList,
@@ -644,27 +644,36 @@ supaya tetap kompatibel bila ada data lama berbentuk sebelumnya.
 
 ## Tanda tangan elektronik (Privi)
 
-Setiap versi kuesioner dapat mewajibkan tanda tangan elektronik. Pengaturannya
-ada pada builder lewat tombol **Tanda tangan**: penyedia, siapa yang
-menandatangani, judul dokumen, dan apakah pengiriman ditahan sampai tanda
-tangan masuk.
+Seluruh kuesioner memakai **Privi**, dan penyambungannya berjalan otomatis di
+sisi server. Karena tidak ada yang perlu dipilih, konfigurasinya di builder
+hanya **satu sakelar**: tombol **E-sign: Aktif / Nonaktif** pada kepala halaman,
+di samping Pengaturan skoring. Sekali klik, langsung tersimpan — tidak ada
+dialog pengaturan, karena dialog yang seluruh isinya sudah ditetapkan hanya
+menambah satu langkah tanpa memberi pilihan.
 
-| Pengaturan | Pilihan |
-|---|---|
-| Penyedia | **Privi** (tersertifikasi) atau kanvas gambar tangan |
-| Penanda tangan | Penanggung jawab pemasok · Direktur/pimpinan · Kedua pihak |
-| Tahan pengiriman | Ya (bawaan) atau boleh menyusul |
+Tombolnya menandai keadaannya sendiri: hijau saat aktif, abu-abu saat nonaktif,
+dengan `aria-pressed` supaya pembaca layar ikut mengumumkannya. Keadaan itu juga
+tampil pada keterangan versi sebagai `· e-sign aktif`. Versi yang sudah terbit
+dibuka dalam mode baca, sehingga tombolnya tidak ditampilkan.
 
-Pada portal pemasok, panel tanda tangan muncul di seksi terakhir wizard. Bila
-"tahan pengiriman" aktif, dokumen yang belum ditandatangani masuk ke daftar
-prapemeriksaan sebelum kirim persis seperti pertanyaan wajib yang kosong —
-pemasok melihat alasannya, bukan tombol yang mati tanpa keterangan.
+Di portal pemasok, kuesioner yang e-sign-nya aktif menyediakan **ruang tanda
+tangan** pada seksi terakhir wizard: sebuah area bergaris putus-putus bertuliskan
+"Area tanda tangan Privi". Di sanalah komponen Privi kelak dimuat. Selama belum
+ditandatangani, kuesioner tidak dapat dikirim — dokumennya muncul pada daftar
+prapemeriksaan sebelum kirim persis seperti pertanyaan wajib yang masih kosong,
+sehingga pemasok melihat alasannya, bukan tombol mati tanpa keterangan.
 
 ⚠️ **Integrasi Privi belum tersambung.** Aplikasi ini front-end saja, jadi yang
-dibangun hanya tampilannya. Pembuatan envelope, pengalihan ke halaman tanda
-tangan Privi, dan callback statusnya berada di sisi server. Tombol pada panel
-pemasok hanya memindahkan keadaan tanda tangan di sesi berjalan, dan nomor
-envelope yang tampil adalah nomor contoh.
+dibangun hanya tampilannya: sakelar di builder dan ruang kosong di portal
+pemasok. Pembuatan envelope, pemuatan komponen Privi ke dalam ruang itu, dan
+callback statusnya berada di sisi server. Tombol **Tanda tangani (simulasi)**
+hanya memindahkan keadaan di sesi berjalan, dan nomor envelope yang tampil
+adalah nomor contoh.
+
+Bentuk datanya sengaja dibuat sekecil mungkin — `makeESignConfig()` hanya
+menghasilkan `{ enabled, provider }` — supaya menambah pengaturan baru kelak
+(misalnya siapa yang menandatangani) menjadi perubahan yang disengaja, bukan
+bidang yang terlanjur ada tanpa dipakai.
 
 ## Dua gerbang menuju qualification
 
@@ -869,7 +878,8 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Pemasok Blocked tidak dapat masuk portal | `AppStore.signInSupplier` |
 | Pengiriman ke SAP yang gagal tercatat pada log | `AppStore.submitToSap`, `SapFailureLog.jsx` |
 | NIK dan NPWP tidak boleh dipakai dua pemasok | `taxIdentity.findTaxIdDuplicate`, `ProfileSectionForm.jsx`, diuji di `sap-check.mjs` |
-| Tanda tangan elektronik menahan pengiriman kuesioner | `ResponseWizard.jsx`, `schema.makeESignConfig` |
+| E-sign hanya sakelar aktif/nonaktif, penyedia tetap Privi | `QuestionnaireBuilder.jsx`, `schema.makeESignConfig` |
+| Kuesioner ber-e-sign tidak dapat dikirim sebelum ditandatangani | `ResponseWizard.jsx` (`eSignPending`), `ESignBlock.jsx` |
 
 ## Catatan implementasi
 

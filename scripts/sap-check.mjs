@@ -182,10 +182,11 @@ check(
 
 check('E1 versi baru tidak mewajibkan tanda tangan', makeVersion().eSign.enabled, false);
 check('E2 penyedia bawaan Privi', makeESignConfig().provider, 'privi');
-check('E3 bawaan menahan pengiriman sampai ditandatangani',
-  makeESignConfig().blockSubmitUntilSigned, true);
-check('E4 pengaturan dapat ditimpa',
-  makeESignConfig({ enabled: true, signerRole: 'director' }).signerRole, 'director');
+check('E3 sakelar dapat diaktifkan', makeESignConfig({ enabled: true }).enabled, true);
+// Konfigurasinya sengaja hanya sakelar: tidak ada pilihan lain untuk diatur,
+// sehingga builder cukup menyediakan tombol aktif/nonaktif tanpa dialog.
+check('E4 konfigurasi hanya berisi sakelar dan penyedia',
+  Object.keys(makeESignConfig()).sort(), ['enabled', 'provider']);
 
 console.log(`\n${passed} lolos, ${failed} gagal.\n`);
 if (failed > 0) process.exit(1);
