@@ -65,17 +65,29 @@ const qualifying = byStatus(STATUS.QUALIFICATION);
 const inRegistration = byStatus(STATUS.REGISTRATION);
 
 check('Q20 preferred supplier tetap layak ditinjau', isEligible(active), true);
-// Jalur A: kualifikasi terbuka begitu pemasok mengirim profil, tanpa menunggu
-// verifikasi dokumen selesai.
-check('Q21 tahap registrasi sudah layak meski dokumen belum lolos periksa', isEligible(inRegistration), true);
-check('Q22 dokumen yang perlu diperbaiki tetap layak', isEligible({ status: STATUS.NEEDS_DOCUMENT_FIX }), true);
+// Kualifikasi tertutup sampai dokumen lolos periksa DAN seluruh kuesioner
+// divalidasi. Pemasok yang masih diperiksa tidak boleh muncul di daftarnya.
+check('Q21 tahap registrasi belum layak, dokumen masih diperiksa', isEligible(inRegistration), false);
+check('Q22 dokumen yang perlu diperbaiki belum layak', isEligible({ status: STATUS.NEEDS_DOCUMENT_FIX }), false);
+check(
+  'Q22b menunggu validasi kuesioner belum layak',
+  isEligible({ status: STATUS.AWAITING_QUESTIONNAIRE }),
+  false,
+);
+check(
+  'Q22c alasan menyebut gerbang yang menahan',
+  /kuesioner/.test(ineligibilityReason({ status: STATUS.AWAITING_QUESTIONNAIRE })),
+  true,
+);
 check('Q23 pendaftaran baru belum layak', isEligible(pending), false);
 check('Q24 tahap qualification jelas layak', isEligible(qualifying), true);
 check('Q25 profil yang belum selesai diisi belum layak', isEligible({ status: STATUS.ONBOARDING }), false);
 check('Q26 pemasok ditolak tidak pernah layak', isEligible({ status: STATUS.REJECTED }), false);
 check('Q27 alasan ketidaklayakan dijelaskan', ineligibilityReason(pending).length > 20, true);
 check('Q28 pemasok layak tanpa alasan penolakan', ineligibilityReason(active), null);
-check('Q29 lima status memenuhi syarat kualifikasi', QUALIFIABLE_STATUSES.length, 5);
+// Kualifikasi kini tertutup sampai dokumen lolos periksa dan kuesioner
+// tervalidasi; hanya Qualification dan Preferred yang tersisa.
+check('Q29 dua status memenuhi syarat kualifikasi', QUALIFIABLE_STATUSES.length, 2);
 
 /* ---------------- Baris ---------------- */
 const good = [

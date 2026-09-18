@@ -457,11 +457,24 @@ diselesaikan — lihat [Dua gerbang menuju qualification](#dua-gerbang-menuju-qu
 Manager procurement tidak lagi menjadi gerbang di tengah jalan; penilaiannya
 sudah terjadi lebih dulu lewat verifikasi dokumen dan validasi kuesioner.
 
-Modul ini tetap ada dan tetap berguna sebagai layar tinjauan:
+Daftarnya memuat **hanya pemasok berstatus `Preferred supplier` dan
+`Disqualification`**. Pemasok yang masih dikualifikasi sengaja tidak muncul:
+pekerjaan atas mereka ada di menu Kualifikasi, dan sejak pengajuan ke manager
+dihapus, menampilkan mereka di sini hanya mengaburkan batas antara kedua layar.
+
+Modul ini tetap berguna sebagai layar tinjauan, dan kini menjadi tempat tim
+Master Data Management mengirim data ke SAP:
 
 - Manager menilai empat berkas sekaligus — **profil registrasi, dokumen legalitas,
   kualifikasi komoditas, dan hasil kuesioner** — dengan tombol keputusan yang baru
   terbuka setelah keempat tab dibuka, mengikuti pola tinjauan pendaftaran.
+- **Kartu "Kirim ke SAP"** muncul pada setiap pemasok preferred, menampilkan cara
+  pemilihannya, hasil tender bila open tender, kode vendor SAP bila sudah
+  terkirim, serta alasan spesifik bila pengirimannya tertahan. Tombol **Submit
+  data ke SAP** dan **Minta revisi ke procurement** hanya aktif untuk role Master
+  Data Management; role lain melihat kartunya sebagai keterangan keadaan saja.
+  Gerbangnya sama persis dengan menu Kirim ke SAP — keduanya memanggil
+  `sapEligibility()`, sehingga tidak mungkin berbeda jawaban.
 - Keputusan **Disqualification** dicatat beserta alasan dan pelakunya, dan dapat
   dijalankan kapan saja atas pemasok yang sudah preferred.
 - Pemasok yang didiskualifikasi dapat dikembalikan ke tahap qualification, sehingga
@@ -469,21 +482,29 @@ Modul ini tetap ada dan tetap berguna sebagai layar tinjauan:
 
 ## Modul Kualifikasi Pemasok
 
-Setelah pemasok mengirimkan profilnya, staf procurement menentukan kategori
-komoditas dan negara asal pasokannya.
+Setelah profil pemasok lolos periksa dan kuesionernya divalidasi, staf
+procurement menentukan kategori komoditas dan negara asal pasokannya.
 
 - **Akses** — Staf Procurement dan Staf Procurement Admin memiliki wewenang yang
   sama dan keduanya dapat mengisi; Manager Procurement meninjau tanpa menyunting.
-- **Kelayakan** — gerbangnya adalah **profil yang sudah dikirim pemasok**, bukan
-  dokumen yang sudah diverifikasi, sehingga kualifikasi berjalan berdampingan
-  dengan verifikasi dokumen alih-alih mengantre di belakangnya. Kedua jalur
-  onboarding bertemu di titik ini: pada jalur undangan pemasok mengirim profilnya
-  sendiri, sedangkan pada registrasi internal manager menyetujui isian admin
-  lebih dahulu sebelum pemasok meninjau dan mengirimkannya. Status yang memenuhi
-  syarat: `Registrasi`, `Perlu perbaikan dokumen`, `Qualification`,
-  `Menunggu preferred`, dan `Preferred supplier`.
-  Daftar menampilkan status onboarding tiap pemasok agar staf punya konteks, dan
-  pemasok yang belum layak tetap menampilkan alasannya secara spesifik.
+- **Kelayakan** — hanya **dua status** yang muncul di daftar kualifikasi:
+  `Qualification` dan `Preferred supplier`. Yang kedua disertakan supaya
+  kualifikasi yang sudah selesai tetap dapat dibuka dan dikoreksi bila tim
+  Master Data Management memintanya sebelum dikirim ke SAP.
+
+  Aturan ini lebih ketat daripada sebelumnya. Dulu kualifikasi terbuka begitu
+  pemasok mengirim profilnya — termasuk saat statusnya masih `Registrasi` atau
+  `Perlu perbaikan dokumen` — agar berjalan berdampingan dengan verifikasi
+  dokumen. Pendekatan itu dicabut: mengualifikasi pemasok yang profilnya belum
+  tentu sah hanya menghasilkan pekerjaan yang mungkin harus diulang, dan daftar
+  yang memuat pemasok belum siap menyulitkan staf melihat mana yang benar-benar
+  menunggu dikerjakan. Pemasok yang dokumennya masih diperiksa atau kuesionernya
+  belum divalidasi kini tidak muncul sama sekali.
+
+  Membuka kualifikasi pemasok yang belum layak lewat URL langsung tetap
+  menampilkan alasannya secara spesifik — misalnya "dokumennya masih diperiksa
+  staf procurement" atau "kuesioner yang ditugaskan belum selesai divalidasi" —
+  bukan halaman kosong.
 - **Baris ganda** — satu baris mewakili satu pasangan komoditas dan negara.
   Baris dapat ditambah satuan atau lima sekaligus, disalin untuk negara lain,
   dan dihapus. Pasangan komoditas–negara yang berulang ditolak.
@@ -873,7 +894,9 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Dokumen lolos periksa menahan pemasok di `Menunggu validasi kuesioner` | `AppStore.verifyDocuments` |
 | Qualification terbuka hanya setelah seluruh kuesioner disetujui | `ReviewDetail.jsx`, `AppStore.advanceToQualification` |
 | Kualifikasi selesai langsung menjadikan pemasok preferred | `AppStore.saveQualification` |
-| Hanya role MDM yang dapat mengirim data ke SAP | `sapRules.canSubmitToSap`, `SapReview.jsx` |
+| Hanya role MDM yang dapat mengirim data ke SAP | `sapRules.canSubmitToSap`, `SapReview.jsx`, `PreferredReview.jsx` |
+| Kualifikasi tertutup sampai dokumen lolos periksa dan kuesioner tervalidasi | `qualificationRules.QUALIFIABLE_STATUSES` |
+| Daftar preferred hanya memuat pemasok preferred dan terdiskualifikasi | `PreferredQueue.TRACKED` |
 | Pemasok open tender tertahan sampai menjadi awardee | `sapRules.sapEligibility` (`open_tender_pending`) |
 | Pemasok Blocked tidak dapat masuk portal | `AppStore.signInSupplier` |
 | Pengiriman ke SAP yang gagal tercatat pada log | `AppStore.submitToSap`, `SapFailureLog.jsx` |
