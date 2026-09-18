@@ -181,6 +181,7 @@ export default function SupplierProfile() {
         >
           {showForm ? (
             <ProfileSectionForm
+              submissionId={submission.id}
               key={active}
               sectionId={active}
               value={currentValue(active)}

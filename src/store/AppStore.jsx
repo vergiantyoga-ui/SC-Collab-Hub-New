@@ -1,6 +1,16 @@
 import { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
-import { PATH, ROLE, STATUS } from '../lib/constants.js';
+import {
+  ACCOUNT_STATUS,
+  PATH,
+  ROLE,
+  SAP_STATUS,
+  SOURCING_METHOD,
+  STATUS,
+  TENDER_OUTCOME,
+} from '../lib/constants.js';
 import { INTERNAL_USERS, SUBMISSIONS } from '../lib/mockData.js';
+// Aturan murni tinggal di lib/; diekspor ulang agar jalur impor lama tetap jalan.
+export { findTaxIdDuplicate } from '../lib/taxIdentity.js';
 import { buildAccountId, buildInviteToken, buildTempPassword } from '../lib/format.js';
 import { VENDOR_TYPES, labelOf } from '../lib/masterData.js';
 
@@ -15,9 +25,25 @@ const AppActionsContext = createContext(null);
 
 const now = () => new Date().toISOString();
 
+/**
+ * Setiap pengajuan memperoleh tiga bidang operasional yang tidak ada pada data
+ * contoh: status akun (active/blocked, didorong dari SAP), keadaan pengiriman
+ * ke SAP, dan riwayat pengirimannya. Dinormalisasi di satu tempat supaya
+ * seluruh layar dapat membacanya tanpa pemeriksaan `?.` berulang.
+ */
+const withOperationalFields = (submission) => ({
+  accountStatus: ACCOUNT_STATUS.ACTIVE,
+  accountStatusReason: null,
+  accountStatusAt: null,
+  sap: { status: SAP_STATUS.NOT_SUBMITTED, history: [] },
+  ...submission,
+});
+
 const initialState = {
-  submissions: SUBMISSIONS,
-  qualifications: {}, // supplierId → { lines, status, updatedAt, updatedBy }
+  submissions: SUBMISSIONS.map(withOperationalFields),
+  qualifications: {}, // supplierId → { lines, header, status, updatedAt, updatedBy }
+  /** Log pengiriman ke SAP yang gagal — dibaca tim Master Data Management. */
+  sapLogs: [],
   session: null, // { kind: 'internal' | 'supplier', user }
 };
 
@@ -56,6 +82,19 @@ function reducer(state, action) {
         qualifications: { ...state.qualifications, [action.supplierId]: action.qualification },
       };
 
+    case 'SAP_LOG':
+      return { ...state, sapLogs: [action.log, ...state.sapLogs] };
+
+    case 'RESOLVE_SAP_LOG':
+      return {
+        ...state,
+        sapLogs: state.sapLogs.map((log) =>
+          log.id === action.logId
+            ? { ...log, resolvedAt: now(), resolvedBy: action.actor, resolution: action.resolution }
+            : log,
+        ),
+      };
+
     default:
       return state;
   }
@@ -90,6 +129,19 @@ export function AppStoreProvider({ children }) {
         if (!live) {
           return { ok: false, message: 'ID akun belum terdaftar atau undangan belum dikirim.' };
         }
+        // Blokir didorong dari SAP, bukan ditetapkan di aplikasi ini. Pemasok
+        // yang diblokir ditahan di layar masuk, bukan dibiarkan masuk lalu
+        // dibatasi per halaman — satu gerbang lebih sulit terlewat.
+        if (live.accountStatus === ACCOUNT_STATUS.BLOCKED) {
+          return {
+            ok: false,
+            blocked: true,
+            message:
+              live.accountStatusReason
+                ? `Akun diblokir: ${live.accountStatusReason} Hubungi tim procurement Paragon.`
+                : 'Akun Anda diblokir. Hubungi tim procurement Paragon.',
+          };
+        }
         dispatch({
           type: 'SIGN_IN',
           session: {
@@ -116,6 +168,10 @@ export function AppStoreProvider({ children }) {
             submittedAt: now(),
             ...payload,
             onboardingPath: null,
+            accountStatus: ACCOUNT_STATUS.ACTIVE,
+            accountStatusReason: null,
+            accountStatusAt: null,
+            sap: { status: SAP_STATUS.NOT_SUBMITTED, history: [] },
             account: null,
             consent: null,
             verification: null,
@@ -296,16 +352,38 @@ export function AppStoreProvider({ children }) {
       },
 
       /* ---------------- Verifikasi dokumen ---------------- */
+      /**
+       * Dokumen lolos periksa. Pemasok TIDAK langsung masuk tahap qualification:
+       * ia menunggu seluruh kuesioner yang ditugaskan divalidasi peninjau.
+       * Gerbang kedua itu dijalankan `advanceToQualification` di bawah.
+       */
       verifyDocuments(id, actor) {
         patch(
           id,
           {
-            status: STATUS.QUALIFICATION,
+            status: STATUS.AWAITING_QUESTIONNAIRE,
             registeredAt: now(),
             verification: { status: 'verified', verifiedAt: now(), verifiedBy: actor.name, notes: [] },
           },
-          entry('Dokumen lolos periksa, lanjut ke tahap qualification', actor.name),
+          entry('Dokumen lolos periksa, menunggu validasi kuesioner', actor.name),
         );
+      },
+
+      /**
+       * Melewatkan pemasok ke tahap qualification. Dipanggil setelah kuesioner
+       * terakhir yang ditugaskan disetujui peninjau, sehingga kedua syarat
+       * pokayoke — profil lolos periksa dan kuesioner tervalidasi — terpenuhi.
+       * Aman dipanggil berulang: status selain AWAITING_QUESTIONNAIRE diabaikan.
+       */
+      advanceToQualification(id, actor) {
+        const submission = state.submissions.find((s) => s.id === id);
+        if (submission?.status !== STATUS.AWAITING_QUESTIONNAIRE) return false;
+        patch(
+          id,
+          { status: STATUS.QUALIFICATION, qualificationOpenedAt: now() },
+          entry('Kuesioner tervalidasi, lanjut ke tahap qualification', actor?.name ?? 'Sistem'),
+        );
+        return true;
       },
 
       requestDocumentFix(id, notes, actor) {
@@ -353,31 +431,191 @@ export function AppStoreProvider({ children }) {
        * Menyimpan kualifikasi pemasok. Baris kosong dibuang di sini supaya
        * baris sisa saat mengisi tidak ikut tersimpan sebagai data.
        */
-      saveQualification(supplierId, lines, status, actor) {
+      saveQualification(supplierId, lines, status, actor, header = {}) {
         const kept = lines.filter(
           (line) => line.commodityCode || line.countryCode || line.notes?.trim(),
         );
+        const previous = state.qualifications[supplierId];
 
         dispatch({
           type: 'SAVE_QUALIFICATION',
           supplierId,
           qualification: {
             lines: kept,
+            header: {
+              sourcingMethod: SOURCING_METHOD.DIRECT_CHOOSE,
+              tenderOutcome: TENDER_OUTCOME.PENDING,
+              ...previous?.header,
+              ...header,
+            },
             status,
             updatedAt: now(),
             updatedBy: actor?.name ?? '',
           },
         });
 
+        /*
+         * Kualifikasi yang selesai langsung menjadikan pemasok preferred.
+         * Tidak ada lagi antrean persetujuan manager di tengah jalan: penilaian
+         * sudah terjadi lebih dulu lewat verifikasi dokumen dan validasi
+         * kuesioner, sehingga menahan pemasok sekali lagi hanya menambah tunggu.
+         * Manager tetap dapat mendiskualifikasi lewat modul Preferred Supplier.
+         */
+        const promoted =
+          status === 'completed' &&
+          [STATUS.QUALIFICATION, STATUS.AWAITING_PREFERRED].includes(
+            state.submissions.find((s) => s.id === supplierId)?.status,
+          );
+
         patch(
           supplierId,
-          {},
+          promoted
+            ? {
+                status: STATUS.PREFERRED,
+                preferredDecision: {
+                  decision: 'approved',
+                  note: 'Otomatis setelah kualifikasi diselesaikan.',
+                  decidedAt: now(),
+                  decidedBy: actor?.name ?? 'Sistem',
+                },
+              }
+            : {},
           entry(
             status === 'completed'
-              ? `Kualifikasi diselesaikan (${kept.length} baris)`
+              ? `Kualifikasi diselesaikan (${kept.length} baris)${promoted ? ', pemasok menjadi preferred' : ''}`
               : 'Draf kualifikasi disimpan',
             actor?.name ?? '',
           ),
+        );
+      },
+
+      /* ---------------- Master Data Management & SAP ---------------- */
+
+      /**
+       * Mengirim data pemasok preferred ke SAP. Tanpa backend, keberhasilan
+       * disimulasikan lewat `outcome`: 'success' mencatat pengiriman, 'failed'
+       * menuliskan entri pada log kegagalan supaya tim MDM dapat menelusurinya.
+       */
+      submitToSap(id, { outcome = 'success', errorCode = '', message = '' } = {}, actor) {
+        const stamp = now();
+        const record = {
+          at: stamp,
+          by: actor?.name ?? '',
+          outcome,
+          errorCode,
+          message,
+        };
+
+        if (outcome === 'success') {
+          patch(
+            id,
+            (s) => ({
+              sap: {
+                status: SAP_STATUS.SUBMITTED,
+                submittedAt: stamp,
+                submittedBy: actor?.name ?? '',
+                sapVendorCode: `V${String(Math.floor(100000 + Math.random() * 899999))}`,
+                history: [...(s.sap?.history ?? []), record],
+              },
+            }),
+            entry('Data pemasok dikirim ke SAP', actor?.name ?? ''),
+          );
+          return { ok: true };
+        }
+
+        const log = {
+          id: `sapfail_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+          supplierId: id,
+          at: stamp,
+          by: actor?.name ?? '',
+          errorCode: errorCode || 'SAP_UNKNOWN',
+          message: message || 'Pengiriman ditolak SAP tanpa keterangan.',
+          resolvedAt: null,
+          resolvedBy: null,
+          resolution: null,
+        };
+        dispatch({ type: 'SAP_LOG', log });
+        patch(
+          id,
+          (s) => ({
+            sap: {
+              ...s.sap,
+              status: SAP_STATUS.FAILED,
+              lastFailureAt: stamp,
+              lastErrorCode: log.errorCode,
+              lastErrorMessage: log.message,
+              history: [...(s.sap?.history ?? []), record],
+            },
+          }),
+          entry(`Pengiriman ke SAP gagal (${log.errorCode})`, actor?.name ?? ''),
+        );
+        return { ok: false, log };
+      },
+
+      /** MDM mengembalikan pemasok ke procurement untuk diperbaiki. */
+      requestSapRevision(id, reason, actor) {
+        patch(
+          id,
+          (s) => ({
+            sap: {
+              ...s.sap,
+              status: SAP_STATUS.REVISION_REQUESTED,
+              revisionReason: reason,
+              revisionRequestedAt: now(),
+              revisionRequestedBy: actor?.name ?? '',
+              history: [
+                ...(s.sap?.history ?? []),
+                { at: now(), by: actor?.name ?? '', outcome: 'revision_requested', message: reason },
+              ],
+            },
+          }),
+          entry('MDM meminta revisi sebelum kirim ke SAP', actor?.name ?? ''),
+        );
+      },
+
+      resolveSapLog(logId, resolution, actor) {
+        dispatch({ type: 'RESOLVE_SAP_LOG', logId, resolution, actor: actor?.name ?? '' });
+      },
+
+      /**
+       * Status active/blocked datang dari SAP. Aksi ini mensimulasikan dorongan
+       * itu supaya alurnya dapat ditelusuri tanpa server.
+       */
+      pushAccountStatus(id, accountStatus, reason, actor) {
+        patch(
+          id,
+          {
+            accountStatus,
+            accountStatusReason: reason,
+            accountStatusAt: now(),
+          },
+          entry(
+            accountStatus === ACCOUNT_STATUS.BLOCKED
+              ? 'Status Blocked diterima dari SAP'
+              : 'Status Active diterima dari SAP',
+            actor?.name ?? 'SAP',
+          ),
+        );
+      },
+
+      /**
+       * Pembaruan data vendor secara internal. Pada sistem sungguhan ini
+       * memicu pengambilan data dari SAP lewat MMI001; di sini hasilnya
+       * disimulasikan dan hanya dicatat pada linimasa.
+       */
+      recordSapFetch(id, fields, actor) {
+        patch(
+          id,
+          (s) => ({
+            sapFetch: {
+              at: now(),
+              by: actor?.name ?? '',
+              transaction: 'MMI001',
+              fields,
+              previous: s.sapFetch ?? null,
+            },
+          }),
+          entry('Data vendor ditarik dari SAP (MMI001)', actor?.name ?? ''),
         );
       },
 
@@ -438,3 +676,15 @@ export function canUseInternalPath(user) {
 export function isManager(user) {
   return user?.role === ROLE.MANAGER;
 }
+
+/** Tim Master Data Management — pemegang gerbang terakhir sebelum SAP. */
+export function isMdm(user) {
+  return user?.role === ROLE.MDM;
+}
+
+/** Role procurement; MDM sengaja tidak termasuk agar tidak menyunting profil. */
+export function isProcurement(user) {
+  return [ROLE.STAFF, ROLE.ADMIN, ROLE.MANAGER].includes(user?.role);
+}
+
+

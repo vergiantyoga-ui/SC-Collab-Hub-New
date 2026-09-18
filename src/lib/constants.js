@@ -26,6 +26,12 @@ export const STATUS = {
   ONBOARDING: 'onboarding',
   REGISTRATION: 'registration',
   NEEDS_DOCUMENT_FIX: 'needs_document_fix',
+  /**
+   * Profil sudah lolos periksa, tetapi kuesioner yang ditugaskan belum
+   * seluruhnya divalidasi peninjau. Pemasok tertahan di sini sampai
+   * validasi tuntas — lihat `advanceToQualification` di AppStore.
+   */
+  AWAITING_QUESTIONNAIRE: 'awaiting_questionnaire',
   QUALIFICATION: 'qualification',
   AWAITING_PREFERRED: 'awaiting_preferred',
   PREFERRED: 'preferred',
@@ -33,10 +39,96 @@ export const STATUS = {
 };
 
 /**
+ * Status operasional pemasok, terpisah dari tahapan onboarding di atas.
+ *
+ * `BLOCKED` didorong dari SAP, bukan ditetapkan di aplikasi ini: pemasok yang
+ * diblokir tidak dapat masuk ke portal. Frontend hanya menampilkan keadaannya
+ * dan menyediakan simulasi dorongan status untuk keperluan demo.
+ */
+export const ACCOUNT_STATUS = {
+  ACTIVE: 'active',
+  BLOCKED: 'blocked',
+};
+
+export const ACCOUNT_STATUS_LABEL = {
+  [ACCOUNT_STATUS.ACTIVE]: 'Active',
+  [ACCOUNT_STATUS.BLOCKED]: 'Blocked',
+};
+
+export const ACCOUNT_STATUS_TONE = {
+  [ACCOUNT_STATUS.ACTIVE]: 'success',
+  [ACCOUNT_STATUS.BLOCKED]: 'danger',
+};
+
+/**
+ * Cara pemilihan pemasok, ditetapkan staf pada header kualifikasi.
+ *
+ * Pemasok bertanda `OPEN_TENDER` belum boleh dikirim ke SAP oleh tim Master
+ * Data Management sampai tendernya menghasilkan pemenang. Status awardee
+ * kelak datang dari modul RFx Management yang belum dibangun; di sini
+ * penandanya disimpan sebagai `tenderOutcome`.
+ */
+export const SOURCING_METHOD = {
+  OPEN_TENDER: 'open_tender',
+  DIRECT_CHOOSE: 'direct_choose',
+};
+
+export const SOURCING_METHODS = [
+  {
+    code: SOURCING_METHOD.OPEN_TENDER,
+    label: 'Open tender',
+    hint: 'Pengiriman ke SAP tertahan sampai pemasok ditetapkan sebagai awardee.',
+  },
+  {
+    code: SOURCING_METHOD.DIRECT_CHOOSE,
+    label: 'Direct choose',
+    hint: 'Pemasok dipilih langsung; tidak ada gerbang tender.',
+  },
+];
+
+/** Hasil tender; kelak diisi modul RFx Management. */
+export const TENDER_OUTCOME = {
+  PENDING: 'pending',
+  AWARDEE: 'awardee',
+  NOT_AWARDED: 'not_awarded',
+};
+
+export const TENDER_OUTCOME_LABEL = {
+  [TENDER_OUTCOME.PENDING]: 'Tender berjalan',
+  [TENDER_OUTCOME.AWARDEE]: 'Awardee',
+  [TENDER_OUTCOME.NOT_AWARDED]: 'Tidak menang',
+};
+
+/**
+ * Keadaan pengiriman data pemasok ke SAP, dikelola tim Master Data Management.
+ */
+export const SAP_STATUS = {
+  NOT_SUBMITTED: 'not_submitted',
+  SUBMITTED: 'submitted',
+  FAILED: 'failed',
+  REVISION_REQUESTED: 'revision_requested',
+};
+
+export const SAP_STATUS_LABEL = {
+  [SAP_STATUS.NOT_SUBMITTED]: 'Belum dikirim',
+  [SAP_STATUS.SUBMITTED]: 'Terkirim ke SAP',
+  [SAP_STATUS.FAILED]: 'Gagal kirim',
+  [SAP_STATUS.REVISION_REQUESTED]: 'Perlu revisi',
+};
+
+export const SAP_STATUS_TONE = {
+  [SAP_STATUS.NOT_SUBMITTED]: 'pending',
+  [SAP_STATUS.SUBMITTED]: 'success',
+  [SAP_STATUS.FAILED]: 'danger',
+  [SAP_STATUS.REVISION_REQUESTED]: 'progress',
+};
+
+/**
  * Tahapan setelah dokumen lolos periksa. Pada titik ini profil pemasok sudah
  * tuntas, sehingga portal pemasok terbuka penuh dan kuesioner boleh ditugaskan.
  */
 export const POST_REGISTRATION_STATUSES = [
+  STATUS.AWAITING_QUESTIONNAIRE,
   STATUS.QUALIFICATION,
   STATUS.AWAITING_PREFERRED,
   STATUS.PREFERRED,
@@ -51,8 +143,8 @@ export function hasFinishedRegistration(status) {
 export const STATUS_PIPELINE = [
   STATUS.SUPPLIER_REQUEST,
   STATUS.REGISTRATION,
+  STATUS.AWAITING_QUESTIONNAIRE,
   STATUS.QUALIFICATION,
-  STATUS.AWAITING_PREFERRED,
   STATUS.PREFERRED,
 ];
 
@@ -71,6 +163,7 @@ export const STATUS_LABEL = {
   [STATUS.ONBOARDING]: 'Melengkapi profil',
   [STATUS.REGISTRATION]: 'Registrasi',
   [STATUS.NEEDS_DOCUMENT_FIX]: 'Perlu perbaikan dokumen',
+  [STATUS.AWAITING_QUESTIONNAIRE]: 'Menunggu validasi kuesioner',
   [STATUS.QUALIFICATION]: 'Qualification',
   [STATUS.AWAITING_PREFERRED]: 'Menunggu preferred',
   [STATUS.PREFERRED]: 'Preferred supplier',
@@ -88,6 +181,7 @@ export const STATUS_TONE = {
   [STATUS.ONBOARDING]: 'progress',
   [STATUS.REGISTRATION]: 'pending',
   [STATUS.NEEDS_DOCUMENT_FIX]: 'danger',
+  [STATUS.AWAITING_QUESTIONNAIRE]: 'pending',
   [STATUS.QUALIFICATION]: 'progress',
   [STATUS.AWAITING_PREFERRED]: 'pending',
   [STATUS.PREFERRED]: 'success',
@@ -100,6 +194,13 @@ export const ROLE = {
   STAFF: 'procurement_staff',
   ADMIN: 'procurement_admin',
   MANAGER: 'procurement_manager',
+  /**
+   * Master Data Management — pemegang keputusan terakhir sebelum data pemasok
+   * masuk ke SAP. Tidak menyunting profil maupun kualifikasi; wewenangnya
+   * meninjau pemasok preferred, mengirimkannya ke SAP, meminta revisi, dan
+   * menelusuri log pengiriman yang gagal.
+   */
+  MDM: 'master_data_management',
 };
 
 /** Label acuan role; antarmuka memakai kunci `role.<id>` pada kamus. */
@@ -107,6 +208,7 @@ export const ROLE_LABEL = {
   [ROLE.STAFF]: 'Staf Procurement',
   [ROLE.ADMIN]: 'Staf Procurement Admin',
   [ROLE.MANAGER]: 'Manager Procurement',
+  [ROLE.MDM]: 'Master Data Management',
 };
 
 /* Jalur onboarding (Section 4.3) */

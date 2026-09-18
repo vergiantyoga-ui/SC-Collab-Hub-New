@@ -32,6 +32,12 @@ export const INTERNAL_USERS = [
     email: 'lestari.handayani@paragon-corp.com',
     role: ROLE.MANAGER,
   },
+  {
+    id: 'usr-mdm-1',
+    name: 'Bayu Nugroho',
+    email: 'bayu.nugroho@paragon-corp.com',
+    role: ROLE.MDM,
+  },
 ];
 
 const emptyTax = () => ({

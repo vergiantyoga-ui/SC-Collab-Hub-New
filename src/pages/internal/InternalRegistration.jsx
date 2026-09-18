@@ -138,6 +138,7 @@ export default function InternalRegistration() {
             />
           ) : (
             <ProfileSectionForm
+              submissionId={submission.id}
               key={active}
               sectionId={active}
               value={submission.profile[active]}

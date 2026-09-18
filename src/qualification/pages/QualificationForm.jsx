@@ -17,6 +17,8 @@ import {
   validateLines,
 } from '../qualificationRules.js';
 import { COUNTRIES, commoditiesBySegment, segmentNameOf } from '../data/referenceData.js';
+import { SelectField } from '../../components/ui/Field.jsx';
+import { SOURCING_METHOD, SOURCING_METHODS, TENDER_OUTCOME, TENDER_OUTCOME_LABEL } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
 import './qualification.css';
 import { VENDOR_TYPES, labelOf } from '../../lib/masterData.js';
@@ -43,6 +45,14 @@ export default function QualificationForm() {
     existing?.lines?.length ? existing.lines : [makeLine()],
   );
   const [errors, setErrors] = useState({});
+  /*
+   * Header kualifikasi. Cara pemilihan pemasok menentukan apakah tim Master
+   * Data Management boleh mengirim datanya ke SAP: pemasok open tender
+   * tertahan sampai tendernya menghasilkan awardee.
+   */
+  const [sourcingMethod, setSourcingMethod] = useState(
+    () => existing?.header?.sourcingMethod ?? SOURCING_METHOD.DIRECT_CHOOSE,
+  );
 
   if (!submission) return <Navigate to="/internal/kualifikasi" replace />;
 
@@ -90,7 +100,7 @@ export default function QualificationForm() {
     }
 
     setErrors(found);
-    saveQualification(supplierId, lines, status, user);
+    saveQualification(supplierId, lines, status, user, { sourcingMethod });
     toast.success(
       status === QUALIFICATION_STATUS.COMPLETED
         ? 'Kualifikasi pemasok selesai.'
@@ -125,6 +135,32 @@ export default function QualificationForm() {
           Pengisian kualifikasi dilakukan staf procurement. Anda dapat meninjau isinya di sini.
         </div>
       )}
+
+      <Card title="Header kualifikasi" style={{ marginBottom: 'var(--sp-5)' }}>
+        <div className="field-grid">
+          <SelectField
+            label="Cara pemilihan pemasok"
+            options={SOURCING_METHODS.map((item) => ({ value: item.code, label: item.label }))}
+            value={sourcingMethod}
+            onChange={(e) => setSourcingMethod(e.target.value)}
+            disabled={!editable}
+            hint={SOURCING_METHODS.find((item) => item.code === sourcingMethod)?.hint}
+            required
+          />
+          {sourcingMethod === SOURCING_METHOD.OPEN_TENDER && (
+            <div className="field">
+              <span className="field__label">Hasil tender</span>
+              <p className="taxgroup__derived">
+                {TENDER_OUTCOME_LABEL[existing?.header?.tenderOutcome ?? TENDER_OUTCOME.PENDING]}
+              </p>
+              <p className="field__hint">
+                Diisi modul RFx Management, yang belum dibangun. Selama belum awardee,
+                tim Master Data Management tidak dapat mengirim pemasok ini ke SAP.
+              </p>
+            </div>
+          )}
+        </div>
+      </Card>
 
       <div className="qual__layout">
         <Card
