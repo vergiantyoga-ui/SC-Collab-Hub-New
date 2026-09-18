@@ -39,24 +39,21 @@ export function canViewQualification(user) {
 /**
  * Status pemasok yang sudah boleh dikualifikasi.
  *
- * Gerbangnya adalah **profil yang sudah dikirim pemasok**, bukan dokumen yang
- * sudah diverifikasi. Kedua jalur onboarding bertemu di titik ini:
- *  - Jalur undangan: pemasok mengisi profil sendiri lalu mengirimkannya.
- *  - Jalur registrasi internal: manager menyetujui isian admin lebih dahulu,
- *    barulah pemasok meninjau dan mengirimkannya.
+ * Gerbangnya adalah **profil yang sudah lolos periksa dan kuesioner yang sudah
+ * divalidasi**. Sebelumnya kualifikasi dibuka lebih awal — begitu pemasok
+ * mengirim profilnya — agar berjalan berdampingan dengan verifikasi dokumen.
+ * Aturan itu dicabut: pemasok yang dokumennya masih diperiksa (`Registrasi`,
+ * `Perlu perbaikan dokumen`) atau yang kuesionernya belum divalidasi
+ * (`Menunggu validasi kuesioner`) tidak lagi muncul di daftar kualifikasi,
+ * karena mengualifikasi pemasok yang profilnya belum tentu sah hanya
+ * menghasilkan pekerjaan yang mungkin harus diulang.
  *
- * `NEEDS_DOCUMENT_FIX` ikut disertakan karena profilnya sudah pernah dikirim,
- * dan kategori komoditas maupun negara asal tidak bergantung pada keabsahan
- * dokumen legalitas yang sedang diperbaiki. Dengan begitu kualifikasi dapat
- * berjalan berdampingan dengan verifikasi dokumen, bukan mengantre di belakangnya.
+ * Yang tersisa hanyalah dua status: `Qualification` — pemasok yang memang
+ * sedang dikualifikasi — dan `Preferred supplier`, supaya kualifikasi yang
+ * sudah selesai tetap dapat dibuka dan dikoreksi bila tim Master Data
+ * Management memintanya sebelum dikirim ke SAP.
  */
-export const QUALIFIABLE_STATUSES = [
-  STATUS.REGISTRATION,
-  STATUS.NEEDS_DOCUMENT_FIX,
-  STATUS.QUALIFICATION,
-  STATUS.AWAITING_PREFERRED,
-  STATUS.PREFERRED,
-];
+export const QUALIFIABLE_STATUSES = [STATUS.QUALIFICATION, STATUS.PREFERRED];
 
 export function isEligible(submission) {
   return QUALIFIABLE_STATUSES.includes(submission?.status);
@@ -75,9 +72,13 @@ export function ineligibilityReason(submission) {
     [STATUS.INTERNAL_DRAFT]: 'profilnya masih diisi admin procurement',
     [STATUS.CONNECTED]: 'belum meninjau profil yang disiapkan tim Paragon',
     [STATUS.ONBOARDING]: 'belum selesai mengisi profil',
+    [STATUS.REGISTRATION]: 'dokumennya masih diperiksa staf procurement',
+    [STATUS.NEEDS_DOCUMENT_FIX]: 'dokumennya diminta diperbaiki',
+    [STATUS.AWAITING_QUESTIONNAIRE]: 'kuesioner yang ditugaskan belum selesai divalidasi',
+    [STATUS.DISQUALIFIED]: 'pemasok didiskualifikasi',
   }[submission.status];
 
-  return `Kualifikasi terbuka setelah pemasok mengirimkan profilnya; saat ini ${stage ?? 'profilnya belum dikirim'}.`;
+  return `Kualifikasi terbuka setelah dokumen lolos periksa dan seluruh kuesioner divalidasi; saat ini ${stage ?? 'profilnya belum dikirim'}.`;
 }
 
 /* ------------------------------------------------------------------ */

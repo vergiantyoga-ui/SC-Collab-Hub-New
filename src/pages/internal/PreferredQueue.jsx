@@ -15,18 +15,20 @@ import { VENDOR_TYPES, labelOf } from '../../lib/masterData.js';
 
 const FILTERS = [
   { id: 'all', label: 'Semua' },
-  { id: STATUS.QUALIFICATION, label: 'Tahap qualification' },
-  { id: STATUS.AWAITING_PREFERRED, label: 'Menunggu keputusan' },
   { id: STATUS.PREFERRED, label: 'Preferred' },
   { id: STATUS.DISQUALIFIED, label: 'Disqualification' },
 ];
 
-const TRACKED = [
-  STATUS.QUALIFICATION,
-  STATUS.AWAITING_PREFERRED,
-  STATUS.PREFERRED,
-  STATUS.DISQUALIFIED,
-];
+/*
+ * Hanya pemasok yang sudah melewati kualifikasi yang tampil di sini.
+ *
+ * Sebelumnya daftar ini juga memuat pemasok bertahap `Qualification` supaya
+ * staf dapat mengajukannya ke manager. Sejak kualifikasi yang selesai langsung
+ * menjadikan pemasok preferred, pengajuan itu tidak ada lagi — menampilkan
+ * pemasok yang masih dikualifikasi hanya mengaburkan batas antara kedua layar,
+ * karena pekerjaan atas mereka ada di menu Kualifikasi, bukan di sini.
+ */
+const TRACKED = [STATUS.PREFERRED, STATUS.DISQUALIFIED];
 
 /**
  * Daftar pemasok pada tahap qualification hingga keputusan preferred.
@@ -135,31 +137,13 @@ export default function PreferredQueue() {
                       )}
                     </td>
                     <td>
-                      {submission.status === STATUS.QUALIFICATION && !isManager && (
-                        <Button
-                          size="sm"
-                          disabled={!readyToSubmit}
-                          title={
-                            readyToSubmit
-                              ? undefined
-                              : 'Isi kualifikasi pemasok terlebih dahulu.'
-                          }
-                          onClick={() => {
-                            submitForPreferred(submission.id, user);
-                            toast.success('Diajukan ke manager procurement.');
-                          }}
-                        >
-                          Ajukan
-                        </Button>
-                      )}
-                      {submission.status === STATUS.AWAITING_PREFERRED && isManager && (
-                        <Button size="sm" to={`/internal/preferred/${submission.id}`}>
-                          Tinjau
-                        </Button>
-                      )}
-                      {submission.status === STATUS.QUALIFICATION && isManager && (
-                        <span className="text-xs muted">Menunggu diajukan staf</span>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        to={`/internal/preferred/${submission.id}`}
+                      >
+                        Tinjau
+                      </Button>
                     </td>
                   </tr>
                 );
