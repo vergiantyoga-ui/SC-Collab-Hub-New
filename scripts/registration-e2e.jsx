@@ -19,7 +19,15 @@ import {
   useAppActions,
   useAppState,
 } from '../src/store/AppStore.jsx';
-import { PATH, STATUS } from '../src/lib/constants.js';
+import {
+  ACCOUNT_STATUS,
+  PATH,
+  SAP_STATUS,
+  SOURCING_METHOD,
+  STATUS,
+  TENDER_OUTCOME,
+} from '../src/lib/constants.js';
+import { sapEligibility } from '../src/sap/sapRules.js';
 import { PROFILE_SECTIONS, REQUIRED_SECTION_IDS } from '../src/lib/constants.js';
 import { passwordExpiryFrom } from '../src/lib/format.js';
 
@@ -73,6 +81,7 @@ function mountStore() {
 
 const STAFF = { id: 'usr-staff-1', name: 'Dewi Anggraini', role: 'procurement_staff' };
 const MANAGER = { id: 'usr-manager-1', name: 'Lestari Handayani', role: 'procurement_manager' };
+const MDM = { id: 'usr-mdm-1', name: 'Bayu Nugroho', role: 'master_data_management' };
 
 const registrationPayload = {
   general: {
@@ -257,30 +266,100 @@ check('A20 catatan perbaikan tersimpan', a.supplier(idA).verification.notes.leng
 a.run((actions) => actions.resubmitDocuments(idA, 'Rara Penguji'));
 check('A21 pengiriman ulang kembali ke registrasi', a.supplier(idA).status, STATUS.REGISTRATION);
 
+/*
+ * Pokayoke dua gerbang: dokumen lolos periksa TIDAK langsung membuka tahap
+ * qualification. Pemasok tertahan sampai kuesioner yang ditugaskan divalidasi.
+ */
 a.run((actions) => actions.verifyDocuments(idA, STAFF));
-check('A22 dokumen lolos periksa menuju qualification', a.supplier(idA).status, STATUS.QUALIFICATION);
+check(
+  'A22 dokumen lolos periksa menahan di validasi kuesioner',
+  a.supplier(idA).status,
+  STATUS.AWAITING_QUESTIONNAIRE,
+);
 check('A23 tanggal registrasi tercatat', Boolean(a.supplier(idA).registeredAt), true);
 
-// Staf mengisi kualifikasi, lalu mengajukan ke manager.
+// Gerbang kedua: kuesioner tervalidasi barulah qualification terbuka.
+a.run((actions) => actions.advanceToQualification(idA, STAFF));
+check('A24 kuesioner tervalidasi membuka qualification', a.supplier(idA).status, STATUS.QUALIFICATION);
+
+// Memanggilnya dua kali tidak boleh memindahkan status lagi.
+a.run((actions) => actions.advanceToQualification(idA, STAFF));
+check('A25 pemanggilan ulang tidak mengubah status', a.supplier(idA).status, STATUS.QUALIFICATION);
+
+/*
+ * Kualifikasi selesai langsung menjadikan pemasok preferred; tidak ada lagi
+ * antrean persetujuan manager di tengah jalan.
+ */
 a.run((actions) =>
   actions.saveQualification(
     idA,
     [{ id: 'ql1', commodityCode: '12161500', countryCode: 'ID', notes: '' }],
     'completed',
     STAFF,
+    { sourcingMethod: SOURCING_METHOD.OPEN_TENDER },
   ),
 );
-check('A24 kualifikasi tersimpan', a.state.qualifications[idA].lines.length, 1);
-check('A25 status kualifikasi selesai', a.state.qualifications[idA].status, 'completed');
+check('A26 kualifikasi tersimpan', a.state.qualifications[idA].lines.length, 1);
+check('A27 status kualifikasi selesai', a.state.qualifications[idA].status, 'completed');
+check('A28 header kualifikasi tersimpan',
+  a.state.qualifications[idA].header.sourcingMethod, SOURCING_METHOD.OPEN_TENDER);
+check('A29 kualifikasi selesai menjadikan preferred', a.supplier(idA).status, STATUS.PREFERRED);
 
-a.run((actions) => actions.submitForPreferred(idA, STAFF));
-check('A26 diajukan sebagai preferred', a.supplier(idA).status, STATUS.AWAITING_PREFERRED);
+/* Gerbang SAP: open tender tanpa awardee tidak boleh dikirim. */
+check(
+  'A30 open tender menahan pengiriman ke SAP',
+  sapEligibility(a.supplier(idA), a.state.qualifications[idA]).code,
+  'open_tender_pending',
+);
 
-a.run((actions) => actions.approvePreferred(idA, 'Rekam jejak baik.', MANAGER));
-check('A27 manager menetapkan preferred', a.supplier(idA).status, STATUS.PREFERRED);
-check('A28 keputusan mencatat pelakunya', a.supplier(idA).preferredDecision.decidedBy, MANAGER.name);
+a.run((actions) =>
+  actions.saveQualification(
+    idA,
+    a.state.qualifications[idA].lines,
+    'completed',
+    STAFF,
+    { sourcingMethod: SOURCING_METHOD.OPEN_TENDER, tenderOutcome: TENDER_OUTCOME.AWARDEE },
+  ),
+);
+check(
+  'A31 awardee membuka pengiriman ke SAP',
+  sapEligibility(a.supplier(idA), a.state.qualifications[idA]).ok,
+  true,
+);
 
-check('A29 riwayat menghimpun seluruh langkah', a.supplier(idA).timeline.length >= 8, true);
+/* MDM mengirim ke SAP — cabang gagal lebih dahulu, lalu berhasil. */
+a.run((actions) =>
+  actions.submitToSap(idA, { outcome: 'failed', errorCode: 'SAP_TIMEOUT', message: 'Putus.' }, MDM),
+);
+check('A32 kegagalan menandai status SAP', a.supplier(idA).sap.status, SAP_STATUS.FAILED);
+check('A33 kegagalan tercatat pada log', a.state.sapLogs.length, 1);
+check('A34 log menyebut pemasoknya', a.state.sapLogs[0].supplierId, idA);
+
+a.run((actions) => actions.submitToSap(idA, { outcome: 'success' }, MDM));
+check('A35 pengiriman berhasil', a.supplier(idA).sap.status, SAP_STATUS.SUBMITTED);
+check('A36 kode vendor SAP terbit', Boolean(a.supplier(idA).sap.sapVendorCode), true);
+check(
+  'A37 pemasok terkirim tidak dikirim ulang',
+  sapEligibility(a.supplier(idA), a.state.qualifications[idA]).code,
+  'already_submitted',
+);
+
+/* Blokir dari SAP menutup akses masuk pemasok. */
+a.run((actions) => actions.pushAccountStatus(idA, ACCOUNT_STATUS.BLOCKED, 'Sengketa pembayaran.', MDM));
+check('A38 status blokir tersimpan', a.supplier(idA).accountStatus, ACCOUNT_STATUS.BLOCKED);
+check(
+  'A39 pemasok terblokir tidak dapat masuk',
+  a.run((actions) => actions.signInSupplier(akun.accountId)).ok,
+  false,
+);
+a.run((actions) => actions.pushAccountStatus(idA, ACCOUNT_STATUS.ACTIVE, null, MDM));
+check(
+  'A40 blokir dibuka, pemasok dapat masuk lagi',
+  a.run((actions) => actions.signInSupplier(akun.accountId)).ok,
+  true,
+);
+
+check('A41 riwayat menghimpun seluruh langkah', a.supplier(idA).timeline.length >= 12, true);
 
 /* ------------------------------------------------------------------ */
 /* Jalur B — registrasi internal, tanpa persetujuan manager            */

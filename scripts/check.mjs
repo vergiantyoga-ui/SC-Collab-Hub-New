@@ -27,6 +27,7 @@ try {
   run('Mesin questionnaire', process.execPath, ['scripts/questionnaire-check.mjs']);
   run('Kualifikasi pemasok', process.execPath, ['scripts/qualification-check.mjs']);
   run('Master data Data Umum', process.execPath, ['scripts/masterdata-check.mjs']);
+  run('SAP, duplikasi pajak & tanda tangan', process.execPath, ['scripts/sap-check.mjs']);
 
   execFileSync(
     'npx',
@@ -43,6 +44,24 @@ try {
     { stdio: 'ignore' },
   );
   run('Render halaman & guard akses', process.execPath, ['scripts/.render-check.built.cjs']);
+
+  execFileSync(
+    'npx',
+    [
+      'esbuild',
+      'scripts/mdm-render-check.jsx',
+      '--bundle',
+      '--platform=node',
+      '--format=cjs',
+      '--jsx=automatic',
+      '--outfile=scripts/.mdm-render-check.built.cjs',
+      '--loader:.css=empty',
+    ],
+    { stdio: 'ignore' },
+  );
+  run('Render halaman MDM & dashboard baru', process.execPath, [
+    'scripts/.mdm-render-check.built.cjs',
+  ]);
 
   console.log('\nSemua pemeriksaan lolos.\n');
 } catch {

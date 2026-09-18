@@ -25,9 +25,13 @@ rancangan**, bukan kode yang berjalan — proyek ini memang tanpa server.
 Perintah · Akun demo · Menelusuri kedua jalur
 
 **Bagian B — Cara kerja**
-Struktur berkas · Modul questionnaire · Pokayoke penugasan kuesioner sebelum
-onboarding · Verifikasi dokumen sebagai checklist seluruh field · Bahasa
-antarmuka · Bahasa visual · Aturan yang tercermin di kode · Catatan implementasi
+Struktur berkas · Modul questionnaire · Tanda tangan elektronik (Privi) ·
+Pokayoke penugasan kuesioner sebelum onboarding · Verifikasi dokumen sebagai
+checklist seluruh field · Dua gerbang menuju qualification · Modul Master Data
+Management & SAP · Status Active/Blocked · Dashboard kepatuhan kuesioner ·
+Ringkasan pemasok · Update data vendor (MMI001) · Duplikasi NIK & NPWP ·
+Bahasa antarmuka · Bahasa visual · Aturan yang tercermin di kode ·
+Catatan implementasi
 
 **Bagian C — Rancangan modul questionnaire**
 Status pengerjaan · Keputusan yang sudah diambil · Penilaian arsitektur ·
@@ -45,7 +49,7 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # keluaran produksi ke dist/
 npm run preview  # meninjau hasil build
-npm test         # lima rangkaian pemeriksaan, termasuk registrasi end-to-end
+npm test         # tujuh rangkaian pemeriksaan, termasuk registrasi end-to-end
 ```
 
 Butuh Node 18 atau lebih baru.
@@ -59,9 +63,11 @@ ujung tanpa menyiapkan basis data apa pun. Ada dua cara.
 store sungguhan lewat react-test-renderer, lalu memanggil aksinya berurutan
 seperti pengguna menekan tombol: mendaftar, menyetujui, mengundang, mengganti
 sandi, mengisi lima bagian profil, menyetujui consent, meminta perbaikan
-dokumen, mengirim ulang, meloloskan periksa, mengisi kualifikasi, mengajukan,
-lalu menetapkan preferred. Jalur registrasi internal, penolakan, dan
-diskualifikasi ikut diuji. Karena setiap pemasangan store dimulai dari data
+dokumen, mengirim ulang, meloloskan periksa, melewati kedua gerbang menuju
+qualification, mengisi kualifikasi hingga pemasok menjadi preferred, menguji
+gerbang open tender, mengirim ke SAP (cabang gagal dan berhasil), lalu
+memblokir dan membuka blokir akun pemasok. Jalur registrasi internal,
+penolakan, dan diskualifikasi ikut diuji. Karena setiap pemasangan store dimulai dari data
 contoh yang sama, tidak ada yang perlu dibersihkan antar-uji.
 
 Bedanya dengan `flow-check.mjs`: berkas itu hanya menguji fungsi murni,
@@ -87,6 +93,7 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 | `dewi.anggraini@paragon-corp.com` | Staf Procurement | Tinjau pendaftaran, kedua jalur onboarding, periksa dokumen, isi kualifikasi, ajukan preferred |
 | `rangga.prasetyo@paragon-corp.com` | Staf Procurement Admin | Wewenang sama persis dengan Staf Procurement |
 | `lestari.handayani@paragon-corp.com` | Manager Procurement | Menetapkan preferred supplier atau mendiskualifikasi |
+| `bayu.nugroho@paragon-corp.com` | Master Data Management | Meninjau pemasok preferred, mengirim datanya ke SAP, meminta revisi, menelusuri log gagal kirim |
 
 **Portal pemasok — `/masuk`**
 
@@ -112,7 +119,15 @@ di Bagian B. Kedua jalur di bawah ini sudah menyertakan langkah tersebut.
 5. Keluar, masuk ke portal pemasok dengan ID akun tersebut, ganti kata sandi.
 6. Isi kelima bagian profil, setujui kedua pernyataan pada layar persetujuan.
 7. Masuk kembali sebagai staf, buka **Verifikasi dokumen**, setujui atau minta perbaikan
-   field yang bermasalah satu per satu.
+   field yang bermasalah satu per satu. Setelah disetujui, pemasok berstatus
+   **Menunggu validasi kuesioner**.
+8. Buka **Tinjauan**, setujui kuesioner yang tadi ditugaskan. Begitu seluruhnya
+   disetujui, pemasok pindah ke tahap **Qualification**.
+9. Buka **Kualifikasi**, tetapkan cara pemilihan pemasok (open tender atau direct
+   choose), isi barisnya, lalu selesaikan — pemasok langsung menjadi **Preferred**.
+10. Keluar, masuk sebagai Master Data Management (`bayu.nugroho@paragon-corp.com`),
+    buka **Kirim ke SAP**, lalu kirim atau minta revisi. Pemasok bertanda open
+    tender akan tertahan sampai hasil tendernya awardee.
 
 **Jalur B — registrasi internal**
 
@@ -124,11 +139,22 @@ di Bagian B. Kedua jalur di bawah ini sudah menyertakan langkah tersebut.
    manager di tengah jalan; akun pemasok langsung dibuat.
 5. Masuk sebagai pemasok memakai ID akun tersebut untuk meninjau dan menyetujui.
 
-**Menelusuri preferred supplier**
+**Menelusuri preferred supplier dan pengiriman ke SAP**
 
 `SUP-2026-0135` sudah berada pada tahap qualification. Isi kualifikasinya lewat
-menu **Kualifikasi**, ajukan dari menu **Preferred supplier**, lalu masuk sebagai
-Manager Procurement untuk menilainya.
+menu **Kualifikasi** — pilih *direct choose* untuk menelusuri jalur mulus, atau
+*open tender* untuk melihat gerbang yang menahan pengiriman ke SAP. Begitu
+kualifikasi diselesaikan pemasok langsung menjadi preferred, tanpa antrean
+persetujuan manager.
+
+Lalu keluar dan masuk sebagai Master Data Management. Menu **Kirim ke SAP**
+menampilkan pemasok tadi beserta alasannya bila tertahan; dialog pengirimannya
+menyediakan pilihan hasil berhasil atau gagal, sehingga log kegagalan pada menu
+**Log gagal kirim** dapat ditelusuri tanpa menunggu kegagalan sungguhan.
+
+Menu **Ringkasan pemasok** menyediakan tombol blokir: memblokir sebuah pemasok
+lalu mencoba masuk ke portal dengan ID akunnya memperlihatkan penolakan di layar
+masuk.
 
 
 ---
@@ -142,6 +168,7 @@ src/
   lib/          constants.js   status, role, enum, ambang teknis
                 validation.js  aturan field generik
                 profileRules.js validasi lima bagian profil (murni, teruji)
+                taxIdentity.js  duplikasi NIK & NPWP (murni, teruji)
                 format.js      tanggal, ID akun, masa berlaku
                 mockData.js    data contoh mencakup setiap status
   store/        AppStore.jsx     reducer tunggal + seluruh aksi transisi status
@@ -179,18 +206,29 @@ src/
                 assignmentMockData.js
     components/ builder/ (QuestionToolbox, SectionCard, QuestionCard,
                           PropertiesPanel, ConditionEditor,
-                          AttachmentRulePanel, ScoringPanel, LibraryPicker)
-                render/  (QuestionRenderer + lampiran & tanda tangan)
+                          AttachmentRulePanel, ScoringPanel, ESignPanel,
+                          LibraryPicker)
+                render/  (QuestionRenderer, ESignBlock + lampiran)
                 shared/  (status, skor, bilah kemajuan, grafik SVG)
     pages/      internal/ (TemplateList, TemplateDetail, TemplateCreate,
                           QuestionnaireBuilder, AssignmentList,
                           AssignmentCreate, ReviewQueue, ReviewDetail,
-                          QuestionnaireDashboard, NotificationList,
-                          AuditTrail)
+                          QuestionnaireDashboard, QuestionnaireCompliance,
+                          NotificationList, AuditTrail)
                 supplier/ (MyQuestionnaires, ResponseWizard)
+  sap/          sapRules.js       gerbang kelayakan kirim ke SAP (murni, teruji)
+                purchaseOrders.js ringkasan PO deterministik (pengganti data SAP)
+                pages/            SapReview, SapFailureLog, VendorDataUpdate,
+                                  SupplierOverview
   styles/       global.css   token warna, tipografi, komponen dasar
                 patterns.css pola tata letak lintas halaman
-scripts/        flow-check.mjs — pemeriksaan transisi status
+scripts/        check.mjs           menjalankan seluruh rangkaian di bawah
+                flow-check.mjs      transisi status & validasi
+                registration-e2e.jsx  registrasi ujung-ke-ujung lewat store
+                questionnaire-check.mjs, qualification-check.mjs,
+                masterdata-check.mjs
+                sap-check.mjs       gerbang SAP, duplikasi pajak, tanda tangan
+                render-check.jsx, mdm-render-check.jsx  render & guard akses
 ```
 
 ## Master data Data Umum dan integrasi SAP
@@ -393,17 +431,19 @@ dipakai untuk pembayaran sungguhan.
 Perjalanan pemasok mengikuti lima langkah berurutan, ditampilkan pada ringkasan beranda:
 
 ```
-Supplier request → Registrasi → Qualification → Menunggu preferred → Preferred supplier
-                        ↘ Perlu perbaikan dokumen        ↘ Disqualification
+Supplier request → Registrasi → Menunggu validasi kuesioner → Qualification
+                        ↘ Perlu perbaikan dokumen
+                                                    → Preferred supplier → dikirim ke SAP
+                                                             ↘ Disqualification
 ```
 
 | Tahap | Artinya |
 |---|---|
 | **Supplier request** | Pendaftaran baru masuk, menunggu ditinjau staf procurement |
 | **Registrasi** | Profil sudah dikirim, dokumennya sedang diperiksa |
-| **Qualification** | Staf mengisi kualifikasi komoditas, pemasok mengisi kuesioner |
-| **Menunggu preferred** | Berkas diajukan staf, menunggu keputusan manager |
-| **Preferred supplier** | Manager menetapkan pemasok sebagai preferred |
+| **Menunggu validasi kuesioner** | Dokumen lolos periksa; menunggu seluruh kuesioner yang ditugaskan disetujui peninjau |
+| **Qualification** | Staf mengisi kualifikasi komoditas dan menetapkan cara pemilihan pemasok |
+| **Preferred supplier** | Kualifikasi selesai; menunggu ditinjau tim Master Data Management untuk dikirim ke SAP |
 | **Disqualification** | Manager menolak; masih dapat dikembalikan ke tahap qualification |
 
 Di antara Supplier request dan Registrasi terdapat tahap onboarding — pemilihan
@@ -412,14 +452,18 @@ sebagai `Diundang`, `Registrasi internal`, `Terhubung`, dan `Melengkapi profil`.
 
 ## Modul Preferred Supplier
 
-Manager procurement menilai empat berkas sekaligus sebelum menetapkan pemasok
-sebagai preferred: **profil registrasi, dokumen legalitas, kualifikasi komoditas,
-dan hasil kuesioner**. Tombol keputusan baru terbuka setelah keempat tab dibuka,
-mengikuti pola yang sudah dipakai pada tinjauan pendaftaran.
+Sejak alur berganti, status preferred **ditetapkan otomatis** begitu kualifikasi
+diselesaikan — lihat [Dua gerbang menuju qualification](#dua-gerbang-menuju-qualification).
+Manager procurement tidak lagi menjadi gerbang di tengah jalan; penilaiannya
+sudah terjadi lebih dulu lewat verifikasi dokumen dan validasi kuesioner.
 
-- Staf procurement mengajukan pemasok yang berkasnya sudah lengkap. Pengajuan
-  terkunci selama kualifikasi belum terisi, karena justru itu yang dinilai manager.
-- Keputusan **Preferred** atau **Disqualification** dicatat beserta alasan dan pelakunya.
+Modul ini tetap ada dan tetap berguna sebagai layar tinjauan:
+
+- Manager menilai empat berkas sekaligus — **profil registrasi, dokumen legalitas,
+  kualifikasi komoditas, dan hasil kuesioner** — dengan tombol keputusan yang baru
+  terbuka setelah keempat tab dibuka, mengikuti pola tinjauan pendaftaran.
+- Keputusan **Disqualification** dicatat beserta alasan dan pelakunya, dan dapat
+  dijalankan kapan saja atas pemasok yang sudah preferred.
 - Pemasok yang didiskualifikasi dapat dikembalikan ke tahap qualification, sehingga
   keputusan tidak menjadi jalan buntu.
 
@@ -598,6 +642,173 @@ dokumen. `SupplierProfile.jsx` dan `SupplierStatus.jsx` — dua layar yang
 menampilkan catatan ini kepada pemasok — dibaca lewat `note.field ?? note.document`
 supaya tetap kompatibel bila ada data lama berbentuk sebelumnya.
 
+## Tanda tangan elektronik (Privi)
+
+Setiap versi kuesioner dapat mewajibkan tanda tangan elektronik. Pengaturannya
+ada pada builder lewat tombol **Tanda tangan**: penyedia, siapa yang
+menandatangani, judul dokumen, dan apakah pengiriman ditahan sampai tanda
+tangan masuk.
+
+| Pengaturan | Pilihan |
+|---|---|
+| Penyedia | **Privi** (tersertifikasi) atau kanvas gambar tangan |
+| Penanda tangan | Penanggung jawab pemasok · Direktur/pimpinan · Kedua pihak |
+| Tahan pengiriman | Ya (bawaan) atau boleh menyusul |
+
+Pada portal pemasok, panel tanda tangan muncul di seksi terakhir wizard. Bila
+"tahan pengiriman" aktif, dokumen yang belum ditandatangani masuk ke daftar
+prapemeriksaan sebelum kirim persis seperti pertanyaan wajib yang kosong —
+pemasok melihat alasannya, bukan tombol yang mati tanpa keterangan.
+
+⚠️ **Integrasi Privi belum tersambung.** Aplikasi ini front-end saja, jadi yang
+dibangun hanya tampilannya. Pembuatan envelope, pengalihan ke halaman tanda
+tangan Privi, dan callback statusnya berada di sisi server. Tombol pada panel
+pemasok hanya memindahkan keadaan tanda tangan di sesi berjalan, dan nomor
+envelope yang tampil adalah nomor contoh.
+
+## Dua gerbang menuju qualification
+
+Sebelumnya dokumen yang lolos periksa langsung membuka tahap qualification.
+Sekarang ada dua gerbang berurutan, dan keduanya harus terpenuhi:
+
+```
+Registrasi → [1] dokumen lolos periksa → Menunggu validasi kuesioner
+           → [2] seluruh kuesioner disetujui → Qualification
+           → kualifikasi diisi → Preferred supplier
+           → [3] ditinjau MDM → dikirim ke SAP
+```
+
+**Gerbang pertama** ada pada `verifyDocuments`, yang kini memindahkan pemasok ke
+status baru `Menunggu validasi kuesioner` (`AWAITING_QUESTIONNAIRE`), bukan
+langsung ke qualification.
+
+**Gerbang kedua** ada pada `ReviewDetail.jsx`. Ketika seorang peninjau menyetujui
+sebuah kuesioner, layar itu memeriksa apakah *seluruh* kuesioner yang ditugaskan
+kepada pemasok tersebut sudah disetujui; bila ya, `advanceToQualification`
+melepaskannya ke tahap qualification. Pemeriksaannya diletakkan di sini karena
+hanya di titik inilah kedua store — pengajuan dan kuesioner — sama-sama terbaca.
+Aksinya aman dipanggil berulang: pemasok yang statusnya bukan
+`AWAITING_QUESTIONNAIRE` diabaikan.
+
+**Kualifikasi yang selesai langsung menjadikan pemasok preferred.** Tidak ada
+lagi antrean persetujuan manager di tengah jalan, karena penilaian sudah terjadi
+lebih dulu lewat verifikasi dokumen dan validasi kuesioner — menahan pemasok
+sekali lagi hanya menambah waktu tunggu. Modul Preferred Supplier tetap ada:
+manager masih dapat meninjau berkasnya dan mendiskualifikasi bila perlu, dan
+pemasok yang didiskualifikasi masih dapat dikembalikan ke tahap qualification.
+
+## Modul Master Data Management & SAP
+
+Tim Master Data Management adalah gerbang terakhir sebelum data pemasok masuk
+SAP. Role barunya (`ROLE.MDM`) sengaja **tidak** dapat menyunting profil maupun
+kualifikasi; wewenangnya hanya memutuskan kirim atau kembalikan.
+
+Aturannya terkumpul pada `src/sap/sapRules.js` — murni, tanpa React, mengikuti
+pola `profileRules.js` dan `qualificationRules.js`. `sapEligibility()` memeriksa
+lima gerbang berurutan dan mengembalikan alasan spesifik bila salah satu gagal:
+
+| Gerbang | Kode | Alasan |
+|---|---|---|
+| Status pemasok | `not_preferred` | Hanya pemasok preferred yang dikirim |
+| Kualifikasi | `qualification_incomplete` | Komoditas dan negara asalnya yang dikirim |
+| **Open tender** | `open_tender_pending` | Belum menjadi awardee |
+| Blokir | `blocked` | Pemasok berstatus Blocked di SAP |
+| Sudah terkirim | `already_submitted` | Tidak dikirim dua kali |
+
+Layar **Kirim ke SAP** (`/internal/sap`) menampilkan pemasok preferred dengan
+saringan menunggu/tertahan/terkirim, rincian data yang akan dikirim (termasuk
+kode korporat hasil `corporateCodesFor()`), riwayat percobaan pengiriman, dan
+dua tombol: **Kirim ke SAP** atau **Minta revisi ke procurement**.
+
+⚠️ Tanpa backend, hasil pengiriman **disimulasikan**: dialog kirim menyediakan
+pilihan berhasil atau gagal beserta kode galatnya, supaya kedua cabang alurnya
+dapat ditelusuri. Kode galat pada `SAP_ERROR_CODES` adalah contoh dan menunggu
+daftar resmi dari tim integrasi.
+
+### Log gagal kirim ke SAP
+
+Kegagalan tidak boleh hilang begitu toast-nya menutup — satu NPWP ganda perlu
+ditelusuri sampai tuntas. Setiap pengiriman yang ditolak menuliskan entri pada
+`/internal/sap/log` berisi pemasok, kode galat, pesan, waktu, dan pelakunya.
+Entri dapat ditandai sudah ditangani beserta keterangan penanganannya, dan
+saringan bawaannya menampilkan yang belum ditangani lebih dahulu.
+
+### Gerbang open tender
+
+Header kualifikasi memuat satu field baru: **cara pemilihan pemasok**, berisi
+`Open tender` atau `Direct choose`. Pemasok bertanda open tender tidak dapat
+dikirim ke SAP sampai hasil tendernya menjadi **awardee**.
+
+Status awardee kelak datang dari modul **RFx Management** yang belum dibangun.
+Sampai modul itu ada, `tenderOutcome` hanya dapat berubah lewat store — pada
+antarmuka nilainya tampil sebagai kolom baca-saja beserta keterangan mengapa
+pengirimannya tertahan.
+
+## Status Active / Blocked
+
+Terpisah dari tahapan onboarding, setiap pemasok punya status operasional
+`ACCOUNT_STATUS`: **Active** atau **Blocked**.
+
+Blokir **didorong dari SAP**, bukan ditetapkan di aplikasi ini. Pemasok yang
+diblokir ditahan di `signInSupplier` — satu gerbang di layar masuk, bukan
+pembatasan per halaman yang lebih mudah terlewat — dan melihat alasan blokirnya
+bila alasannya dicatat.
+
+⚠️ Tombol blokir/buka blokir pada layar Ringkasan pemasok **mensimulasikan
+dorongan dari SAP** supaya alurnya dapat ditelusuri tanpa server. Pada sistem
+sungguhan tidak ada tombol itu; statusnya datang lewat integrasi.
+
+## Dashboard kepatuhan kuesioner
+
+Dashboard kuesioner yang sudah ada menjawab "bagaimana hasilnya". Halaman baru
+`/internal/kepatuhan-kuesioner` menjawab pertanyaan yang berbeda dan lebih
+sering ditanyakan procurement: **siapa yang belum mengisi**.
+
+Karena itu barisnya adalah pemasok, bukan respons. Saringan per kuesioner
+memperlihatkan siapa saja yang tertinggal pada satu kuesioner tertentu, dan
+**pemasok yang belum ditugaskan sama sekali tetap muncul** sebagai "belum
+mengisi" — justru merekalah yang paling mudah terlewat bila daftarnya disusun
+dari penugasan yang ada.
+
+## Ringkasan pemasok
+
+`/internal/ringkasan-pemasok` menyatukan tiga hal yang selama ini tersebar:
+rencana kerja sama (reguler atau one time), aktivitas order, dan status akun
+active/blocked. Ketiganya dapat disaring sekaligus.
+
+⚠️ **Data PO berasal dari SAP dan sambungannya belum ada.** Angkanya dihasilkan
+`src/sap/purchaseOrders.js` secara **deterministik** dari ID pemasok — hash
+sederhana, bukan `Math.random()`. Alasannya praktis: angka yang berubah tiap
+render membuat daftar berkedip dan saringan "sudah pernah order" tidak dapat
+dipercaya saat menelusuri demo. Satu berkas itu yang perlu diganti ketika
+integrasi tersedia.
+
+## Update data vendor (MMI001)
+
+`/internal/update-vendor` menerima nomor ID pemasok — ID pengajuan
+(`SUP-2026-0135`) maupun ID akun portal (`SUP-RAW-0118`), karena staf lebih
+sering memegang salah satunya — lalu menampilkan data vendornya.
+
+⚠️ Penarikan sesungguhnya memakai transaksi SAP **MMI001** di sisi server, yang
+belum dibangun. Data yang ditampilkan berasal dari aplikasi ini, disusun dalam
+bentuk yang sama seperti balasan SAP nantinya. Yang sudah nyata adalah
+pencarian, penanganan ID tak dikenal, dan pencatatan setiap penarikan pada
+linimasa pemasok lewat `recordSapFetch`.
+
+## Duplikasi NIK & NPWP
+
+Saat bagian Data Pajak dikirim, NIK dan NPWP dicocokkan terhadap pemasok lain.
+Bila bentrok, pesan galatnya menyebut **siapa** yang sudah memakai nomor itu
+beserta ID pengajuannya, bukan sekadar "nomor sudah dipakai".
+
+Pemeriksaan sengaja berjalan **setelah** validasi bentuk lolos: memberi tahu
+"NPWP sudah dipakai" atas nomor yang panjangnya belum benar hanya membingungkan.
+
+⚠️ Pada sistem sungguhan pemeriksaan ini dilakukan basis data lewat indeks unik.
+Karena proyek ini tanpa server, pencocokannya dilakukan atas data yang ada di
+memori lewat `findTaxIdDuplicate()` di `AppStore.jsx` — satu-satunya tempat yang
+perlu diganti bila backend menyusul.
+
 ## Bahasa antarmuka
 
 Tersedia **Bahasa Indonesia, English, dan 中文**, dapat diganti lewat tombol
@@ -638,7 +849,7 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Tombol keputusan terkunci sampai ketiga tab dibuka | `SubmissionReview.jsx` |
 | Jalur internal hanya untuk Procurement Admin | `AppStore.canUseInternalPath`, `SubmissionReview.jsx` |
 | Jalur terkunci setelah dipilih | tidak ada aksi yang mengubah `onboardingPath` |
-| Akun Jalur B baru dibuat setelah approval manager | `AppStore.managerApprove` |
+| Akun Jalur B dibuat begitu staf merampungkan profil, tanpa approval manager | `AppStore.finishInternalRegistration` |
 | Kata sandi berlaku 7 hari sejak email terkirim | `format.passwordExpiryFrom`, diuji di `flow-check.mjs` |
 | Dua kotak centang persetujuan, tidak pre-checked | `ConsentPage.jsx` |
 | Verifikasi dokumen wajib sebelum aktif | `DocumentVerification.jsx` |
@@ -650,6 +861,15 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Maksimal 10 kontak, satu kontak utama | `ProfileSectionForm.jsx`, `profileRules.js` |
 | Profil memuat data pendaftaran dan kelengkapan dalam satu halaman | `SupplierProfile.jsx`, `constants.PROFILE_SECTIONS` |
 | Perubahan dokumen setelah aktif memicu verifikasi ulang | `ActiveProfile.jsx`, `AppStore.updateActiveProfile` |
+| Dokumen lolos periksa menahan pemasok di `Menunggu validasi kuesioner` | `AppStore.verifyDocuments` |
+| Qualification terbuka hanya setelah seluruh kuesioner disetujui | `ReviewDetail.jsx`, `AppStore.advanceToQualification` |
+| Kualifikasi selesai langsung menjadikan pemasok preferred | `AppStore.saveQualification` |
+| Hanya role MDM yang dapat mengirim data ke SAP | `sapRules.canSubmitToSap`, `SapReview.jsx` |
+| Pemasok open tender tertahan sampai menjadi awardee | `sapRules.sapEligibility` (`open_tender_pending`) |
+| Pemasok Blocked tidak dapat masuk portal | `AppStore.signInSupplier` |
+| Pengiriman ke SAP yang gagal tercatat pada log | `AppStore.submitToSap`, `SapFailureLog.jsx` |
+| NIK dan NPWP tidak boleh dipakai dua pemasok | `taxIdentity.findTaxIdDuplicate`, `ProfileSectionForm.jsx`, diuji di `sap-check.mjs` |
+| Tanda tangan elektronik menahan pengiriman kuesioner | `ResponseWizard.jsx`, `schema.makeESignConfig` |
 
 ## Catatan implementasi
 
@@ -698,8 +918,9 @@ Yang masih terbuka setelah tujuh fase:
   dalam aplikasi beserta pemicunya.
 - **Terjemahan** modul kuesioner masih Bahasa Indonesia; kunci EN dan ZH
   menyusul dengan pola fallback yang sudah ada.
-- **Tanda tangan** berupa kanvas gambar tangan, bukan tanda tangan elektronik
-  tersertifikasi.
+- **Tanda tangan elektronik** dapat dipilih per template (penyedia **Privi**),
+  tetapi sambungan ke Privi belum ada — pembuatan envelope dan callback statusnya
+  berada di sisi server. Kanvas gambar tangan tetap tersedia sebagai pilihan kedua.
 
 ## Keputusan yang sudah diambil
 
@@ -712,7 +933,7 @@ Enam pertanyaan terbuka pada proposal awal sudah dijawab:
 | Drag-and-drop | Diabaikan. Penyusunan ulang memakai tombol naik/turun, tanpa dependensi baru |
 | Pembagian fase | Disetujui, dikerjakan bertahap |
 | Cakupan bahasa | Indonesia dulu; kunci EN/ZH menyusul dengan pola fallback yang sudah ada |
-| Tanda tangan | Kanvas gambar tangan. **Bukan** tanda tangan elektronik tersertifikasi — bila keabsahan hukum diperlukan, ini butuh penyedia pihak ketiga dan berada di luar jangkauan frontend |
+| Tanda tangan | ~~Kanvas gambar tangan saja~~ — **diperbarui:** template kini dapat memilih tanda tangan elektronik **Privi**. Yang dibangun baru tampilannya; pemanggilan API Privi berada di sisi server. Kanvas gambar tangan tetap tersedia sebagai pilihan kedua |
 
 ### Penilaian Arsitektur yang Ada
 
