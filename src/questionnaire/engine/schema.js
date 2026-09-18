@@ -42,6 +42,62 @@ export const QUESTIONNAIRE_TYPES = [
 
 export const MATERIAL_TYPES = ['Raw Material', 'Packaging Material', 'Both', 'Not Applicable'];
 
+/**
+ * Tanda tangan elektronik.
+ *
+ * Penyedia yang dituju adalah **Privi**. Proyek ini front-end saja, sehingga
+ * yang dibangun hanya tampilannya: memilih penyedia, menetapkan siapa yang
+ * wajib menandatangani, dan memperlihatkan keadaan tanda tangan pada portal
+ * pemasok. Pemanggilan API Privi — pembuatan envelope, pengalihan ke halaman
+ * tanda tangan, callback status — berada di sisi server dan belum ada.
+ */
+export const ESIGN_PROVIDERS = [
+  { code: 'privi', label: 'Privi', hint: 'Penyedia tanda tangan elektronik tersertifikasi.' },
+  { code: 'manual', label: 'Kanvas gambar tangan', hint: 'Tanpa keabsahan hukum; untuk kebutuhan internal.' },
+];
+
+export const ESIGN_SIGNER_ROLES = [
+  { code: 'authorized_person', label: 'Penanggung jawab pemasok' },
+  { code: 'director', label: 'Direktur / pimpinan' },
+  { code: 'both_parties', label: 'Pemasok dan Paragon' },
+];
+
+export const ESIGN_STATUS = {
+  NOT_REQUIRED: 'not_required',
+  PENDING: 'pending',
+  SENT: 'sent',
+  SIGNED: 'signed',
+  DECLINED: 'declined',
+};
+
+export const ESIGN_STATUS_LABEL = {
+  [ESIGN_STATUS.NOT_REQUIRED]: 'Tidak diperlukan',
+  [ESIGN_STATUS.PENDING]: 'Belum ditandatangani',
+  [ESIGN_STATUS.SENT]: 'Menunggu tanda tangan',
+  [ESIGN_STATUS.SIGNED]: 'Sudah ditandatangani',
+  [ESIGN_STATUS.DECLINED]: 'Ditolak penanda tangan',
+};
+
+export const ESIGN_STATUS_TONE = {
+  [ESIGN_STATUS.NOT_REQUIRED]: 'neutral',
+  [ESIGN_STATUS.PENDING]: 'pending',
+  [ESIGN_STATUS.SENT]: 'progress',
+  [ESIGN_STATUS.SIGNED]: 'success',
+  [ESIGN_STATUS.DECLINED]: 'danger',
+};
+
+export function makeESignConfig(overrides = {}) {
+  return {
+    enabled: false,
+    provider: 'privi',
+    signerRole: 'authorized_person',
+    /** Menahan pengiriman sampai dokumen ditandatangani. */
+    blockSubmitUntilSigned: true,
+    documentTitle: '',
+    ...overrides,
+  };
+}
+
 /** Klasifikasi risiko bawaan; setiap versi boleh menimpanya. */
 export const DEFAULT_RISK_BANDS = [
   { id: 'excellent', label: 'Excellent', min: 90, max: 100, risk: 'low' },
@@ -245,6 +301,7 @@ export function makeVersion(overrides = {}) {
     scoringEnabled: false,
     passingScore: null,
     riskBands: DEFAULT_RISK_BANDS,
+    eSign: makeESignConfig(),
     publishedAt: null,
     publishedBy: null,
     sections: [],

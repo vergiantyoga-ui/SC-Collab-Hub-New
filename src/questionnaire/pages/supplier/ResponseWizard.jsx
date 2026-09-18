@@ -8,6 +8,8 @@ import Icon from '../../../components/ui/Icon.jsx';
 import { useToast } from '../../../components/ui/Toast.jsx';
 import QuestionRenderer from '../../components/render/QuestionRenderer.jsx';
 import CompletionBar from '../../components/shared/CompletionBar.jsx';
+import ESignBlock from '../../components/render/ESignBlock.jsx';
+import { ESIGN_STATUS, makeESignConfig } from '../../engine/schema.js';
 import {
   useQuestionnaireActions,
   useQuestionnaireState,
@@ -60,6 +62,12 @@ export default function ResponseWizard() {
   const [showErrors, setShowErrors] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
+  /*
+   * Tanda tangan hidup di state halaman, bukan di store: tanpa backend tidak
+   * ada envelope sungguhan untuk disimpan, dan yang perlu ditunjukkan hanyalah
+   * gerbangnya — kuesioner tidak dapat dikirim sebelum ditandatangani.
+   */
+  const [signature, setSignature] = useState(null);
 
   // Menandai mulai mengisi hanya sekali, saat kuesioner pertama kali dibuka.
   useEffect(() => {
@@ -136,8 +144,25 @@ export default function ResponseWizard() {
     navigate('/portal/kuesioner');
   }
 
+  const eSign = version.eSign ?? makeESignConfig();
+  const eSignDocumentTitle = eSign.documentTitle?.trim() || template.name;
+  const eSignPending =
+    eSign.enabled &&
+    eSign.blockSubmitUntilSigned &&
+    signature?.status !== ESIGN_STATUS.SIGNED;
+
   const blockers = submissionBlockers(version, answers, attachments);
   const allBlockers = [
+    ...(eSignPending
+      ? [
+          {
+            questionId: 'esign',
+            sectionName: 'Tanda tangan',
+            questionText: eSignDocumentTitle,
+            message: 'Dokumen belum ditandatangani.',
+          },
+        ]
+      : []),
     ...blockers,
     ...pendingFixes.map((fix) => ({
       questionId: fix.questionId,
@@ -247,6 +272,24 @@ export default function ResponseWizard() {
                   onFilesChange={(files) => setFiles(question.id, files)}
                 />
               ))
+            )}
+
+            {eSign.enabled && isLast && (
+              <ESignBlock
+                config={eSign}
+                signature={signature}
+                documentTitle={eSignDocumentTitle}
+                disabled={expired}
+                onSign={() =>
+                  setSignature({
+                    status: ESIGN_STATUS.SIGNED,
+                    signedAt: new Date().toISOString(),
+                    signedBy: submission?.contact.name ?? 'Pemasok',
+                    envelopeId: `PRIVI-${Math.random().toString(36).slice(2, 10).toUpperCase()}`,
+                  })
+                }
+                onReset={() => setSignature(null)}
+              />
             )}
 
             <div className="wizard__actions">

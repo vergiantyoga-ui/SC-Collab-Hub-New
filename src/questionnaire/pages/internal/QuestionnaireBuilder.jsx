@@ -10,6 +10,7 @@ import QuestionToolbox from '../../components/builder/QuestionToolbox.jsx';
 import SectionCard from '../../components/builder/SectionCard.jsx';
 import PropertiesPanel from '../../components/builder/PropertiesPanel.jsx';
 import ScoringPanel from '../../components/builder/ScoringPanel.jsx';
+import ESignPanel from '../../components/builder/ESignPanel.jsx';
 import LibraryPicker from '../../components/builder/LibraryPicker.jsx';
 import QuestionnaireStatusBadge from '../../components/shared/QuestionnaireStatusBadge.jsx';
 import {
@@ -44,6 +45,7 @@ export default function QuestionnaireBuilder() {
   const [confirming, setConfirming] = useState(null);
   const [showBlockers, setShowBlockers] = useState(false);
   const [showScoring, setShowScoring] = useState(false);
+  const [showESign, setShowESign] = useState(false);
   const [library, setLibrary] = useState(null); // 'question' | 'section'
 
   const template = templates.find((item) => item.id === templateId);
@@ -171,6 +173,9 @@ export default function QuestionnaireBuilder() {
               <>
                 <Button variant="secondary" onClick={() => setShowScoring(true)}>
                   Pengaturan skoring
+                </Button>
+                <Button variant="secondary" onClick={() => setShowESign(true)}>
+                  Tanda tangan{version.eSign?.enabled ? ' · aktif' : ''}
                 </Button>
                 <Button onClick={handlePublish} disabled={blockers.length > 0}>
                   Terbitkan
@@ -318,6 +323,20 @@ export default function QuestionnaireBuilder() {
           onUpdateBand={(bandId, patch) =>
             run(actions.updateRiskBand(version.id, bandId, patch, actor))
           }
+        />
+      </Modal>
+
+      <Modal
+        open={showESign}
+        onClose={() => setShowESign(false)}
+        title="Tanda tangan elektronik"
+        description="Berlaku untuk seluruh pengisian pada versi ini."
+        footer={<Button onClick={() => setShowESign(false)}>Selesai</Button>}
+      >
+        <ESignPanel
+          version={version}
+          readOnly={readOnly}
+          onUpdate={(patch) => run(actions.updateVersionSettings(version.id, patch, actor))}
         />
       </Modal>
 

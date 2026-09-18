@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useNavigate } from 'react-router-dom';
 import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
-import { STATUS } from '../../lib/constants.js';
+import { ROLE, SAP_STATUS, STATUS } from '../../lib/constants.js';
 import { useQuestionnaireState } from '../../questionnaire/store/QuestionnaireStore.jsx';
 import { QUALIFIABLE_STATUSES } from '../../qualification/qualificationRules.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
@@ -12,7 +12,7 @@ import { useT } from '../../i18n/LanguageContext.jsx';
  */
 export default function InternalLayout() {
   const t = useT();
-  const { session, submissions, qualifications } = useAppState();
+  const { session, submissions, qualifications, sapLogs } = useAppState();
   const questionnaireState = useQuestionnaireState();
   const { signOut } = useAppActions();
   const navigate = useNavigate();
@@ -36,6 +36,13 @@ export default function InternalLayout() {
   const awaitingReview = questionnaireState.responses.filter(
     (item) => item.status === 'submitted' || item.status === 'under_review',
   ).length;
+  const isMdm = user.role === ROLE.MDM;
+  // Pemasok preferred yang belum terkirim ke SAP — antrean kerja tim MDM.
+  const awaitingSap = submissions.filter(
+    (item) =>
+      item.status === STATUS.PREFERRED && item.sap?.status !== SAP_STATUS.SUBMITTED,
+  ).length;
+  const openSapFailures = sapLogs.filter((log) => !log.resolvedAt).length;
 
   const groups = [
     {
@@ -46,6 +53,7 @@ export default function InternalLayout() {
       label: 'Questionnaire',
       items: [
         { to: '/internal/dashboard-kuesioner', label: 'Dashboard', icon: 'home' },
+        { to: '/internal/kepatuhan-kuesioner', label: 'Kepatuhan pengisian', icon: 'verify' },
         { to: '/internal/questionnaire', label: 'Template', icon: 'consent' },
         { to: '/internal/penugasan', label: 'Penugasan', icon: 'queue' },
         { to: '/internal/tinjauan', label: 'Tinjauan', icon: 'verify', count: awaitingReview },
@@ -72,8 +80,35 @@ export default function InternalLayout() {
           icon: 'approval',
           count: pendingQualification,
         },
+        { to: '/internal/update-vendor', label: 'Update data vendor', icon: 'document' },
       ],
     },
+    {
+      label: 'Data pemasok',
+      items: [{ to: '/internal/ringkasan-pemasok', label: 'Ringkasan pemasok', icon: 'home' }],
+    },
+    /*
+     * Kelompok MDM tampil untuk tim Master Data Management dan manager.
+     * Staf procurement tidak melihatnya: keputusan kirim-ke-SAP bukan
+     * wewenangnya, dan menu yang seluruh tombolnya terkunci hanya
+     * menambah kebingungan.
+     */
+    ...(isMdm || user.role === ROLE.MANAGER
+      ? [
+          {
+            label: 'Master Data Management',
+            items: [
+              { to: '/internal/sap', label: 'Kirim ke SAP', icon: 'approval', count: awaitingSap },
+              {
+                to: '/internal/sap/log',
+                label: 'Log gagal kirim',
+                icon: 'document',
+                count: openSapFailures,
+              },
+            ],
+          },
+        ]
+      : []),
     {
       label: 'Lain-lain',
       items: [

@@ -7,7 +7,9 @@ import Modal from '../../../components/ui/Modal.jsx';
 import DataList from '../../../components/ui/DataList.jsx';
 import { TextAreaField, Checkbox } from '../../../components/ui/Field.jsx';
 import { useToast } from '../../../components/ui/Toast.jsx';
-import { useAppState } from '../../../store/AppStore.jsx';
+import { useAppActions, useAppState } from '../../../store/AppStore.jsx';
+import { STATUS } from '../../../lib/constants.js';
+import { assignmentsForSupplier } from '../../store/QuestionnaireStore.jsx';
 import ScorePill from '../../components/shared/ScorePill.jsx';
 import CompletionBar from '../../components/shared/CompletionBar.jsx';
 import {
@@ -40,7 +42,8 @@ export default function ReviewDetail() {
   const { responseId } = useParams();
   const state = useQuestionnaireState();
   const actions = useQuestionnaireActions();
-  const { session } = useAppState();
+  const { session, submissions } = useAppState();
+  const appActions = useAppActions();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -94,6 +97,29 @@ export default function ReviewDetail() {
     if (!result.ok) {
       toast.error(result.message);
       return;
+    }
+
+    /*
+     * Gerbang kedua pokayoke: pemasok baru masuk tahap qualification setelah
+     * SELURUH kuesioner yang ditugaskan padanya disetujui. Pemeriksaannya
+     * dilakukan di sini, pada saat keputusan terakhir diambil, karena hanya di
+     * titik ini kedua store — pengajuan dan kuesioner — sama-sama terbaca.
+     */
+    if (decision === REVIEW_DECISION.APPROVE) {
+      const supplier = submissions.find((item) => item.id === assignment.supplierId);
+      if (supplier?.status === STATUS.AWAITING_QUESTIONNAIRE) {
+        const others = assignmentsForSupplier(state, assignment.supplierId).filter(
+          (item) => item.assignment.id !== assignment.id,
+        );
+        const allApproved = others.every(
+          (item) => item.response?.status === RESPONSE_STATUS.APPROVED,
+        );
+        if (allApproved && appActions.advanceToQualification(supplier.id, actor)) {
+          toast.success(
+            `Seluruh kuesioner ${supplier.general.vendorName} tervalidasi — pemasok lanjut ke tahap qualification.`,
+          );
+        }
+      }
     }
 
     toast.success(

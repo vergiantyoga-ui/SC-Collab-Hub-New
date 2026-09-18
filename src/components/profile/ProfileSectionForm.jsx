@@ -40,6 +40,7 @@ import {
 } from '../../lib/constants.js';
 import { formatNpwp, wasNpwpNormalized } from '../../lib/validation.js';
 import { LICENSES, normalizeSection, validateSection } from '../../lib/profileRules.js';
+import { findTaxIdDuplicate, useAppState } from '../../store/AppStore.jsx';
 
 /**
  * Satu komponen menangani kelima bagian profil supaya aturan validasi
@@ -48,7 +49,15 @@ import { LICENSES, normalizeSection, validateSection } from '../../lib/profileRu
  *
  * `onSubmit(values)` dipanggil hanya jika seluruh validasi lolos.
  */
-export default function ProfileSectionForm({ sectionId, value, onSubmit, onCancel, submitLabel }) {
+export default function ProfileSectionForm({
+  sectionId,
+  value,
+  onSubmit,
+  onCancel,
+  submitLabel,
+  submissionId = null,
+}) {
+  const { submissions } = useAppState();
   const [values, setValues] = useState(value);
   const [errors, setErrors] = useState({});
 
@@ -57,6 +66,30 @@ export default function ProfileSectionForm({ sectionId, value, onSubmit, onCance
   function handleSubmit(event) {
     event.preventDefault();
     const found = validateSection(sectionId, values);
+
+    /*
+     * Pemeriksaan duplikasi NIK dan NPWP.
+     *
+     * Dijalankan setelah validasi bentuk lolos, bukan sebelumnya: memberi tahu
+     * "NPWP sudah dipakai" atas nomor yang panjangnya belum benar hanya
+     * membingungkan. Pada sistem sungguhan pemeriksaan ini dilakukan basis data
+     * lewat indeks unik; di sini dicocokkan ke data yang ada di memori, dan
+     * `findTaxIdDuplicate` adalah satu-satunya tempat yang perlu diganti bila
+     * backend menyusul.
+     */
+    if (sectionId === 'tax' && !found.nik && !found.npwp) {
+      const duplicate = findTaxIdDuplicate(
+        submissions,
+        { nik: values.nik, npwp: values.npwp },
+        submissionId,
+      );
+      if (duplicate) {
+        const owner = duplicate.submission.general?.vendorName ?? duplicate.submission.id;
+        found[duplicate.field] =
+          `${duplicate.field === 'nik' ? 'NIK' : 'NPWP'} ini sudah terdaftar atas nama ${owner} (${duplicate.submission.id}). Satu nomor hanya boleh dipakai satu pemasok.`;
+      }
+    }
+
     setErrors(found);
 
     if (Object.keys(found).length > 0) {
