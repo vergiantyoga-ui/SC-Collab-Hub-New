@@ -51,17 +51,6 @@ export const MATERIAL_TYPES = ['Raw Material', 'Packaging Material', 'Both', 'No
  * pemasok. Pemanggilan API Privi — pembuatan envelope, pengalihan ke halaman
  * tanda tangan, callback status — berada di sisi server dan belum ada.
  */
-export const ESIGN_PROVIDERS = [
-  { code: 'privi', label: 'Privi', hint: 'Penyedia tanda tangan elektronik tersertifikasi.' },
-  { code: 'manual', label: 'Kanvas gambar tangan', hint: 'Tanpa keabsahan hukum; untuk kebutuhan internal.' },
-];
-
-export const ESIGN_SIGNER_ROLES = [
-  { code: 'authorized_person', label: 'Penanggung jawab pemasok' },
-  { code: 'director', label: 'Direktur / pimpinan' },
-  { code: 'both_parties', label: 'Pemasok dan Paragon' },
-];
-
 export const ESIGN_STATUS = {
   NOT_REQUIRED: 'not_required',
   PENDING: 'pending',
@@ -86,14 +75,19 @@ export const ESIGN_STATUS_TONE = {
   [ESIGN_STATUS.DECLINED]: 'danger',
 };
 
+/**
+ * Penyedia tanda tangan tidak dapat dipilih: seluruh kuesioner memakai Privi,
+ * dan penyambungannya berjalan otomatis di sisi server. Karena itu
+ * konfigurasinya hanya satu sakelar — builder cukup menyediakan tombol
+ * aktif/nonaktif, tanpa dialog pengaturan yang tidak punya pilihan apa pun.
+ */
+export const ESIGN_PROVIDER = 'privi';
+export const ESIGN_PROVIDER_LABEL = 'Privi';
+
 export function makeESignConfig(overrides = {}) {
   return {
     enabled: false,
-    provider: 'privi',
-    signerRole: 'authorized_person',
-    /** Menahan pengiriman sampai dokumen ditandatangani. */
-    blockSubmitUntilSigned: true,
-    documentTitle: '',
+    provider: ESIGN_PROVIDER,
     ...overrides,
   };
 }

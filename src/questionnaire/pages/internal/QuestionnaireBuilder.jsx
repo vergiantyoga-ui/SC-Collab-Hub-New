@@ -10,7 +10,6 @@ import QuestionToolbox from '../../components/builder/QuestionToolbox.jsx';
 import SectionCard from '../../components/builder/SectionCard.jsx';
 import PropertiesPanel from '../../components/builder/PropertiesPanel.jsx';
 import ScoringPanel from '../../components/builder/ScoringPanel.jsx';
-import ESignPanel from '../../components/builder/ESignPanel.jsx';
 import LibraryPicker from '../../components/builder/LibraryPicker.jsx';
 import QuestionnaireStatusBadge from '../../components/shared/QuestionnaireStatusBadge.jsx';
 import {
@@ -24,6 +23,7 @@ import {
   findQuestion,
   publishBlockers,
 } from '../../engine/index.js';
+import { makeESignConfig } from '../../engine/schema.js';
 import './builder.css';
 
 /**
@@ -45,7 +45,6 @@ export default function QuestionnaireBuilder() {
   const [confirming, setConfirming] = useState(null);
   const [showBlockers, setShowBlockers] = useState(false);
   const [showScoring, setShowScoring] = useState(false);
-  const [showESign, setShowESign] = useState(false);
   const [library, setLibrary] = useState(null); // 'question' | 'section'
 
   const template = templates.find((item) => item.id === templateId);
@@ -54,6 +53,7 @@ export default function QuestionnaireBuilder() {
   if (!template || !version) return <Navigate to="/internal/questionnaire" replace />;
 
   const readOnly = !canEdit(version);
+  const eSignEnabled = Boolean(version.eSign?.enabled);
   const actor = session?.user;
   const blockers = publishBlockers(version);
 
@@ -165,7 +165,7 @@ export default function QuestionnaireBuilder() {
         title={template.name}
         description={`${countSections(version)} seksi · ${countQuestions(version)} pertanyaan${
           version.scoringEnabled ? ' · skoring aktif' : ''
-        }`}
+        }${eSignEnabled ? ' · e-sign aktif' : ''}`}
         actions={
           <div className="row">
             <QuestionnaireStatusBadge status={version.status} />
@@ -174,8 +174,29 @@ export default function QuestionnaireBuilder() {
                 <Button variant="secondary" onClick={() => setShowScoring(true)}>
                   Pengaturan skoring
                 </Button>
-                <Button variant="secondary" onClick={() => setShowESign(true)}>
-                  Tanda tangan{version.eSign?.enabled ? ' · aktif' : ''}
+                {/*
+                  * E-sign cukup satu sakelar. Penyedianya sudah ditetapkan
+                  * (Privi) dan penyambungannya otomatis di sisi server, jadi
+                  * tidak ada yang perlu dikonfigurasi di sini — dialog
+                  * pengaturan hanya akan menambah langkah tanpa pilihan.
+                  */}
+                <Button
+                  variant={eSignEnabled ? 'success' : 'secondary'}
+                  aria-pressed={eSignEnabled}
+                  onClick={() =>
+                    run(
+                      actions.updateVersionSettings(
+                        version.id,
+                        { eSign: { ...(version.eSign ?? makeESignConfig()), enabled: !eSignEnabled } },
+                        actor,
+                      ),
+                      eSignEnabled
+                        ? 'Tanda tangan elektronik dinonaktifkan.'
+                        : 'Tanda tangan elektronik diaktifkan — pemasok menandatangani lewat Privi.',
+                    )
+                  }
+                >
+                  E-sign: {eSignEnabled ? 'Aktif' : 'Nonaktif'}
                 </Button>
                 <Button onClick={handlePublish} disabled={blockers.length > 0}>
                   Terbitkan
@@ -323,20 +344,6 @@ export default function QuestionnaireBuilder() {
           onUpdateBand={(bandId, patch) =>
             run(actions.updateRiskBand(version.id, bandId, patch, actor))
           }
-        />
-      </Modal>
-
-      <Modal
-        open={showESign}
-        onClose={() => setShowESign(false)}
-        title="Tanda tangan elektronik"
-        description="Berlaku untuk seluruh pengisian pada versi ini."
-        footer={<Button onClick={() => setShowESign(false)}>Selesai</Button>}
-      >
-        <ESignPanel
-          version={version}
-          readOnly={readOnly}
-          onUpdate={(patch) => run(actions.updateVersionSettings(version.id, patch, actor))}
         />
       </Modal>
 

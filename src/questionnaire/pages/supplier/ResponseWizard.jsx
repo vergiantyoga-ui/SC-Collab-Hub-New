@@ -146,10 +146,7 @@ export default function ResponseWizard() {
 
   const eSign = version.eSign ?? makeESignConfig();
   const eSignDocumentTitle = eSign.documentTitle?.trim() || template.name;
-  const eSignPending =
-    eSign.enabled &&
-    eSign.blockSubmitUntilSigned &&
-    signature?.status !== ESIGN_STATUS.SIGNED;
+  const eSignPending = eSign.enabled && signature?.status !== ESIGN_STATUS.SIGNED;
 
   const blockers = submissionBlockers(version, answers, attachments);
   const allBlockers = [
@@ -276,7 +273,6 @@ export default function ResponseWizard() {
 
             {eSign.enabled && isLast && (
               <ESignBlock
-                config={eSign}
                 signature={signature}
                 documentTitle={eSignDocumentTitle}
                 disabled={expired}
