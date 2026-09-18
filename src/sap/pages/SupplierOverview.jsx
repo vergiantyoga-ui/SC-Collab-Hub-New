@@ -22,7 +22,7 @@ import {
 } from '../../lib/constants.js';
 import { canSubmitToSap } from '../sapRules.js';
 import { purchaseSummaryFor } from '../purchaseOrders.js';
-import { labelOf } from '../../lib/masterData.js';
+import { asOptions, labelOf } from '../../lib/masterData.js';
 import { formatDate } from '../../lib/format.js';
 import '../../questionnaire/pages/internal/compliance.css';
 
@@ -136,7 +136,10 @@ export default function SupplierOverview() {
             label="Rencana kerja sama"
             options={[
               { value: 'all', label: 'Semua' },
-              ...OTV_STATUSES.map((item) => ({ value: item.code, label: item.label })),
+              // asOptions memetakan {code,name} milik master data menjadi
+              // {value,label}; memetakannya sendiri lewat item.label
+              // menghasilkan pilihan berlabel kosong.
+              ...asOptions(OTV_STATUSES),
             ]}
             value={plan}
             onChange={(e) => setPlan(e.target.value)}
