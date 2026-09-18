@@ -599,6 +599,28 @@ export function AppStoreProvider({ children }) {
       },
 
       /**
+       * Menyunting satu bagian data vendor dari konsol internal.
+       *
+       * Berbeda dari `updateActiveProfile` yang dipakai pemasok: perubahan dari
+       * sisi internal tidak memicu verifikasi ulang, karena yang menyuntingnya
+       * justru tim yang akan memverifikasi. Bagian pendaftaran (`general`,
+       * `address`, `contact`) tinggal di akar pengajuan, sedangkan lima bagian
+       * sisanya di dalam `profile` — percabangan itu ditangani di sini supaya
+       * pemanggilnya cukup menyebut nama bagiannya.
+       */
+      updateVendorSection(id, sectionId, values, actor) {
+        const atRoot = ['general', 'address', 'contact'].includes(sectionId);
+        patch(
+          id,
+          (s) =>
+            atRoot
+              ? { [sectionId]: values }
+              : { profile: { ...s.profile, [sectionId]: values } },
+          entry(`Bagian ${sectionId} disunting dari konsol internal`, actor?.name ?? ''),
+        );
+      },
+
+      /**
        * Pembaruan data vendor secara internal. Pada sistem sungguhan ini
        * memicu pengambilan data dari SAP lewat MMI001; di sini hasilnya
        * disimulasikan dan hanya dicatat pada linimasa.
