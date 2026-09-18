@@ -87,6 +87,11 @@ const MDM_EMAIL = 'bayu.nugroho@paragon-corp.com';
 
 const CASES = [
   { email: MDM_EMAIL, route: '/internal/sap', expect: 'SAP' },
+  // Saringan rencana kerja sama harus memuat kedua pilihannya, bukan hanya
+  // "Semua": master data memakai kunci `name`, sehingga memetakannya lewat
+  // `item.label` diam-diam menghasilkan pilihan berlabel kosong.
+  { email: STAFF_EMAIL, route: '/internal/ringkasan-pemasok', expect: 'One Time Vendor' },
+  { email: STAFF_EMAIL, route: '/internal/ringkasan-pemasok', expect: 'Reguler Vendor' },
   { email: MDM_EMAIL, route: '/internal/sap/log', expect: 'Log' },
   { email: STAFF_EMAIL, route: '/internal/update-vendor', expect: 'MMI001' },
   { email: STAFF_EMAIL, route: '/internal/ringkasan-pemasok', expect: 'pemasok' },

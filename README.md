@@ -803,8 +803,22 @@ dari penugasan yang ada.
 ## Ringkasan pemasok
 
 `/internal/ringkasan-pemasok` menyatukan tiga hal yang selama ini tersebar:
-rencana kerja sama (reguler atau one time), aktivitas order, dan status akun
-active/blocked. Ketiganya dapat disaring sekaligus.
+rencana kerja sama, aktivitas order, dan status akun active/blocked. Keempat
+saringannya dapat dipakai sekaligus.
+
+| Saringan | Pilihan |
+|---|---|
+| Rencana kerja sama | Semua · **Reguler Vendor** (`C1`) · **One Time Vendor** (`C0`) |
+| Aktivitas order | Semua · Sudah melakukan order · Belum pernah order |
+| Status akun | Semua · Active · Blocked |
+| Cari pemasok | Nama perusahaan |
+
+Pilihan rencana kerja sama dibangun dari `OTV_STATUSES` lewat `asOptions()`.
+Helper itu wajib dipakai, bukan `.map()` sendiri: master data menyimpan
+namanya pada kunci `name`, sehingga memetakannya lewat `item.label`
+menghasilkan pilihan berlabel kosong — dropdown yang tampak hanya berisi
+"Semua". Kesalahan itu tidak tertangkap `npm run build`, jadi
+`mdm-render-check.jsx` memeriksa kedua label pilihannya benar-benar muncul.
 
 ⚠️ **Data PO berasal dari SAP dan sambungannya belum ada.** Angkanya dihasilkan
 `src/sap/purchaseOrders.js` secara **deterministik** dari ID pemasok — hash
@@ -924,6 +938,7 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Dokumen lolos periksa menahan pemasok di `Menunggu validasi kuesioner` | `AppStore.verifyDocuments` |
 | Qualification terbuka hanya setelah seluruh kuesioner disetujui | `ReviewDetail.jsx`, `AppStore.advanceToQualification` |
 | Kualifikasi selesai langsung menjadikan pemasok preferred | `AppStore.saveQualification` |
+| Pilihan dropdown master data dibangun lewat `asOptions()` | `masterData.asOptions`, `SupplierOverview.jsx` |
 | Penyuntingan internal tidak memicu verifikasi ulang | `AppStore.updateVendorSection` |
 | Hanya role MDM yang dapat mengirim data ke SAP | `sapRules.canSubmitToSap`, `SapReview.jsx`, `PreferredReview.jsx` |
 | Kualifikasi tertutup sampai dokumen lolos periksa dan kuesioner tervalidasi | `qualificationRules.QUALIFIABLE_STATUSES` |
