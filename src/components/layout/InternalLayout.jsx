@@ -128,7 +128,12 @@ export default function InternalLayout() {
           to: '/internal/preferred',
           label: 'Preferred supplier',
           icon: 'approval',
-          count: awaitingPreferred,
+          /*
+           * Angka pada lencana mengikuti pekerjaan yang menunggu pembacanya:
+           * MDM menunggu pemasok preferred untuk dikirim ke SAP, sedangkan
+           * procurement menunggu antrean persetujuan yang tersisa.
+           */
+          count: isMdm ? awaitingSap : awaitingPreferred,
         },
       ],
     },
