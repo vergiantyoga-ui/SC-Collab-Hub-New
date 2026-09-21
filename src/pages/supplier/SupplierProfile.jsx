@@ -8,6 +8,8 @@ import Modal from '../../components/ui/Modal.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import ProfileSectionForm from '../../components/profile/ProfileSectionForm.jsx';
 import ProfileSummary from '../../components/profile/ProfileSummary.jsx';
+import Tabs, { TabPanel } from '../../components/ui/Tabs.jsx';
+import RegistrationProgress from './RegistrationProgress.jsx';
 import { useAppActions, useCurrentSubmission } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import {
@@ -37,6 +39,7 @@ export default function SupplierProfile() {
   const [active, setActive] = useState(() => firstIncomplete(submission));
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(null);
+  const [tab, setTab] = useState('data');
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -99,7 +102,7 @@ export default function SupplierProfile() {
   return (
     <>
       <PageHeader
-        trail={[{ label: t('common.home'), to: '/portal/status' }, { label: t('nav.profile') }]}
+        trail={[{ label: t('common.home') }, { label: t('nav.profile') }]}
         icon="profile"
         title={t('profile.title')}
         description={t(isActive ? 'profile.lede.active' : 'profile.lede.onboarding')}
@@ -126,6 +129,20 @@ export default function SupplierProfile() {
         </div>
       )}
 
+      <Tabs
+        items={[
+          { id: 'data', label: 'Data perusahaan' },
+          { id: 'progress', label: 'Status & riwayat' },
+        ]}
+        active={tab}
+        onChange={setTab}
+      />
+
+      <TabPanel id="progress" active={tab}>
+        <RegistrationProgress />
+      </TabPanel>
+
+      <TabPanel id="data" active={tab}>
       <div className="profile-layout">
         <div className="profile-rail">
           <SectionRail
@@ -199,6 +216,7 @@ export default function SupplierProfile() {
           )}
         </Card>
       </div>
+      </TabPanel>
 
       <Modal
         open={Boolean(confirming)}

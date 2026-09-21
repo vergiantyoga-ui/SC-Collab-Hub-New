@@ -9,7 +9,7 @@ import SupplierLayout from './components/layout/SupplierLayout.jsx';
 import ChangePassword from './pages/supplier/ChangePassword.jsx';
 import SupplierProfile from './pages/supplier/SupplierProfile.jsx';
 import ConsentPage from './pages/supplier/ConsentPage.jsx';
-import SupplierStatus from './pages/supplier/SupplierStatus.jsx';
+import AccountProfile from './pages/supplier/AccountProfile.jsx';
 
 import InternalLayout from './components/layout/InternalLayout.jsx';
 import InternalHome from './pages/internal/InternalHome.jsx';
@@ -57,16 +57,18 @@ export default function App() {
 
       {/* Portal pemasok */}
       <Route path="/portal" element={<SupplierLayout />}>
-        <Route index element={<Navigate to="/portal/status" replace />} />
+        <Route index element={<Navigate to="/portal/profil" replace />} />
         <Route path="ganti-sandi" element={<ChangePassword />} />
-        <Route path="status" element={<SupplierStatus />} />
+        {/* Status pendaftaran kini menjadi tab di dalam Profil. */}
+        <Route path="status" element={<Navigate to="/portal/profil" replace />} />
         <Route path="profil" element={<SupplierProfile />} />
+        <Route path="akun" element={<AccountProfile />} />
         <Route path="persetujuan" element={<ConsentPage />} />
         <Route path="kuesioner" element={<MyQuestionnaires />} />
         <Route path="kuesioner/:responseId" element={<ResponseWizard />} />
         <Route
           path="notifikasi"
-          element={<NotificationList audience="supplier" trailRoot="/portal/status" />}
+          element={<NotificationList audience="supplier" trailRoot="/portal/profil" />}
         />
         {/* Tautan lama dari email undangan tetap berfungsi */}
         <Route path="profil-onboarding" element={<Navigate to="/portal/profil" replace />} />
