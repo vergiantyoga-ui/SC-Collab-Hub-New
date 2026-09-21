@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import PageHeader from '../../components/ui/PageHeader.jsx';
 import Card from '../../components/ui/Card.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
@@ -20,6 +19,10 @@ const FILTERS = [
 
 /**
  * Log pengiriman ke SAP yang gagal.
+ *
+ * Bagian kedua halaman Kirim ke SAP, bukan halaman tersendiri: kegagalan selalu
+ * dibaca berdampingan dengan antrean kirim — yang menanganinya orang yang sama,
+ * dan tindak lanjutnya biasanya mengirim ulang dari antrean itu juga.
  *
  * Kegagalan tidak boleh hilang begitu toast-nya menutup: satu NPWP ganda atau
  * kode korporat yang tidak dikenal perlu ditelusuri sampai tuntas. Setiap entri
@@ -65,12 +68,6 @@ export default function SapFailureLog() {
 
   return (
     <>
-      <PageHeader
-        trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Log gagal kirim SAP' }]}
-        icon="document"
-        title="Log gagal kirim ke SAP"
-        description="Setiap pengiriman yang ditolak SAP tercatat di sini beserta kode galat dan pemasoknya."
-      />
 
       <div className="row" style={{ marginBottom: 'var(--sp-4)', flexWrap: 'wrap' }}>
         {FILTERS.map((item) => (

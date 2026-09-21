@@ -18,9 +18,9 @@ import InternalRegistration from './pages/internal/InternalRegistration.jsx';
 import PreferredQueue from './pages/internal/PreferredQueue.jsx';
 import PreferredReview from './pages/internal/PreferredReview.jsx';
 import DocumentVerification from './pages/internal/DocumentVerification.jsx';
+import InternalAccount from './pages/internal/InternalAccount.jsx';
 
 import SapReview from './sap/pages/SapReview.jsx';
-import SapFailureLog from './sap/pages/SapFailureLog.jsx';
 import VendorDataUpdate from './sap/pages/VendorDataUpdate.jsx';
 import SupplierOverview from './sap/pages/SupplierOverview.jsx';
 
@@ -33,7 +33,6 @@ import AssignmentCreate from './questionnaire/pages/internal/AssignmentCreate.js
 import ReviewQueue from './questionnaire/pages/internal/ReviewQueue.jsx';
 import ReviewDetail from './questionnaire/pages/internal/ReviewDetail.jsx';
 import QuestionnaireDashboard from './questionnaire/pages/internal/QuestionnaireDashboard.jsx';
-import QuestionnaireCompliance from './questionnaire/pages/internal/QuestionnaireCompliance.jsx';
 import NotificationList from './questionnaire/pages/internal/NotificationList.jsx';
 import AuditTrail from './questionnaire/pages/internal/AuditTrail.jsx';
 
@@ -97,11 +96,17 @@ export default function App() {
         <Route path="tinjauan" element={<ReviewQueue />} />
         <Route path="tinjauan/:responseId" element={<ReviewDetail />} />
         <Route path="dashboard-kuesioner" element={<QuestionnaireDashboard />} />
-        <Route path="kepatuhan-kuesioner" element={<QuestionnaireCompliance />} />
+        {/* Kepatuhan pengisian kini menjadi bagian dari dashboard kuesioner. */}
+        <Route
+          path="kepatuhan-kuesioner"
+          element={<Navigate to="/internal/dashboard-kuesioner" replace />}
+        />
         <Route path="ringkasan-pemasok" element={<SupplierOverview />} />
         <Route path="update-vendor" element={<VendorDataUpdate />} />
+        <Route path="akun" element={<InternalAccount />} />
         <Route path="sap" element={<SapReview />} />
-        <Route path="sap/log" element={<SapFailureLog />} />
+        {/* Log kegagalan kini menjadi bagian dari halaman Kirim ke SAP. */}
+        <Route path="sap/log" element={<Navigate to="/internal/sap" replace />} />
         <Route path="jejak-audit" element={<AuditTrail />} />
         <Route
           path="notifikasi"

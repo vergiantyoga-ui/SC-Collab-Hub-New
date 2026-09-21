@@ -82,6 +82,12 @@ function reducer(state, action) {
         qualifications: { ...state.qualifications, [action.supplierId]: action.qualification },
       };
 
+    case 'UPDATE_SESSION_USER':
+      return {
+        ...state,
+        session: { ...state.session, user: { ...state.session.user, ...action.patch } },
+      };
+
     case 'SAP_LOG':
       return { ...state, sapLogs: [action.log, ...state.sapLogs] };
 
@@ -487,6 +493,19 @@ export function AppStoreProvider({ children }) {
             actor?.name ?? '',
           ),
         );
+      },
+
+      /**
+       * Menyunting profil akun pengguna internal yang sedang masuk.
+       *
+       * Hanya menyentuh sesi, bukan `INTERNAL_USERS`: direktori itu mewakili
+       * data kepegawaian yang pada sistem sungguhan datang dari sumber lain
+       * (SSO atau HRIS), bukan sesuatu yang aplikasi ini miliki. Karena itu
+       * perubahannya ikut hilang saat keluar — sama seperti data lain di
+       * aplikasi tanpa backend ini.
+       */
+      updateInternalProfile(patch) {
+        dispatch({ type: 'UPDATE_SESSION_USER', patch });
       },
 
       /* ---------------- Master Data Management & SAP ---------------- */

@@ -24,6 +24,7 @@ import { SAP_ERROR_CODES, canSubmitToSap, sapEligibility } from '../sapRules.js'
 import { summariseLines } from '../../qualification/qualificationRules.js';
 import { corporateCodesFor, labelOf, VENDOR_TYPES } from '../../lib/masterData.js';
 import { formatDate, formatDateTime } from '../../lib/format.js';
+import SapFailureLog from './SapFailureLog.jsx';
 import './sap.css';
 
 const FILTERS = [
@@ -112,7 +113,7 @@ export default function SapReview() {
         trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Kirim ke SAP' }]}
         icon="approval"
         title="Review & kirim ke SAP"
-        description="Pemasok berstatus preferred ditinjau tim Master Data Management sebelum datanya masuk ke SAP."
+        description="Pemasok berstatus preferred ditinjau tim Master Data Management sebelum datanya masuk ke SAP, beserta log pengiriman yang gagal."
       />
 
       {!allowed && (
@@ -323,6 +324,17 @@ export default function SapReview() {
           )}
         </div>
       )}
+
+      {/*
+        * Log kegagalan menutup halaman: setelah menimbang antrean kirim,
+        * pertanyaan berikutnya selalu "yang kemarin gagal bagaimana".
+        */}
+      <div style={{ marginTop: 'var(--sp-6, 32px)' }}>
+        <h2 className="card__title" style={{ marginBottom: 'var(--sp-3)' }}>
+          Log gagal kirim
+        </h2>
+        <SapFailureLog />
+      </div>
 
       <Modal
         open={sending}
