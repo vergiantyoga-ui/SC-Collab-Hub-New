@@ -3,11 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../../components/ui/PageHeader.jsx';
 import Card from '../../../components/ui/Card.jsx';
 import Button from '../../../components/ui/Button.jsx';
-import { TextField, SelectField, TextAreaField, Checkbox } from '../../../components/ui/Field.jsx';
+import {
+  TextField,
+  SelectField,
+  TextAreaField,
+  Checkbox,
+  CheckboxGroup,
+} from '../../../components/ui/Field.jsx';
 import { useToast } from '../../../components/ui/Toast.jsx';
 import { useAppState } from '../../../store/AppStore.jsx';
-import { useQuestionnaireActions } from '../../store/QuestionnaireStore.jsx';
-import { MATERIAL_TYPES, QUESTIONNAIRE_TYPES } from '../../engine/index.js';
+import { useQuestionnaireActions, useQuestionnaireState } from '../../store/QuestionnaireStore.jsx';
+import { MATERIAL_TYPES, QUESTIONNAIRE_TYPES, generateTemplateCode } from '../../engine/index.js';
 import { collectErrors, required } from '../../../lib/validation.js';
 
 /**
@@ -18,31 +24,39 @@ import { collectErrors, required } from '../../../lib/validation.js';
 export default function TemplateCreate() {
   const [values, setValues] = useState({
     name: '',
-    code: '',
     type: '',
     description: '',
-    targetSupplierType: '',
-    materialType: '',
-    estimatedMinutes: '',
+    materialTypes: [],
     scoringEnabled: false,
   });
   const [errors, setErrors] = useState({});
 
   const actions = useQuestionnaireActions();
+  const state = useQuestionnaireState();
   const { session } = useAppState();
   const toast = useToast();
   const navigate = useNavigate();
 
   const set = (patch) => setValues((current) => ({ ...current, ...patch }));
 
+  /*
+   * Kode dibangkitkan dari nama, tidak diketik: satu sumber kebenaran, dan
+   * tidak ada lagi kode yang menyimpang dari nama kuesionernya setelah
+   * namanya diubah. Dihitung saat mengetik supaya hasilnya terlihat sebelum
+   * disimpan, bukan mengejutkan setelahnya.
+   */
+  const previewCode = generateTemplateCode(
+    values.name,
+    state.templates.map((item) => item.code),
+  );
+
   function handleSubmit(event) {
     event.preventDefault();
 
     const found = collectErrors({
       name: required(values.name, 'Nama questionnaire'),
-      code: required(values.code, 'Kode'),
       type: required(values.type, 'Tipe'),
-      materialType: required(values.materialType, 'Jenis material'),
+      materialTypes: values.materialTypes.length > 0 ? null : 'Pilih minimal satu jenis material.',
     });
     setErrors(found);
 
@@ -51,7 +65,7 @@ export default function TemplateCreate() {
       return;
     }
 
-    const created = actions.createTemplate(values, session?.user);
+    const created = actions.createTemplate({ ...values, code: previewCode }, session?.user);
     toast.success(`"${created.template.name}" dibuat sebagai draf.`);
     navigate(`/internal/questionnaire/${created.template.id}/v/${created.version.id}`);
   }
@@ -82,15 +96,14 @@ export default function TemplateCreate() {
                 placeholder="Misalnya Supplier Audit"
                 required
               />
-              <TextField
-                label="Kode"
-                value={values.code}
-                onChange={(e) => set({ code: e.target.value.toUpperCase() })}
-                error={errors.code}
-                placeholder="QST-AUD"
-                hint="Dipakai pada laporan dan penomoran."
-                required
-              />
+              <div className="field">
+                <span className="field__label">Kode</span>
+                <p className="taxgroup__derived">{previewCode || '—'}</p>
+                <p className="field__hint">
+                  Dibangkitkan otomatis dari nama kuesioner dengan format QST-akronim.
+                  Dipakai pada laporan dan penomoran.
+                </p>
+              </div>
               <SelectField
                 label="Tipe"
                 options={QUESTIONNAIRE_TYPES}
@@ -107,28 +120,19 @@ export default function TemplateCreate() {
                 onChange={(e) => set({ description: e.target.value })}
                 hint="Jelaskan singkat tujuan kuesioner ini bagi pemasok."
               />
-              <TextField
-                label="Sasaran pemasok"
-                value={values.targetSupplierType}
-                onChange={(e) => set({ targetSupplierType: e.target.value })}
-                placeholder="Misalnya pemasok bahan baku"
-              />
-              <SelectField
-                label="Jenis material"
-                options={MATERIAL_TYPES}
-                value={values.materialType}
-                onChange={(e) => set({ materialType: e.target.value })}
-                error={errors.materialType}
-                required
-              />
-              <TextField
-                label="Perkiraan waktu pengisian"
-                type="number"
-                inputMode="numeric"
-                value={values.estimatedMinutes}
-                onChange={(e) => set({ estimatedMinutes: e.target.value })}
-                hint="Dalam menit. Ditampilkan kepada pemasok."
-              />
+              <div className="span-full">
+                <CheckboxGroup
+                  legend="Jenis material"
+                  options={MATERIAL_TYPES}
+                  values={values.materialTypes}
+                  onChange={(next) => set({ materialTypes: next })}
+                  error={errors.materialTypes}
+                />
+                <p className="field__hint">
+                  Pilih satu atau lebih. Kuesioner yang berlaku untuk semua pemasok
+                  cukup dicentang seluruhnya.
+                </p>
+              </div>
             </div>
 
             <div style={{ marginTop: 'var(--sp-2)' }}>

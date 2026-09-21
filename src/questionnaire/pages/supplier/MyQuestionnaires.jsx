@@ -72,9 +72,6 @@ export default function MyQuestionnaires() {
                       {formatDate(assignment.assignedAt)} oleh {assignment.assignedBy}
                     </p>
 
-                    {assignment.materialName && (
-                      <p className="qrow__meta">Material: {assignment.materialName}</p>
-                    )}
 
                     <p className={`qrow__due ${overdue ? 'qrow__due--late' : ''}`.trim()}>
                       Tenggat {formatDate(assignment.dueDate)}

@@ -11,19 +11,34 @@ import {
   useQuestionnaireState,
   versionsOf,
 } from '../../store/QuestionnaireStore.jsx';
-import { TEMPLATE_STATUS, MATERIAL_TYPES } from '../../engine/index.js';
+import { TEMPLATE_STATUS } from '../../engine/index.js';
 import { PRIORITIES } from '../../store/assignmentMockData.js';
 import { INTERNAL_USERS } from '../../../lib/mockData.js';
 import { hasFinishedRegistration } from '../../../lib/constants.js';
-import { VENDOR_TYPES, labelOf } from '../../../lib/masterData.js';
 import { collectErrors, required } from '../../../lib/validation.js';
+
+let rowSeq = 0;
+const makeRow = () => ({
+  key: `row_${(rowSeq += 1)}`,
+  templateId: '',
+  versionId: '',
+  dueDate: '',
+  priority: 'normal',
+  instructions: '',
+});
 
 /**
  * Menugaskan kuesioner kepada pemasok.
  *
- * Hanya versi terbit yang dapat ditugaskan, dan hanya pemasok berstatus aktif
- * yang muncul pada daftar — menugaskan kuesioner kepada pemasok yang
- * pendaftarannya belum tuntas hanya akan menghasilkan tugas yang tak bisa dibuka.
+ * Bentuknya header dan baris, bukan satu formulir datar. Alasannya praktis:
+ * satu pemasok hampir selalu menerima beberapa kuesioner sekaligus — audit,
+ * pernyataan kepatuhan, deklarasi bahan — dan peninjaunya sama. Memilih
+ * pemasok dan peninjau sekali di header lalu menambahkan barisnya jauh lebih
+ * singkat daripada mengulang seluruh formulir untuk tiap kuesioner.
+ *
+ * Hanya versi terbit yang dapat ditugaskan, dan hanya pemasok yang
+ * pendaftarannya sudah tuntas yang muncul — menugaskan kuesioner kepada
+ * pemasok yang belum selesai hanya menghasilkan tugas yang tak bisa dibuka.
  */
 export default function AssignmentCreate() {
   const { templates, versions } = useQuestionnaireState();
@@ -32,20 +47,17 @@ export default function AssignmentCreate() {
   const toast = useToast();
   const navigate = useNavigate();
 
-  const [values, setValues] = useState({
-    templateId: '',
-    versionId: '',
-    supplierId: '',
-    materialCategory: '',
-    materialName: '',
-    dueDate: '',
-    reviewerId: '',
-    priority: 'normal',
-    instructions: '',
-  });
+  const [header, setHeader] = useState({ supplierId: '', reviewerId: '' });
+  const [rows, setRows] = useState(() => [makeRow()]);
   const [errors, setErrors] = useState({});
 
-  const set = (patch) => setValues((current) => ({ ...current, ...patch }));
+  const setHeaderValue = (patch) => setHeader((current) => ({ ...current, ...patch }));
+
+  const setRow = (key, patch) =>
+    setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
+
+  const addRow = () => setRows((current) => [...current, makeRow()]);
+  const removeRow = (key) => setRows((current) => current.filter((row) => row.key !== key));
 
   /** Template yang punya minimal satu versi terbit. */
   const publishable = useMemo(
@@ -56,11 +68,10 @@ export default function AssignmentCreate() {
     [templates, versions],
   );
 
-  const availableVersions = values.templateId
-    ? versionsOf(versions, values.templateId).filter(
-        (v) => v.status === TEMPLATE_STATUS.PUBLISHED,
-      )
-    : [];
+  const versionsFor = (templateId) =>
+    templateId
+      ? versionsOf(versions, templateId).filter((v) => v.status === TEMPLATE_STATUS.PUBLISHED)
+      : [];
 
   // Kuesioner ditugaskan sejak tahap qualification; menunggu status preferred
   // justru membalik urutannya, sebab hasil kuesioner ikut dinilai manager.
@@ -70,41 +81,71 @@ export default function AssignmentCreate() {
     event.preventDefault();
 
     const found = collectErrors({
-      templateId: required(values.templateId, 'Kuesioner'),
-      versionId: required(values.versionId, 'Versi'),
-      supplierId: required(values.supplierId, 'Pemasok'),
-      dueDate: required(values.dueDate, 'Tenggat'),
-      reviewerId: required(values.reviewerId, 'Peninjau'),
+      supplierId: required(header.supplierId, 'Pemasok'),
+      reviewerId: required(header.reviewerId, 'Peninjau'),
     });
-    setErrors(found);
 
-    if (Object.keys(found).length > 0) {
+    /*
+     * Baris diperiksa satu per satu supaya galatnya menempel pada baris yang
+     * bersangkutan, bukan menjadi satu pesan umum di atas formulir yang
+     * memaksa pengguna menebak baris mana yang bermasalah.
+     */
+    const rowErrors = {};
+    rows.forEach((row) => {
+      const rowFound = collectErrors({
+        templateId: required(row.templateId, 'Kuesioner'),
+        versionId: required(row.versionId, 'Versi'),
+        dueDate: required(row.dueDate, 'Tanggal pengisian'),
+      });
+      if (Object.keys(rowFound).length > 0) rowErrors[row.key] = rowFound;
+    });
+
+    // Kuesioner yang sama dua kali untuk satu pemasok bukan dua tugas.
+    const seen = new Set();
+    rows.forEach((row) => {
+      if (!row.templateId) return;
+      if (seen.has(row.templateId)) {
+        rowErrors[row.key] = {
+          ...rowErrors[row.key],
+          templateId: 'Kuesioner ini sudah ada pada baris lain.',
+        };
+      }
+      seen.add(row.templateId);
+    });
+
+    setErrors({ ...found, rows: rowErrors });
+
+    if (Object.keys(found).length > 0 || Object.keys(rowErrors).length > 0) {
       document.querySelector('[aria-invalid="true"]')?.focus();
       return;
     }
 
-    const supplier = submissions.find((item) => item.id === values.supplierId);
-    const reviewer = INTERNAL_USERS.find((user) => user.id === values.reviewerId);
+    const supplier = submissions.find((item) => item.id === header.supplierId);
+    const reviewer = INTERNAL_USERS.find((user) => user.id === header.reviewerId);
 
-    actions.createAssignment(
-      {
-        templateId: values.templateId,
-        versionId: values.versionId,
-        supplierId: supplier.id,
-        supplierName: supplier.general.vendorName,
-        supplierSite: `${supplier.address.city}, ${supplier.address.province}`,
-        materialCategory: values.materialCategory || labelOf(VENDOR_TYPES, supplier.general.vendorType),
-        materialName: values.materialName,
-        dueDate: new Date(values.dueDate).toISOString(),
-        reviewerId: reviewer.id,
-        reviewerName: reviewer.name,
-        priority: values.priority,
-        instructions: values.instructions,
-      },
-      session?.user,
+    rows.forEach((row) => {
+      actions.createAssignment(
+        {
+          templateId: row.templateId,
+          versionId: row.versionId,
+          supplierId: supplier.id,
+          supplierName: supplier.general.vendorName,
+          supplierSite: `${supplier.address.city}, ${supplier.address.province}`,
+          dueDate: new Date(row.dueDate).toISOString(),
+          reviewerId: reviewer.id,
+          reviewerName: reviewer.name,
+          priority: row.priority,
+          instructions: row.instructions,
+        },
+        session?.user,
+      );
+    });
+
+    toast.success(
+      rows.length === 1
+        ? `Kuesioner ditugaskan kepada ${supplier.general.vendorName}.`
+        : `${rows.length} kuesioner ditugaskan kepada ${supplier.general.vendorName}.`,
     );
-
-    toast.success(`Kuesioner ditugaskan kepada ${supplier.general.vendorName}.`);
     navigate('/internal/penugasan');
   }
 
@@ -118,109 +159,137 @@ export default function AssignmentCreate() {
         ]}
         icon="queue"
         title="Tugaskan kuesioner"
-        description="Pilih kuesioner yang sudah terbit, tentukan pemasok, tenggat, dan peninjaunya."
+        description="Pilih pemasok dan peninjaunya, lalu tambahkan kuesioner yang ditugaskan."
       />
 
-      <div style={{ maxWidth: 720 }}>
-        <Card>
-          {publishable.length === 0 ? (
+      <div style={{ maxWidth: 860 }}>
+        {publishable.length === 0 ? (
+          <Card>
             <p className="text-sm muted">
               Belum ada kuesioner yang terbit. Terbitkan sebuah versi terlebih dahulu sebelum
               menugaskannya.
             </p>
-          ) : (
-            <form onSubmit={handleSubmit} noValidate>
+          </Card>
+        ) : (
+          <form onSubmit={handleSubmit} noValidate>
+            <Card title="Pemasok & peninjau" subtitle="Berlaku untuk seluruh kuesioner di bawah">
               <div className="field-grid">
                 <SelectField
-                  label="Kuesioner"
-                  options={publishable.map((t) => ({ value: t.id, label: t.name }))}
-                  value={values.templateId}
-                  onChange={(e) => set({ templateId: e.target.value, versionId: '' })}
-                  error={errors.templateId}
-                  required
-                />
-                <SelectField
-                  label="Versi"
-                  options={availableVersions.map((v) => ({ value: v.id, label: v.versionLabel }))}
-                  value={values.versionId}
-                  onChange={(e) => set({ versionId: e.target.value })}
-                  error={errors.versionId}
-                  disabled={!values.templateId}
-                  hint="Hanya versi terbit yang dapat ditugaskan."
-                  required
-                />
-
-                <SelectField
                   label="Pemasok"
-                  className="span-full"
                   options={activeSuppliers.map((s) => ({
                     value: s.id,
                     label: `${s.general.vendorName} — ${s.id}`,
                   }))}
-                  value={values.supplierId}
-                  onChange={(e) => set({ supplierId: e.target.value })}
+                  value={header.supplierId}
+                  onChange={(e) => setHeaderValue({ supplierId: e.target.value })}
                   error={errors.supplierId}
-                  hint="Hanya pemasok berstatus aktif yang dapat menerima penugasan."
+                  hint="Hanya pemasok yang pendaftarannya sudah tuntas yang dapat menerima penugasan."
                   required
                 />
-
-                <SelectField
-                  label="Kategori material"
-                  options={MATERIAL_TYPES}
-                  value={values.materialCategory}
-                  onChange={(e) => set({ materialCategory: e.target.value })}
-                />
-                <TextField
-                  label="Material atau produk"
-                  value={values.materialName}
-                  onChange={(e) => set({ materialName: e.target.value })}
-                  placeholder="Opsional"
-                />
-
-                <TextField
-                  label="Tenggat pengisian"
-                  type="date"
-                  value={values.dueDate}
-                  onChange={(e) => set({ dueDate: e.target.value })}
-                  error={errors.dueDate}
-                  required
-                />
-                <SelectField
-                  label="Prioritas"
-                  options={PRIORITIES.map((p) => ({ value: p.id, label: p.label }))}
-                  value={values.priority}
-                  onChange={(e) => set({ priority: e.target.value })}
-                />
-
                 <SelectField
                   label="Peninjau"
-                  className="span-full"
                   options={INTERNAL_USERS.map((u) => ({ value: u.id, label: u.name }))}
-                  value={values.reviewerId}
-                  onChange={(e) => set({ reviewerId: e.target.value })}
+                  value={header.reviewerId}
+                  onChange={(e) => setHeaderValue({ reviewerId: e.target.value })}
                   error={errors.reviewerId}
                   required
                 />
-
-                <TextAreaField
-                  label="Instruksi tambahan"
-                  className="span-full"
-                  rows={3}
-                  value={values.instructions}
-                  onChange={(e) => set({ instructions: e.target.value })}
-                  hint="Ditampilkan kepada pemasok di atas kuesioner."
-                />
               </div>
+            </Card>
+
+            <Card
+              title={`Kuesioner yang ditugaskan (${rows.length})`}
+              subtitle="Satu baris untuk satu kuesioner"
+              style={{ marginTop: 'var(--sp-5)' }}
+              actions={
+                <Button variant="secondary" size="sm" onClick={addRow}>
+                  Tambah kuesioner
+                </Button>
+              }
+            >
+              {rows.map((row, index) => {
+                const rowError = errors.rows?.[row.key] ?? {};
+                const rowVersions = versionsFor(row.templateId);
+
+                return (
+                  <fieldset key={row.key} className="taxdoc">
+                    <legend className="taxdoc__legend">
+                      Kuesioner {index + 1}
+                      {rows.length > 1 && (
+                        <button
+                          type="button"
+                          className="link-danger"
+                          onClick={() => removeRow(row.key)}
+                          style={{ marginLeft: 'var(--sp-3)' }}
+                        >
+                          Hapus
+                        </button>
+                      )}
+                    </legend>
+
+                    <div className="field-grid">
+                      <SelectField
+                        label="Nama kuesioner"
+                        options={publishable.map((t) => ({ value: t.id, label: t.name }))}
+                        value={row.templateId}
+                        onChange={(e) =>
+                          setRow(row.key, { templateId: e.target.value, versionId: '' })
+                        }
+                        error={rowError.templateId}
+                        required
+                      />
+                      <SelectField
+                        label="Versi"
+                        options={rowVersions.map((v) => ({
+                          value: v.id,
+                          label: v.versionLabel,
+                        }))}
+                        value={row.versionId}
+                        onChange={(e) => setRow(row.key, { versionId: e.target.value })}
+                        error={rowError.versionId}
+                        disabled={!row.templateId}
+                        hint="Hanya versi terbit yang dapat ditugaskan."
+                        required
+                      />
+                      <TextField
+                        label="Tanggal pengisian"
+                        type="date"
+                        value={row.dueDate}
+                        onChange={(e) => setRow(row.key, { dueDate: e.target.value })}
+                        error={rowError.dueDate}
+                        hint="Tenggat pemasok menyelesaikan pengisian."
+                        required
+                      />
+                      <SelectField
+                        label="Prioritas"
+                        options={PRIORITIES.map((p) => ({ value: p.id, label: p.label }))}
+                        value={row.priority}
+                        onChange={(e) => setRow(row.key, { priority: e.target.value })}
+                      />
+                      <TextAreaField
+                        label="Instruksi tambahan"
+                        className="span-full"
+                        rows={2}
+                        value={row.instructions}
+                        onChange={(e) => setRow(row.key, { instructions: e.target.value })}
+                        hint="Ditampilkan kepada pemasok di atas kuesioner ini. Opsional."
+                      />
+                    </div>
+                  </fieldset>
+                );
+              })}
 
               <div className="form-actions">
                 <Button variant="secondary" to="/internal/penugasan">
                   Batal
                 </Button>
-                <Button type="submit">Tugaskan</Button>
+                <Button type="submit">
+                  {rows.length === 1 ? 'Tugaskan' : `Tugaskan ${rows.length} kuesioner`}
+                </Button>
               </div>
-            </form>
-          )}
-        </Card>
+            </Card>
+          </form>
+        )}
       </div>
     </>
   );

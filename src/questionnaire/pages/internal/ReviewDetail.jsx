@@ -185,7 +185,6 @@ export default function ReviewDetail() {
               items={[
                 { label: 'Pemasok', value: assignment.supplierName, full: true },
                 { label: 'Lokasi', value: assignment.supplierSite, full: true },
-                { label: 'Material', value: assignment.materialName || assignment.materialCategory },
                 { label: 'Dikirim', value: formatDate(response.submittedAt) },
                 { label: 'Tenggat', value: formatDate(assignment.dueDate) },
                 { label: 'Putaran', value: `ke-${response.revision}` },

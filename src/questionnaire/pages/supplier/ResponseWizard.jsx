@@ -179,9 +179,7 @@ export default function ResponseWizard() {
         ]}
         icon="consent"
         title={template.name}
-        description={`${version.versionLabel} · tenggat ${formatDate(assignment.dueDate)}${
-          version.estimatedMinutes ? ` · perkiraan ${version.estimatedMinutes} menit` : ''
-        }`}
+        description={`${version.versionLabel} · tenggat ${formatDate(assignment.dueDate)}`}
         actions={<CompletionBar percent={completion.percent} label="Kemajuan keseluruhan" />}
       />
 

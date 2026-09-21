@@ -99,7 +99,7 @@ export default function AssignmentList() {
                     <td>
                       {template.name}
                       <span className="qtable__sub">
-                        {version.versionLabel} · {assignment.materialCategory}
+                        {version.versionLabel}
                       </span>
                     </td>
                     <td>

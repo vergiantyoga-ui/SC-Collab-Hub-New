@@ -181,8 +181,11 @@ export default function TemplateDetail() {
             items={[
               { label: 'Kode', value: template.code },
               { label: 'Tipe', value: template.type },
-              { label: 'Sasaran pemasok', value: template.targetSupplierType, full: true },
-              { label: 'Jenis material', value: template.materialType },
+              {
+                label: 'Jenis material',
+                value: (template.materialTypes ?? []).join(', '),
+                full: true,
+              },
               { label: 'Pemilik', value: template.ownerName },
               { label: 'Dibuat', value: formatDate(template.createdAt) },
               { label: 'Diperbarui', value: formatDate(template.updatedAt) },

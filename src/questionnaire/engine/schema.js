@@ -40,7 +40,56 @@ export const QUESTIONNAIRE_TYPES = [
   'Other',
 ];
 
-export const MATERIAL_TYPES = ['Raw Material', 'Packaging Material', 'Both', 'Not Applicable'];
+/**
+ * Jenis material yang disasar sebuah kuesioner. Satu template boleh menyasar
+ * lebih dari satu, sehingga disimpan sebagai larik `materialTypes` — bukan
+ * `materialType` tunggal seperti sebelumnya, yang memaksa pilihan semu
+ * "Both" dan tetap tidak dapat menyatakan kombinasi selain itu.
+ */
+export const MATERIAL_TYPES = ['Raw Material', 'Packaging Material', 'Indirect Material'];
+
+/**
+ * Kode template dibangkitkan dari namanya, bukan diketik.
+ *
+ * Bentuknya `QST-` + akronim nama: huruf pertama tiap kata yang bermakna.
+ * Kata sambung dibuang supaya "Animal Free Statement" menjadi `QST-AFS`, bukan
+ * `QST-AFS` yang tercampur "of"/"dan". Nama satu kata memakai tiga huruf
+ * pertamanya, karena akronim satu huruf tidak membedakan apa pun.
+ *
+ * `existingCodes` dipakai untuk menambah akhiran angka bila akronimnya bentrok:
+ * dua kuesioner berbeda tidak boleh berbagi kode yang terbawa ke laporan.
+ */
+const CODE_STOPWORDS = new Set([
+  'dan', 'atau', 'untuk', 'pada', 'yang', 'di', 'ke', 'dari',
+  'and', 'or', 'for', 'of', 'the', 'to', 'in', 'a', 'an',
+]);
+
+export function generateTemplateCode(name, existingCodes = []) {
+  const words = String(name ?? '')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((word) => !CODE_STOPWORDS.has(word.toLowerCase()));
+
+  if (words.length === 0) return '';
+
+  const acronym =
+    words.length === 1
+      ? words[0].slice(0, 3).toUpperCase()
+      : words
+          .map((word) => word[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 6);
+
+  const base = `QST-${acronym}`;
+  if (!existingCodes.includes(base)) return base;
+
+  // Bentrok: tambahkan akhiran angka terkecil yang masih bebas.
+  let suffix = 2;
+  while (existingCodes.includes(`${base}-${suffix}`)) suffix += 1;
+  return `${base}-${suffix}`;
+}
 
 /**
  * Tanda tangan elektronik.
@@ -185,7 +234,6 @@ export const DEFAULT_RISK_BANDS = [
  * @property {'draft'|'published'|'unpublished'|'archived'} status
  * @property {string|null} effectiveDate
  * @property {string|null} expiryDate
- * @property {number|null} estimatedMinutes
  * @property {boolean} scoringEnabled
  * @property {number|null} passingScore
  * @property {Array<{id:string,label:string,min:number,max:number,risk:string}>} riskBands
@@ -201,8 +249,7 @@ export const DEFAULT_RISK_BANDS = [
  * @property {string} name
  * @property {string} type
  * @property {string} description
- * @property {string} targetSupplierType
- * @property {string} materialType
+ * @property {string[]} materialTypes
  * @property {string} ownerId
  * @property {string} ownerName
  * @property {string} createdAt
@@ -291,7 +338,6 @@ export function makeVersion(overrides = {}) {
     status: TEMPLATE_STATUS.DRAFT,
     effectiveDate: null,
     expiryDate: null,
-    estimatedMinutes: null,
     scoringEnabled: false,
     passingScore: null,
     riskBands: DEFAULT_RISK_BANDS,
@@ -312,8 +358,7 @@ export function makeTemplate(overrides = {}) {
     name: '',
     type: 'Other',
     description: '',
-    targetSupplierType: 'Semua pemasok',
-    materialType: 'Not Applicable',
+    materialTypes: [],
     ownerId: '',
     ownerName: '',
     createdAt: now,
