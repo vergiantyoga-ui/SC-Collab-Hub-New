@@ -5,7 +5,7 @@ import DataList from '../../components/ui/DataList.jsx';
 import Button from '../../components/ui/Button.jsx';
 import Modal from '../../components/ui/Modal.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
-import { TextAreaField, SelectField, TextField } from '../../components/ui/Field.jsx';
+import { TextAreaField, SelectField } from '../../components/ui/Field.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { STATUS } from '../../lib/constants.js';
@@ -30,18 +30,12 @@ import {
   versionsOf,
 } from '../../questionnaire/store/QuestionnaireStore.jsx';
 import { TEMPLATE_STATUS } from '../../questionnaire/engine/index.js';
-import { PRIORITIES } from '../../questionnaire/store/assignmentMockData.js';
+import AssignmentRows, {
+  useAssignmentRows,
+  validateAssignmentRows,
+} from '../../questionnaire/components/shared/AssignmentRows.jsx';
 import { INTERNAL_USERS } from '../../lib/mockData.js';
-import { collectErrors, required } from '../../lib/validation.js';
-
-const EMPTY_ASSIGNMENT_FORM = {
-  templateId: '',
-  versionId: '',
-  dueDate: '',
-  reviewerId: '',
-  priority: 'normal',
-  instructions: '',
-};
+import { required } from '../../lib/validation.js';
 
 const TABS = [
   { id: 'general', label: 'Data umum' },
@@ -73,7 +67,11 @@ export default function SubmissionReview({ submission }) {
   const [documentSource, setDocumentSource] = useState('');
   const [inviteResult, setInviteResult] = useState(null);
   const [assigningQuestionnaire, setAssigningQuestionnaire] = useState(false);
-  const [assignValues, setAssignValues] = useState(EMPTY_ASSIGNMENT_FORM);
+  // Baris kuesioner memakai komponen yang sama dengan halaman Tugaskan
+  // kuesioner, supaya keduanya tidak berbeda perlahan.
+  const { rows: assignRows, setRow: setAssignRow, addRow: addAssignRow, removeRow: removeAssignRow, reset: resetAssignRows } =
+    useAssignmentRows();
+  const [assignReviewerId, setAssignReviewerId] = useState('');
   const [assignErrors, setAssignErrors] = useState({});
 
   const user = session.user;
@@ -98,49 +96,45 @@ export default function SubmissionReview({ submission }) {
     [qState.templates, qState.versions],
   );
 
-  const availableVersions = assignValues.templateId
-    ? versionsOf(qState.versions, assignValues.templateId).filter(
-        (v) => v.status === TEMPLATE_STATUS.PUBLISHED,
-      )
-    : [];
-
-  function setAssign(patch) {
-    setAssignValues((current) => ({ ...current, ...patch }));
-  }
-
   function handleAssignQuestionnaire(event) {
     event.preventDefault();
-    const found = collectErrors({
-      templateId: required(assignValues.templateId, 'Kuesioner'),
-      versionId: required(assignValues.versionId, 'Versi'),
-      dueDate: required(assignValues.dueDate, 'Tenggat'),
-      reviewerId: required(assignValues.reviewerId, 'Peninjau'),
+
+    const rowErrors = validateAssignmentRows(assignRows);
+    const reviewerError = required(assignReviewerId, 'Peninjau');
+    setAssignErrors({ reviewerId: reviewerError, rows: rowErrors });
+
+    if (reviewerError || Object.keys(rowErrors).length > 0) {
+      document.querySelector('[aria-invalid="true"]')?.focus();
+      return;
+    }
+
+    const reviewer = INTERNAL_USERS.find((u) => u.id === assignReviewerId);
+
+    assignRows.forEach((row) => {
+      qActions.createAssignment(
+        {
+          templateId: row.templateId,
+          versionId: row.versionId,
+          supplierId: submission.id,
+          supplierName: submission.general.vendorName,
+          supplierSite: `${submission.address.city}, ${submission.address.province}`,
+          dueDate: new Date(row.dueDate).toISOString(),
+          reviewerId: reviewer.id,
+          reviewerName: reviewer.name,
+          priority: row.priority,
+          instructions: row.instructions,
+        },
+        user,
+      );
     });
-    setAssignErrors(found);
-    if (Object.keys(found).length > 0) return;
-
-    const reviewer = INTERNAL_USERS.find((u) => u.id === assignValues.reviewerId);
-
-    qActions.createAssignment(
-      {
-        templateId: assignValues.templateId,
-        versionId: assignValues.versionId,
-        supplierId: submission.id,
-        supplierName: submission.general.vendorName,
-        supplierSite: `${submission.address.city}, ${submission.address.province}`,
-        dueDate: new Date(assignValues.dueDate).toISOString(),
-        reviewerId: reviewer.id,
-        reviewerName: reviewer.name,
-        priority: assignValues.priority,
-        instructions: assignValues.instructions,
-      },
-      user,
-    );
 
     setAssigningQuestionnaire(false);
-    setAssignValues(EMPTY_ASSIGNMENT_FORM);
+    resetAssignRows();
+    setAssignReviewerId('');
     setAssignErrors({});
-    toast.success('Kuesioner ditugaskan. Undangan atau registrasi internal kini dapat dilanjutkan.');
+    toast.success(
+      `${assignRows.length} kuesioner ditugaskan. Undangan atau registrasi internal kini dapat dilanjutkan.`,
+    );
   }
 
   function selectTab(id) {
@@ -486,7 +480,7 @@ export default function SubmissionReview({ submission }) {
         open={assigningQuestionnaire}
         onClose={() => setAssigningQuestionnaire(false)}
         title="Tugaskan kuesioner"
-        description="Pilih kuesioner terbit untuk ditugaskan ke pengajuan ini sebelum melanjutkan onboarding."
+        description="Pilih peninjau, lalu tambahkan kuesioner terbit yang ditugaskan ke pengajuan ini. Beberapa kuesioner dapat ditugaskan sekaligus."
       >
         {publishableTemplates.length === 0 ? (
           <p className="text-sm muted">
@@ -497,62 +491,36 @@ export default function SubmissionReview({ submission }) {
           <form onSubmit={handleAssignQuestionnaire} noValidate>
             <div className="field-grid">
               <SelectField
-                label="Kuesioner"
-                className="span-full"
-                options={publishableTemplates.map((t) => ({ value: t.id, label: t.name }))}
-                value={assignValues.templateId}
-                onChange={(e) => setAssign({ templateId: e.target.value, versionId: '' })}
-                error={assignErrors.templateId}
-                required
-              />
-              <SelectField
-                label="Versi"
-                className="span-full"
-                options={availableVersions.map((v) => ({ value: v.id, label: v.versionLabel }))}
-                value={assignValues.versionId}
-                onChange={(e) => setAssign({ versionId: e.target.value })}
-                error={assignErrors.versionId}
-                disabled={!assignValues.templateId}
-                hint="Hanya versi terbit yang dapat ditugaskan."
-                required
-              />
-              <TextField
-                label="Tenggat pengisian"
-                type="date"
-                value={assignValues.dueDate}
-                onChange={(e) => setAssign({ dueDate: e.target.value })}
-                error={assignErrors.dueDate}
-                required
-              />
-              <SelectField
-                label="Prioritas"
-                options={PRIORITIES.map((p) => ({ value: p.id, label: p.label }))}
-                value={assignValues.priority}
-                onChange={(e) => setAssign({ priority: e.target.value })}
-              />
-              <SelectField
                 label="Peninjau"
                 className="span-full"
                 options={INTERNAL_USERS.map((u) => ({ value: u.id, label: u.name }))}
-                value={assignValues.reviewerId}
-                onChange={(e) => setAssign({ reviewerId: e.target.value })}
+                value={assignReviewerId}
+                onChange={(e) => setAssignReviewerId(e.target.value)}
                 error={assignErrors.reviewerId}
+                hint="Berlaku untuk seluruh kuesioner di bawah."
                 required
               />
-              <TextAreaField
-                label="Instruksi tambahan"
-                className="span-full"
-                rows={3}
-                value={assignValues.instructions}
-                onChange={(e) => setAssign({ instructions: e.target.value })}
-                hint="Ditampilkan kepada pemasok di atas kuesioner. Opsional."
-              />
             </div>
+
+            <AssignmentRows
+              rows={assignRows}
+              errors={assignErrors.rows}
+              templates={publishableTemplates}
+              versions={qState.versions}
+              onChange={setAssignRow}
+              onAdd={addAssignRow}
+              onRemove={removeAssignRow}
+            />
+
             <div className="modal__actions">
               <Button variant="secondary" onClick={() => setAssigningQuestionnaire(false)}>
                 Batal
               </Button>
-              <Button type="submit">Tugaskan</Button>
+              <Button type="submit">
+                {assignRows.length === 1
+                  ? 'Tugaskan'
+                  : `Tugaskan ${assignRows.length} kuesioner`}
+              </Button>
             </div>
           </form>
         )}
