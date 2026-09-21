@@ -37,8 +37,6 @@ import { collectErrors, required } from '../../lib/validation.js';
 const EMPTY_ASSIGNMENT_FORM = {
   templateId: '',
   versionId: '',
-  materialCategory: '',
-  materialName: '',
   dueDate: '',
   reviewerId: '',
   priority: 'normal',
@@ -130,9 +128,6 @@ export default function SubmissionReview({ submission }) {
         supplierId: submission.id,
         supplierName: submission.general.vendorName,
         supplierSite: `${submission.address.city}, ${submission.address.province}`,
-        materialCategory:
-          assignValues.materialCategory || labelOf(VENDOR_TYPES, submission.general.vendorType),
-        materialName: assignValues.materialName,
         dueDate: new Date(assignValues.dueDate).toISOString(),
         reviewerId: reviewer.id,
         reviewerName: reviewer.name,
