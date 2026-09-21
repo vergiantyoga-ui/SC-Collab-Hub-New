@@ -6,7 +6,13 @@
 import { findTaxIdDuplicate } from '../src/lib/taxIdentity.js';
 import { sapEligibility, canSubmitToSap, needsMdmReview } from '../src/sap/sapRules.js';
 import { purchaseSummaryFor } from '../src/sap/purchaseOrders.js';
-import { makeESignConfig, makeVersion } from '../src/questionnaire/engine/schema.js';
+import {
+  makeESignConfig,
+  makeVersion,
+  makeTemplate,
+  generateTemplateCode,
+  MATERIAL_TYPES,
+} from '../src/questionnaire/engine/schema.js';
 import {
   ACCOUNT_STATUS,
   ROLE,
@@ -187,6 +193,51 @@ check('E3 sakelar dapat diaktifkan', makeESignConfig({ enabled: true }).enabled,
 // sehingga builder cukup menyediakan tombol aktif/nonaktif tanpa dialog.
 check('E4 konfigurasi hanya berisi sakelar dan penyedia',
   Object.keys(makeESignConfig()).sort(), ['enabled', 'provider']);
+
+/* ---------------- Kode template dibangkitkan dari nama ---------------- */
+
+check('T1 akronim dari tiap kata', generateTemplateCode('Supplier Audit'), 'QST-SA');
+check(
+  'T2 tiga kata menjadi tiga huruf',
+  generateTemplateCode('Animal Free Statement'),
+  'QST-AFS',
+);
+// Kata sambung dibuang supaya akronimnya menyebut isi, bukan tata bahasa.
+check(
+  'T3 kata sambung diabaikan',
+  generateTemplateCode('Code of Conduct for Supplier'),
+  'QST-CCS',
+);
+// Akronim satu huruf tidak membedakan apa pun, jadi nama satu kata memakai
+// tiga huruf pertamanya.
+check('T4 nama satu kata memakai tiga huruf', generateTemplateCode('Halal'), 'QST-HAL');
+check('T5 tanda baca tidak ikut', generateTemplateCode('Halal & Compliance'), 'QST-HC');
+check('T6 nama kosong menghasilkan kode kosong', generateTemplateCode('   '), '');
+// Dua kuesioner tidak boleh berbagi kode yang terbawa ke laporan.
+check(
+  'T7 kode bentrok diberi akhiran',
+  generateTemplateCode('Supplier Audit', ['QST-SA']),
+  'QST-SA-2',
+);
+check(
+  'T8 akhiran mencari angka bebas berikutnya',
+  generateTemplateCode('Supplier Audit', ['QST-SA', 'QST-SA-2']),
+  'QST-SA-3',
+);
+
+/* ---------------- Template: jenis material jamak ---------------- */
+
+check('M1 template baru tanpa jenis material', makeTemplate().materialTypes, []);
+check('M2 jenis material dapat lebih dari satu',
+  makeTemplate({ materialTypes: ['Raw Material', 'Indirect Material'] }).materialTypes.length, 2);
+check('M3 tiga pilihan jenis material', MATERIAL_TYPES, [
+  'Raw Material',
+  'Packaging Material',
+  'Indirect Material',
+]);
+// Field yang dihapus tidak boleh diam-diam hidup lagi lewat pabrik entitas.
+check('M4 sasaran pemasok sudah tidak ada', 'targetSupplierType' in makeTemplate(), false);
+check('M5 perkiraan waktu sudah tidak ada', 'estimatedMinutes' in makeVersion(), false);
 
 console.log(`\n${passed} lolos, ${failed} gagal.\n`);
 if (failed > 0) process.exit(1);

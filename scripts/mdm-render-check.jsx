@@ -143,6 +143,13 @@ const CASES = [
   { email: STAFF_EMAIL, route: '/internal/dashboard-kuesioner', expect: 'Kepatuhan pengisian' },
   { email: STAFF_EMAIL, route: '/internal/dashboard-kuesioner', expect: 'Belum ditugaskan' },
   { email: STAFF_EMAIL, route: '/internal/akun', expect: 'Profil akun' },
+  // Formulir template: kode dibangkitkan, jenis material jamak, dua field hilang.
+  { email: STAFF_EMAIL, route: '/internal/questionnaire/baru', expect: 'Indirect Material' },
+  { email: STAFF_EMAIL, route: '/internal/questionnaire/baru', expect: 'QST-akronim' },
+  // Formulir penugasan: header pemasok/peninjau lalu baris kuesioner.
+  { email: STAFF_EMAIL, route: '/internal/penugasan/baru', expect: 'Pemasok & peninjau' },
+  { email: STAFF_EMAIL, route: '/internal/penugasan/baru', expect: 'Tambah kuesioner' },
+  { email: STAFF_EMAIL, route: '/internal/penugasan/baru', expect: 'Tanggal pengisian' },
   { email: STAFF_EMAIL, route: '/internal/akun', expect: 'Bidang pekerjaan' },
   { email: STAFF_EMAIL, route: '/internal/akun', expect: 'kata sandi' },
   // Kelompok menu yang dirombak.

@@ -25,7 +25,8 @@ rancangan**, bukan kode yang berjalan — proyek ini memang tanpa server.
 Perintah · Akun demo · Menelusuri kedua jalur
 
 **Bagian B — Cara kerja**
-Struktur berkas · Modul questionnaire · Navigasi konsol internal ·
+Struktur berkas · Modul questionnaire · Membuat template · Menugaskan kuesioner ·
+Navigasi konsol internal ·
 Navigasi portal pemasok · Tanda tangan elektronik (Privi) ·
 Pokayoke penugasan kuesioner sebelum onboarding · Verifikasi dokumen sebagai
 checklist seluruh field · Dua gerbang menuju qualification · Modul Master Data
@@ -595,6 +596,54 @@ Rancangan lengkap termasuk skema basis data dan spesifikasi API ada pada
 dokumen proposal terpisah; keduanya artefak rancangan untuk tim backend,
 karena proyek ini tanpa server.
 
+## Membuat template kuesioner
+
+Formulir informasi dasar memuat nama, tipe, deskripsi, jenis material, dan
+sakelar skoring. Tiga hal berubah dari bentuk sebelumnya.
+
+**Kode dibangkitkan dari nama, tidak diketik.** Formatnya `QST-` diikuti akronim
+nama kuesioner: "Supplier Audit" → `QST-SA`, "Animal Free Statement" → `QST-AFS`.
+Kata sambung (`dan`, `of`, `for`, …) dibuang supaya akronimnya menyebut isi
+bukan tata bahasa, nama satu kata memakai tiga huruf pertamanya karena akronim
+satu huruf tidak membedakan apa pun, dan kode yang bentrok diberi akhiran angka
+karena dua kuesioner tidak boleh berbagi kode yang terbawa ke laporan. Hasilnya
+tampil sebagai kolom baca-saja yang ikut berubah saat mengetik nama, jadi tidak
+ada kejutan setelah disimpan. Fungsinya `generateTemplateCode()`, diuji di
+`sap-check.mjs`.
+
+**Jenis material menjadi pilihan jamak** berisi Raw Material, Packaging
+Material, dan Indirect Material. Bentuk tunggal sebelumnya memaksa pilihan semu
+"Both" dan tetap tidak dapat menyatakan kombinasi selain itu; kini disimpan
+sebagai larik `materialTypes`.
+
+**Sasaran pemasok dan perkiraan waktu pengisian dihapus.** Keduanya keterangan
+bebas yang tidak dipakai aturan mana pun — sasaran pemasok tumpang tindih
+dengan jenis material, dan perkiraan waktu adalah tebakan yang tidak pernah
+diperbarui setelah pertanyaannya bertambah.
+
+## Menugaskan kuesioner
+
+Formulirnya berbentuk **header dan baris**, bukan satu formulir datar:
+
+- **Header** — pemasok dan peninjau, berlaku untuk seluruh baris.
+- **Baris** — nama kuesioner, versi, tanggal pengisian, prioritas, dan instruksi
+  tambahan. Barisnya dapat ditambah dan dihapus.
+
+Satu pemasok hampir selalu menerima beberapa kuesioner sekaligus — audit,
+pernyataan kepatuhan, deklarasi bahan — dan peninjaunya sama. Memilih pemasok
+dan peninjau sekali lalu menambah baris jauh lebih singkat daripada mengulang
+seluruh formulir untuk tiap kuesioner. Menekan Tugaskan membuat satu penugasan
+per baris.
+
+Galat menempel pada baris yang bersangkutan, bukan menjadi satu pesan umum di
+atas formulir yang memaksa pengguna menebak baris mana yang bermasalah.
+Kuesioner yang sama dua kali untuk satu pemasok ditolak, karena itu bukan dua
+tugas.
+
+**Kategori material dan material/produk dihapus** dari penugasan. Jenis material
+sudah melekat pada templatenya, jadi mengulangnya per penugasan hanya membuka
+peluang keduanya berbeda.
+
 ## Pokayoke penugasan kuesioner sebelum onboarding
 
 Sebelum aturan ini, kuesioner baru bisa ditugaskan setelah pemasok aktif —
@@ -1053,6 +1102,9 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Pemasok Blocked tidak dapat masuk portal | `AppStore.signInSupplier` |
 | Pengiriman ke SAP yang gagal tercatat pada log | `AppStore.submitToSap`, `SapFailureLog.jsx` |
 | NIK dan NPWP tidak boleh dipakai dua pemasok | `taxIdentity.findTaxIdDuplicate`, `ProfileSectionForm.jsx`, diuji di `sap-check.mjs` |
+| Kode template dibangkitkan dari nama, tidak diketik | `schema.generateTemplateCode`, `TemplateCreate.jsx` |
+| Satu template dapat menyasar beberapa jenis material | `schema.MATERIAL_TYPES`, `makeTemplate.materialTypes` |
+| Satu penugasan dapat memuat beberapa kuesioner sekaligus | `AssignmentCreate.jsx` |
 | E-sign hanya sakelar aktif/nonaktif, penyedia tetap Privi | `QuestionnaireBuilder.jsx`, `schema.makeESignConfig` |
 | Kuesioner ber-e-sign tidak dapat dikirim sebelum ditandatangani | `ResponseWizard.jsx` (`eSignPending`), `ESignBlock.jsx` |
 
@@ -1254,10 +1306,10 @@ QuestionLibraryItem, SectionLibraryItem       (sumber salinan, tidak terhubung F
 #### Entitas inti
 
 **QuestionnaireTemplate** — identitas lintas versi.
-`id, code, name, type, description, targetSupplierType, materialType, ownerId, status, createdAt, updatedAt`
+`id, code, name, type, description, materialTypes[], ownerId, status, createdAt, updatedAt`
 
 **QuestionnaireVersion** — isi yang dibekukan saat terbit.
-`id, templateId, versionLabel, status(draft|published|unpublished|archived), effectiveDate, expiryDate, estimatedMinutes, scoringEnabled, passingScore, riskBands[], publishedAt, publishedBy, sections[]`
+`id, templateId, versionLabel, status(draft|published|unpublished|archived), effectiveDate, expiryDate, scoringEnabled, passingScore, riskBands[], eSign, publishedAt, publishedBy, sections[]`
 
 **QuestionnaireSection**
 `id, versionId, name, description, order, mandatory, weight`
@@ -1279,7 +1331,7 @@ Operator: `equals`, `notEquals`, `in`, `notIn`, `answered`, `notAnswered`, `gt`,
 `required, maxFiles, maxFileSizeMb, allowedTypes[], expiryDateRequired, expiryMinDays`
 
 **QuestionnaireAssignment**
-`id, versionId, supplierId, supplierSiteId, materialCategory, materialId, dueDate, reviewerId, priority, instructions, assignedBy, assignedAt`
+`id, versionId, supplierId, supplierSite, dueDate, reviewerId, priority, instructions, assignedBy, assignedAt`
 
 **QuestionnaireResponse**
 `id, assignmentId, status, startedAt, submittedAt, completionPercent, score, riskLevel, currentRevision`
