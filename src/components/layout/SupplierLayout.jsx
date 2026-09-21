@@ -32,11 +32,17 @@ export default function SupplierLayout() {
     return response && response.status !== 'submitted';
   }).length;
 
+  const unreadNotifications = questionnaireState.notifications.filter(
+    (item) => item.audience === 'supplier' && !item.read,
+  ).length;
+
+  /*
+   * Status pendaftaran tidak lagi menjadi butir menu: isinya sudah pindah ke
+   * tab di dalam Profil. Notifikasi juga keluar dari sidebar dan menjadi
+   * lonceng pada bilah atas, karena sifatnya selingan — dibuka sebentar lalu
+   * ditinggalkan — bukan tujuan navigasi yang setara dengan Profil.
+   */
   const groups = [
-    {
-      label: t('nav.group.home'),
-      items: [{ to: '/portal/status', label: t('nav.status'), icon: 'status' }],
-    },
     {
       label: t('nav.group.company'),
       items: [
@@ -54,14 +60,6 @@ export default function SupplierLayout() {
             label: 'Kuesioner',
             items: [
               { to: '/portal/kuesioner', label: 'Kuesioner saya', icon: 'consent', count: openCount },
-              {
-                to: '/portal/notifikasi',
-                label: 'Notifikasi',
-                icon: 'status',
-                count: questionnaireState.notifications.filter(
-                  (item) => item.audience === 'supplier' && !item.read,
-                ).length,
-              },
             ],
           },
         ]
@@ -73,6 +71,25 @@ export default function SupplierLayout() {
       groups={groups}
       user={{ name: submission.general.vendorName }}
       subtitle={submission.account?.accountId ?? t(`status.${submission.status}`)}
+      notifications={{
+        to: '/portal/notifikasi',
+        count: unreadNotifications,
+        label: 'Notifikasi',
+      }}
+      userMenu={[
+        {
+          to: '/portal/akun',
+          label: 'Profil akun',
+          icon: 'profile',
+          hint: submission.contact?.name,
+        },
+        {
+          to: '/portal/profil',
+          label: 'Profil perusahaan',
+          icon: 'consent',
+          hint: submission.general.vendorName,
+        },
+      ]}
       onSignOut={() => {
         signOut();
         navigate('/masuk', { replace: true });

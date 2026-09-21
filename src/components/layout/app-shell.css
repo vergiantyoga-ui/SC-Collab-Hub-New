@@ -338,3 +338,105 @@
     font-size: var(--text-xs);
   }
 }
+
+/* ---- Lonceng notifikasi pada bilah atas ---- */
+.shell__bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-700);
+  flex: none;
+}
+.shell__bell:hover {
+  background: var(--surface-sunk);
+}
+.shell__bell.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.shell__bell-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+}
+
+/* ---- Menu pengguna pada bilah atas ---- */
+.shell__usermenu {
+  position: relative;
+  flex: none;
+}
+.shell__user--button {
+  border: 1px solid transparent;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  gap: var(--sp-2);
+}
+.shell__user--button:hover,
+.shell__user--button[aria-expanded='true'] {
+  border-color: var(--line);
+  background: var(--surface-sunk);
+}
+.shell__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 232px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+}
+.shell__menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--ink-700);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.shell__menu-item span {
+  display: flex;
+  flex-direction: column;
+}
+.shell__menu-item small {
+  font-size: var(--text-xs);
+  color: var(--ink-400);
+}
+.shell__menu-item:hover {
+  background: var(--surface-sunk);
+}
+.shell__menu-item--danger {
+  color: var(--danger);
+}
+.shell__menu-sep {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--line);
+}

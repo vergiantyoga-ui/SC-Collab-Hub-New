@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../ui/Icon.jsx';
 import { useTheme } from '../../store/ThemeContext.jsx';
 import { useLanguage, useT } from '../../i18n/LanguageContext.jsx';
@@ -13,11 +13,28 @@ import './app-shell.css';
  * konten dibungkus satu permukaan putih.
  *
  * `groups` berbentuk [{ label, items: [{ to, label, icon, count }] }].
+ *
+ * Dua bagian bilah atas bersifat opsional:
+ *  - `notifications` — lonceng beserta penanda belum dibaca. Dipakai portal
+ *    pemasok, yang notifikasinya dipindahkan dari sidebar ke bilah atas karena
+ *    sifatnya selingan, bukan tujuan navigasi.
+ *  - `userMenu` — daftar tautan di balik identitas pengguna. Bila diisi,
+ *    tombol keluar ikut pindah ke dalamnya dan tombol keluar pada sidebar
+ *    disembunyikan, supaya tidak ada dua jalan keluar yang berbeda tempat.
  */
-export default function AppShell({ groups, user, subtitle, onSignOut, children }) {
+export default function AppShell({
+  groups,
+  user,
+  subtitle,
+  onSignOut,
+  notifications,
+  userMenu,
+  children,
+}) {
   const t = useT();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const hasUserMenu = Boolean(userMenu?.length);
 
   return (
     <div className={`shell ${collapsed ? 'shell--collapsed' : ''}`.trim()}>
@@ -96,10 +113,12 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
           ))}
         </nav>
 
-        <button type="button" className="shell__link shell__signout" onClick={onSignOut}>
-          <Icon name="logout" size={20} />
-          <span className="shell__link-text">{t('common.signOut')}</span>
-        </button>
+        {!hasUserMenu && (
+          <button type="button" className="shell__link shell__signout" onClick={onSignOut}>
+            <Icon name="logout" size={20} />
+            <span className="shell__link-text">{t('common.signOut')}</span>
+          </button>
+        )}
       </aside>
 
       <div className="shell__body">
@@ -117,23 +136,150 @@ export default function AppShell({ groups, user, subtitle, onSignOut, children }
 
           <LanguageMenu />
 
+          {notifications && (
+            <NavLink
+              to={notifications.to}
+              className="shell__bell"
+              aria-label={
+                notifications.count > 0
+                  ? `${notifications.label ?? 'Notifikasi'}, ${notifications.count} belum dibaca`
+                  : (notifications.label ?? 'Notifikasi')
+              }
+            >
+              <Icon name="bell" size={18} />
+              {notifications.count > 0 && (
+                <span className="shell__bell-dot" aria-hidden="true">
+                  {notifications.count > 9 ? '9+' : notifications.count}
+                </span>
+              )}
+            </NavLink>
+          )}
+
           <ThemeToggle />
 
-          <div className="shell__user">
-            <span className="shell__avatar" aria-hidden="true">
-              {initialsOf(user.name)}
-            </span>
-            <span className="shell__identity">
-              {user.name}
-              <small>{subtitle}</small>
-            </span>
-          </div>
+          {hasUserMenu ? (
+            <UserMenu
+              user={user}
+              subtitle={subtitle}
+              items={userMenu}
+              onSignOut={onSignOut}
+            />
+          ) : (
+            <div className="shell__user">
+              <span className="shell__avatar" aria-hidden="true">
+                {initialsOf(user.name)}
+              </span>
+              <span className="shell__identity">
+                {user.name}
+                <small>{subtitle}</small>
+              </span>
+            </div>
+          )}
         </header>
 
         <main id="main" className="shell__main">
           {children}
         </main>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Identitas pengguna yang sekaligus menjadi menu.
+ *
+ * Ditutup oleh klik di luar dan tombol Escape, dan fokus dikembalikan ke
+ * tombolnya supaya pengguna keyboard tidak terlempar ke awal halaman.
+ * Menutup sendiri saat rute berganti, karena menu yang tertinggal terbuka di
+ * atas halaman baru terasa seperti sisa yang lupa dibersihkan.
+ */
+function UserMenu({ user, subtitle, items, onSignOut }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const buttonRef = useRef(null);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const onPointerDown = (event) => {
+      if (!wrapRef.current?.contains(event.target)) setOpen(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+      setOpen(false);
+      buttonRef.current?.focus();
+    };
+
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div className="shell__usermenu" ref={wrapRef}>
+      <button
+        type="button"
+        ref={buttonRef}
+        className="shell__user shell__user--button"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="shell__avatar" aria-hidden="true">
+          {initialsOf(user.name)}
+        </span>
+        <span className="shell__identity">
+          {user.name}
+          <small>{subtitle}</small>
+        </span>
+        <Icon name={open ? 'chevronUp' : 'chevronDown'} size={16} />
+      </button>
+
+      {open && (
+        <div className="shell__menu" role="menu">
+          {items.map((item) => (
+            <button
+              key={item.to}
+              type="button"
+              role="menuitem"
+              className="shell__menu-item"
+              onClick={() => {
+                setOpen(false);
+                navigate(item.to);
+              }}
+            >
+              <Icon name={item.icon} size={18} />
+              <span>
+                {item.label}
+                {item.hint && <small>{item.hint}</small>}
+              </span>
+            </button>
+          ))}
+
+          <div className="shell__menu-sep" role="separator" />
+
+          <button
+            type="button"
+            role="menuitem"
+            className="shell__menu-item shell__menu-item--danger"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+          >
+            <Icon name="logout" size={18} />
+            <span>{t('common.signOut')}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -49,6 +49,12 @@ const PATHS = {
       <path d="M12 7.5V12l3 2" />
     </>
   ),
+  bell: (
+    <>
+      <path d="M18 8.5a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16s-2-1.5-2-6.5Z" />
+      <path d="M13.7 19a2 2 0 0 1-3.4 0" />
+    </>
+  ),
   consent: (
     <>
       <rect x="4" y="3" width="16" height="18" rx="2" />
