@@ -25,7 +25,8 @@ rancangan**, bukan kode yang berjalan — proyek ini memang tanpa server.
 Perintah · Akun demo · Menelusuri kedua jalur
 
 **Bagian B — Cara kerja**
-Struktur berkas · Modul questionnaire · Navigasi portal pemasok · Tanda tangan elektronik (Privi) ·
+Struktur berkas · Modul questionnaire · Navigasi konsol internal ·
+Navigasi portal pemasok · Tanda tangan elektronik (Privi) ·
 Pokayoke penugasan kuesioner sebelum onboarding · Verifikasi dokumen sebagai
 checklist seluruh field · Dua gerbang menuju qualification · Modul Master Data
 Management & SAP · Status Active/Blocked · Dashboard kepatuhan kuesioner ·
@@ -186,7 +187,7 @@ src/
     auth/       SupplierLogin, StaffLogin, ForgotPassword
     supplier/   RegisterWizard, ChangePassword, SupplierProfile,
                 ConsentPage, RegistrationProgress, AccountProfile
-    internal/   InternalHome, QueueDashboard, SubmissionReview,
+    internal/   InternalHome, QueueDashboard, SubmissionReview, InternalAccount,
                 InternalRegistration, ManagerApprovals, DocumentVerification
   qualification/
     data/       referenceData.js  UNSPSC (subset) dan negara ISO 3166-1
@@ -209,16 +210,18 @@ src/
                           AttachmentRulePanel, ScoringPanel, LibraryPicker)
                 render/  (QuestionRenderer, ESignBlock ruang tanda tangan,
                           + lampiran)
-                shared/  (status, skor, bilah kemajuan, grafik SVG)
+                shared/  (status, skor, bilah kemajuan, grafik SVG,
+                          ComplianceSection)
     pages/      internal/ (TemplateList, TemplateDetail, TemplateCreate,
                           QuestionnaireBuilder, AssignmentList,
                           AssignmentCreate, ReviewQueue, ReviewDetail,
-                          QuestionnaireDashboard, QuestionnaireCompliance,
+                          QuestionnaireDashboard,
                           NotificationList, AuditTrail)
                 supplier/ (MyQuestionnaires, ResponseWizard)
   sap/          sapRules.js       gerbang kelayakan kirim ke SAP (murni, teruji)
                 purchaseOrders.js ringkasan PO deterministik (pengganti data SAP)
-                pages/            SapReview, SapFailureLog, VendorDataUpdate,
+                pages/            SapReview (memuat SapFailureLog),
+                                  VendorDataUpdate,
                                   SupplierOverview
   styles/       global.css   token warna, tipografi, komponen dasar
                 patterns.css pola tata letak lintas halaman
@@ -758,8 +761,13 @@ daftar resmi dari tim integrasi.
 ### Log gagal kirim ke SAP
 
 Kegagalan tidak boleh hilang begitu toast-nya menutup — satu NPWP ganda perlu
-ditelusuri sampai tuntas. Setiap pengiriman yang ditolak menuliskan entri pada
-`/internal/sap/log` berisi pemasok, kode galat, pesan, waktu, dan pelakunya.
+ditelusuri sampai tuntas. Setiap pengiriman yang ditolak menuliskan entri berisi
+pemasok, kode galat, pesan, waktu, dan pelakunya.
+
+Log ini adalah **bagian kedua halaman Kirim ke SAP**, bukan halaman tersendiri:
+kegagalan selalu dibaca berdampingan dengan antrean kirim — yang menanganinya
+orang yang sama, dan tindak lanjutnya biasanya mengirim ulang dari antrean itu
+juga. Rute lama `/internal/sap/log` dipertahankan sebagai pengalihan.
 Entri dapat ditandai sudah ditangani beserta keterangan penanganannya, dan
 saringan bawaannya menampilkan yang belum ditangani lebih dahulu.
 
@@ -788,11 +796,17 @@ bila alasannya dicatat.
 dorongan dari SAP** supaya alurnya dapat ditelusuri tanpa server. Pada sistem
 sungguhan tidak ada tombol itu; statusnya datang lewat integrasi.
 
-## Dashboard kepatuhan kuesioner
+## Dashboard kuesioner
 
-Dashboard kuesioner yang sudah ada menjawab "bagaimana hasilnya". Halaman baru
-`/internal/kepatuhan-kuesioner` menjawab pertanyaan yang berbeda dan lebih
-sering ditanyakan procurement: **siapa yang belum mengisi**.
+`/internal/dashboard-kuesioner` menyatukan empat hal dalam satu layar: KPI
+template dan penugasan, tingkat respons, hasil penilaian pemasok, lalu
+**kepatuhan pengisian** di bagian bawah.
+
+Bagian kepatuhan dulu halaman tersendiri (`/internal/kepatuhan-kuesioner`, kini
+dialihkan ke dashboard). Digabung karena keduanya menjawab pertanyaan yang
+bersambung: setelah melihat hasilnya, pertanyaan berikutnya selalu "lalu siapa
+yang belum mengisi". Isinya dirender `ComplianceSection.jsx`, yang menjawab
+pertanyaan itu: **siapa yang belum mengisi**.
 
 Karena itu barisnya adalah pemasok, bukan respons. Saringan per kuesioner
 memperlihatkan siapa saja yang tertinggal pada satu kuesioner tertentu, dan
@@ -877,6 +891,49 @@ Pemeriksaan sengaja berjalan **setelah** validasi bentuk lolos: memberi tahu
 Karena proyek ini tanpa server, pencocokannya dilakukan atas data yang ada di
 memori lewat `findTaxIdDuplicate()` di `AppStore.jsx` — satu-satunya tempat yang
 perlu diganti bila backend menyusul.
+
+## Navigasi konsol internal
+
+Menu dikelompokkan menurut pekerjaan, bukan menurut modul yang membangunnya:
+
+| Kelompok | Isi |
+|---|---|
+| Beranda | Ringkasan |
+| Questionnaire | Template · Penugasan · Tinjauan |
+| **Registrasi supplier** | Supplier request · Registrasi · Kualifikasi · Preferred supplier · Kirim ke SAP (MDM & manager) |
+| **Data vendor** | Update data vendor |
+| **Dashboard & Audit Trail** | Dashboard kuesioner · Ringkasan pemasok · Jejak audit |
+
+Kelompok **Proses** berganti nama menjadi **Registrasi supplier** karena kini
+memuat perjalanan pemasok utuh — dari antrean pendaftaran sampai datanya masuk
+SAP. Menyebutnya "Proses" tidak lagi memberi tahu proses yang mana. Preferred
+supplier dan Kirim ke SAP pindah ke dalamnya; kelompok Persetujuan dan Master
+Data Management yang dulu memisahkannya dibubarkan.
+
+**Update data vendor keluar** menjadi kelompoknya sendiri. Pekerjaannya tidak
+mengikuti tahapan pemasok mana pun — staf membukanya kapan saja atas permintaan,
+untuk pemasok pada tahap apa pun — sehingga menaruhnya di dalam alur registrasi
+menyesatkan.
+
+**Dashboard & Audit Trail** menyatukan ketiga layar yang dibaca, bukan
+dikerjakan.
+
+Seperti pada portal pemasok, **notifikasi menjadi lonceng pada bilah atas** dan
+**tombol keluar pindah ke menu identitas** di pojok kanan atas, yang berisi dua
+pilihan: **Profil akun** dan **Keluar**.
+
+### Profil akun internal
+
+`/internal/akun` memuat nama, bidang pekerjaan, email akun, nomor ponsel, nomor
+kantor, role, dan penggantian kata sandi.
+
+Email dibiarkan **baca-saja**: itu identitas masuk ke direktori Paragon, dan
+menggantinya berarti menjadi orang lain — urusan tim IT, bukan aplikasi ini.
+
+⚠️ Perubahan hanya menyentuh sesi lewat `updateInternalProfile`, bukan
+`INTERNAL_USERS`. Direktori itu mewakili data kepegawaian yang pada sistem
+sungguhan datang dari SSO atau HRIS, bukan sesuatu yang aplikasi ini miliki,
+sehingga perubahannya ikut hilang saat keluar.
 
 ## Navigasi portal pemasok
 
@@ -981,6 +1038,9 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Dokumen lolos periksa menahan pemasok di `Menunggu validasi kuesioner` | `AppStore.verifyDocuments` |
 | Qualification terbuka hanya setelah seluruh kuesioner disetujui | `ReviewDetail.jsx`, `AppStore.advanceToQualification` |
 | Kualifikasi selesai langsung menjadikan pemasok preferred | `AppStore.saveQualification` |
+| Kepatuhan pengisian menjadi bagian dashboard kuesioner | `QuestionnaireDashboard.jsx`, `ComplianceSection.jsx` |
+| Log gagal kirim menjadi bagian halaman Kirim ke SAP | `SapReview.jsx`, `SapFailureLog.jsx` |
+| Email akun internal tidak dapat disunting dari aplikasi | `InternalAccount.jsx` |
 | Status pendaftaran menjadi tab di dalam Profil pemasok | `SupplierProfile.jsx`, `RegistrationProgress.jsx` |
 | Notifikasi pemasok menjadi lonceng bilah atas, bukan butir sidebar | `AppShell.notifications`, `SupplierLayout.jsx` |
 | Tombol keluar pindah ke menu identitas saat `userMenu` diisi | `AppShell.UserMenu` |

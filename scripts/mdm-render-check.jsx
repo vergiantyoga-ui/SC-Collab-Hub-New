@@ -137,6 +137,21 @@ const MDM_EMAIL = 'bayu.nugroho@paragon-corp.com';
 
 const CASES = [
   { email: MDM_EMAIL, route: '/internal/sap', expect: 'SAP' },
+  // Log kegagalan kini bagian dari halaman Kirim ke SAP.
+  { email: MDM_EMAIL, route: '/internal/sap', expect: 'Log gagal kirim' },
+  // Kepatuhan pengisian kini bagian dari dashboard kuesioner.
+  { email: STAFF_EMAIL, route: '/internal/dashboard-kuesioner', expect: 'Kepatuhan pengisian' },
+  { email: STAFF_EMAIL, route: '/internal/dashboard-kuesioner', expect: 'Belum ditugaskan' },
+  { email: STAFF_EMAIL, route: '/internal/akun', expect: 'Profil akun' },
+  { email: STAFF_EMAIL, route: '/internal/akun', expect: 'Bidang pekerjaan' },
+  { email: STAFF_EMAIL, route: '/internal/akun', expect: 'kata sandi' },
+  // Kelompok menu yang dirombak.
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Registrasi supplier' },
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Dashboard & Audit Trail' },
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Data vendor' },
+  // Notifikasi menjadi lonceng bilah atas; identitas menjadi menu.
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'aria-haspopup' },
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: '/internal/notifikasi' },
   // Saringan rencana kerja sama harus memuat kedua pilihannya, bukan hanya
   // "Semua": master data memakai kunci `name`, sehingga memetakannya lewat
   // `item.label` diam-diam menghasilkan pilihan berlabel kosong.
