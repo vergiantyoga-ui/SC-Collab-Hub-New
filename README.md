@@ -212,7 +212,7 @@ src/
                 render/  (QuestionRenderer, ESignBlock ruang tanda tangan,
                           + lampiran)
                 shared/  (status, skor, bilah kemajuan, grafik SVG,
-                          ComplianceSection)
+                          ComplianceSection, AssignmentRows)
     pages/      internal/ (TemplateList, TemplateDetail, TemplateCreate,
                           QuestionnaireBuilder, AssignmentList,
                           AssignmentCreate, ReviewQueue, ReviewDetail,
@@ -643,6 +643,22 @@ tugas.
 **Kategori material dan material/produk dihapus** dari penugasan. Jenis material
 sudah melekat pada templatenya, jadi mengulangnya per penugasan hanya membuka
 peluang keduanya berbeda.
+
+### Dua tempat, satu komponen
+
+Penugasan dapat dilakukan dari dua tempat: halaman **Tugaskan kuesioner**, dan
+dialog pokayoke pada **tinjauan pendaftaran** — yang menahan undangan maupun
+registrasi internal sampai ada kuesioner tertugaskan. Keduanya kini memakai
+komponen baris yang sama, `AssignmentRows.jsx`, sehingga dialog itu pun dapat
+menugaskan beberapa kuesioner sekaligus.
+
+Bedanya hanya pada header: halaman penuh memilih pemasok dan peninjau, sedangkan
+dialog hanya memilih peninjau karena pemasoknya sudah pasti pengajuan yang
+sedang dibuka.
+
+Aturan mana yang wajib, penolakan kuesioner ganda, dan bentuk galat per baris
+tinggal di satu berkas bersama `validateAssignmentRows()` — supaya kedua tempat
+tidak berbeda perlahan ketika salah satunya disunting.
 
 ## Pokayoke penugasan kuesioner sebelum onboarding
 
@@ -1104,7 +1120,7 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | NIK dan NPWP tidak boleh dipakai dua pemasok | `taxIdentity.findTaxIdDuplicate`, `ProfileSectionForm.jsx`, diuji di `sap-check.mjs` |
 | Kode template dibangkitkan dari nama, tidak diketik | `schema.generateTemplateCode`, `TemplateCreate.jsx` |
 | Satu template dapat menyasar beberapa jenis material | `schema.MATERIAL_TYPES`, `makeTemplate.materialTypes` |
-| Satu penugasan dapat memuat beberapa kuesioner sekaligus | `AssignmentCreate.jsx` |
+| Satu penugasan dapat memuat beberapa kuesioner sekaligus | `AssignmentRows.jsx`, dipakai `AssignmentCreate.jsx` dan `SubmissionReview.jsx` |
 | E-sign hanya sakelar aktif/nonaktif, penyedia tetap Privi | `QuestionnaireBuilder.jsx`, `schema.makeESignConfig` |
 | Kuesioner ber-e-sign tidak dapat dikirim sebelum ditandatangani | `ResponseWizard.jsx` (`eSignPending`), `ESignBlock.jsx` |
 

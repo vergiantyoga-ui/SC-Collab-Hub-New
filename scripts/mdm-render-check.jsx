@@ -22,6 +22,14 @@ import { SUBMISSIONS } from '../src/lib/mockData.js';
 import { PROFILE_SECTIONS } from '../src/lib/constants.js';
 import ProfileSectionForm from '../src/components/profile/ProfileSectionForm.jsx';
 import ProfileSummary from '../src/components/profile/ProfileSummary.jsx';
+import AssignmentRows, {
+  makeAssignmentRow,
+  validateAssignmentRows,
+} from '../src/questionnaire/components/shared/AssignmentRows.jsx';
+import {
+  QUESTIONNAIRE_TEMPLATES,
+  QUESTIONNAIRE_VERSIONS,
+} from '../src/questionnaire/store/questionnaireMockData.js';
 
 let failures = 0;
 
@@ -150,6 +158,7 @@ const CASES = [
   { email: STAFF_EMAIL, route: '/internal/penugasan/baru', expect: 'Pemasok & peninjau' },
   { email: STAFF_EMAIL, route: '/internal/penugasan/baru', expect: 'Tambah kuesioner' },
   { email: STAFF_EMAIL, route: '/internal/penugasan/baru', expect: 'Tanggal pengisian' },
+
   { email: STAFF_EMAIL, route: '/internal/akun', expect: 'Bidang pekerjaan' },
   { email: STAFF_EMAIL, route: '/internal/akun', expect: 'kata sandi' },
   // Kelompok menu yang dirombak.
@@ -316,6 +325,72 @@ try {
 } catch (error) {
   check('status pendaftaran tidak lagi menjadi butir sidebar', false, error.message);
 }
+
+/*
+ * Baris penugasan dipakai di dua tempat — halaman Tugaskan kuesioner dan
+ * dialog pokayoke pada tinjauan pendaftaran. Komponennya diuji langsung
+ * karena isi dialog hanya dirender saat dialognya terbuka.
+ */
+console.log('\nBaris penugasan kuesioner:');
+
+try {
+  const rows = [makeAssignmentRow(), makeAssignmentRow()];
+  const text = renderInProviders(
+    React.createElement(AssignmentRows, {
+      rows,
+      errors: {},
+      templates: QUESTIONNAIRE_TEMPLATES,
+      versions: QUESTIONNAIRE_VERSIONS,
+      onChange: () => {},
+      onAdd: () => {},
+      onRemove: () => {},
+    }),
+  );
+  // Legend dirender sebagai beberapa anak ("Kuesioner ", 2), jadi yang
+  // dihitung adalah jumlah fieldset-nya, bukan teks gabungannya.
+  const legends = text.split('taxdoc__legend').length - 1;
+  check('dua baris dirender', legends, 2);
+  check('tombol tambah tersedia', text.includes('Tambah kuesioner'), 'tombol tambah hilang');
+  check('baris dapat dihapus saat lebih dari satu', text.includes('Hapus'), 'tombol hapus hilang');
+  check('tanggal pengisian ada di baris', text.includes('Tanggal pengisian'), 'field tenggat hilang');
+} catch (error) {
+  check('baris penugasan dirender', false, error.message);
+}
+
+// Satu baris saja tidak boleh menawarkan Hapus — menghapus baris terakhir
+// meninggalkan formulir tanpa kuesioner apa pun.
+try {
+  const text = renderInProviders(
+    React.createElement(AssignmentRows, {
+      rows: [makeAssignmentRow()],
+      templates: QUESTIONNAIRE_TEMPLATES,
+      versions: QUESTIONNAIRE_VERSIONS,
+      onChange: () => {},
+      onAdd: () => {},
+      onRemove: () => {},
+    }),
+  );
+  check('baris tunggal tanpa tombol hapus', !text.includes('Hapus'), 'tombol hapus tetap muncul');
+} catch (error) {
+  check('baris tunggal tanpa tombol hapus', false, error.message);
+}
+
+// Aturan validasinya juga dipakai bersama, jadi diperiksa di sini sekalian.
+const dupRows = [
+  { ...makeAssignmentRow(), templateId: 'tpl_a', versionId: 'v1', dueDate: '2026-12-01' },
+  { ...makeAssignmentRow(), templateId: 'tpl_a', versionId: 'v1', dueDate: '2026-12-01' },
+];
+const dupErrors = validateAssignmentRows(dupRows);
+check(
+  'kuesioner ganda ditolak',
+  Boolean(dupErrors[dupRows[1].key]?.templateId),
+  'duplikat tidak terdeteksi',
+);
+check(
+  'baris kosong menghasilkan galat per field',
+  Object.keys(validateAssignmentRows([makeAssignmentRow()])).length,
+  1,
+);
 
 console.log(
   failures === 0
