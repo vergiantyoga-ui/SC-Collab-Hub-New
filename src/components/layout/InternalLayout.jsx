@@ -52,15 +52,20 @@ export default function InternalLayout() {
     {
       label: 'Questionnaire',
       items: [
-        { to: '/internal/dashboard-kuesioner', label: 'Dashboard', icon: 'home' },
-        { to: '/internal/kepatuhan-kuesioner', label: 'Kepatuhan pengisian', icon: 'verify' },
         { to: '/internal/questionnaire', label: 'Template', icon: 'consent' },
         { to: '/internal/penugasan', label: 'Penugasan', icon: 'queue' },
         { to: '/internal/tinjauan', label: 'Tinjauan', icon: 'verify', count: awaitingReview },
       ],
     },
+    /*
+     * Registrasi supplier — dulu bernama "Proses". Namanya dipertegas karena
+     * kelompok ini kini memuat perjalanan pemasok dari pendaftaran sampai
+     * datanya masuk SAP: antrean, verifikasi, kualifikasi, penetapan
+     * preferred, lalu pengiriman ke SAP. Menyebutnya "Proses" tidak lagi
+     * memberi tahu proses yang mana.
+     */
     {
-      label: t('nav.group.process'),
+      label: 'Registrasi supplier',
       items: [
         {
           to: '/internal/antrian',
@@ -80,50 +85,6 @@ export default function InternalLayout() {
           icon: 'approval',
           count: pendingQualification,
         },
-        { to: '/internal/update-vendor', label: 'Update data vendor', icon: 'document' },
-      ],
-    },
-    {
-      label: 'Data pemasok',
-      items: [{ to: '/internal/ringkasan-pemasok', label: 'Ringkasan pemasok', icon: 'home' }],
-    },
-    /*
-     * Kelompok MDM tampil untuk tim Master Data Management dan manager.
-     * Staf procurement tidak melihatnya: keputusan kirim-ke-SAP bukan
-     * wewenangnya, dan menu yang seluruh tombolnya terkunci hanya
-     * menambah kebingungan.
-     */
-    ...(isMdm || user.role === ROLE.MANAGER
-      ? [
-          {
-            label: 'Master Data Management',
-            items: [
-              { to: '/internal/sap', label: 'Kirim ke SAP', icon: 'approval', count: awaitingSap },
-              {
-                to: '/internal/sap/log',
-                label: 'Log gagal kirim',
-                icon: 'document',
-                count: openSapFailures,
-              },
-            ],
-          },
-        ]
-      : []),
-    {
-      label: 'Lain-lain',
-      items: [
-        {
-          to: '/internal/notifikasi',
-          label: 'Notifikasi',
-          icon: 'status',
-          count: unreadNotifications,
-        },
-        { to: '/internal/jejak-audit', label: 'Jejak audit', icon: 'document' },
-      ],
-    },
-    {
-      label: t('nav.group.approval'),
-      items: [
         {
           to: '/internal/preferred',
           label: 'Preferred supplier',
@@ -135,6 +96,36 @@ export default function InternalLayout() {
            */
           count: isMdm ? awaitingSap : awaitingPreferred,
         },
+        /*
+         * Kirim ke SAP hanya tampil untuk tim Master Data Management dan
+         * manager. Staf procurement tidak melihatnya: keputusan itu bukan
+         * wewenangnya, dan menu yang seluruh tombolnya terkunci hanya
+         * menambah kebingungan.
+         */
+        ...(isMdm || user.role === ROLE.MANAGER
+          ? [
+              {
+                to: '/internal/sap',
+                label: 'Kirim ke SAP',
+                icon: 'approval',
+                // Antrean kirim ditambah kegagalan yang belum ditangani —
+                // keduanya kini satu halaman, jadi lencananya pun satu.
+                count: awaitingSap + openSapFailures,
+              },
+            ]
+          : []),
+      ],
+    },
+    {
+      label: 'Data vendor',
+      items: [{ to: '/internal/update-vendor', label: 'Update data vendor', icon: 'document' }],
+    },
+    {
+      label: 'Dashboard & Audit Trail',
+      items: [
+        { to: '/internal/dashboard-kuesioner', label: 'Dashboard kuesioner', icon: 'home' },
+        { to: '/internal/ringkasan-pemasok', label: 'Ringkasan pemasok', icon: 'home' },
+        { to: '/internal/jejak-audit', label: 'Jejak audit', icon: 'document' },
       ],
     },
   ];
@@ -144,6 +135,14 @@ export default function InternalLayout() {
       groups={groups}
       user={user}
       subtitle={t(`role.${user.role}`)}
+      notifications={{
+        to: '/internal/notifikasi',
+        count: unreadNotifications,
+        label: 'Notifikasi',
+      }}
+      userMenu={[
+        { to: '/internal/akun', label: 'Profil akun', icon: 'profile', hint: user.email },
+      ]}
       onSignOut={() => {
         signOut();
         navigate('/internal/masuk', { replace: true });

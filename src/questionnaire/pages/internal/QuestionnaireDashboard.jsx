@@ -1,4 +1,5 @@
 import PageHeader from '../../../components/ui/PageHeader.jsx';
+import ComplianceSection from '../../components/shared/ComplianceSection.jsx';
 import Card from '../../../components/ui/Card.jsx';
 import Button from '../../../components/ui/Button.jsx';
 import { BarChart, DonutChart, GaugeChart } from '../../components/shared/Charts.jsx';
@@ -57,7 +58,7 @@ export default function QuestionnaireDashboard() {
         trail={[{ label: 'Beranda', to: '/internal/beranda' }, { label: 'Dashboard kuesioner' }]}
         icon="home"
         title="Dashboard kuesioner"
-        description="Ringkasan template, penugasan, dan hasil penilaian pemasok."
+        description="Ringkasan template, penugasan, hasil penilaian pemasok, dan siapa yang sudah atau belum mengisi."
         actions={<Button variant="secondary" to="/internal/penugasan">Buka penugasan</Button>}
       />
 
@@ -144,6 +145,17 @@ export default function QuestionnaireDashboard() {
           />
         )}
       </Card>
+
+      {/*
+        * Kepatuhan pengisian menutup dashboard: setelah melihat hasilnya,
+        * pertanyaan berikutnya selalu "lalu siapa yang belum mengisi".
+        */}
+      <div style={{ marginTop: 'var(--sp-6, 32px)' }}>
+        <h2 className="card__title" style={{ marginBottom: 'var(--sp-3)' }}>
+          Kepatuhan pengisian
+        </h2>
+        <ComplianceSection />
+      </div>
     </>
   );
 }
