@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../../components/ui/PageHeader.jsx';
 import Card from '../../../components/ui/Card.jsx';
 import Button from '../../../components/ui/Button.jsx';
-import { TextField, SelectField, TextAreaField } from '../../../components/ui/Field.jsx';
+import { SelectField } from '../../../components/ui/Field.jsx';
 import { useToast } from '../../../components/ui/Toast.jsx';
 import { useAppState } from '../../../store/AppStore.jsx';
 import {
@@ -12,20 +12,13 @@ import {
   versionsOf,
 } from '../../store/QuestionnaireStore.jsx';
 import { TEMPLATE_STATUS } from '../../engine/index.js';
-import { PRIORITIES } from '../../store/assignmentMockData.js';
+import AssignmentRows, {
+  useAssignmentRows,
+  validateAssignmentRows,
+} from '../../components/shared/AssignmentRows.jsx';
 import { INTERNAL_USERS } from '../../../lib/mockData.js';
 import { hasFinishedRegistration } from '../../../lib/constants.js';
 import { collectErrors, required } from '../../../lib/validation.js';
-
-let rowSeq = 0;
-const makeRow = () => ({
-  key: `row_${(rowSeq += 1)}`,
-  templateId: '',
-  versionId: '',
-  dueDate: '',
-  priority: 'normal',
-  instructions: '',
-});
 
 /**
  * Menugaskan kuesioner kepada pemasok.
@@ -48,16 +41,10 @@ export default function AssignmentCreate() {
   const navigate = useNavigate();
 
   const [header, setHeader] = useState({ supplierId: '', reviewerId: '' });
-  const [rows, setRows] = useState(() => [makeRow()]);
+  const { rows, setRow, addRow, removeRow } = useAssignmentRows();
   const [errors, setErrors] = useState({});
 
   const setHeaderValue = (patch) => setHeader((current) => ({ ...current, ...patch }));
-
-  const setRow = (key, patch) =>
-    setRows((current) => current.map((row) => (row.key === key ? { ...row, ...patch } : row)));
-
-  const addRow = () => setRows((current) => [...current, makeRow()]);
-  const removeRow = (key) => setRows((current) => current.filter((row) => row.key !== key));
 
   /** Template yang punya minimal satu versi terbit. */
   const publishable = useMemo(
@@ -67,11 +54,6 @@ export default function AssignmentCreate() {
       ),
     [templates, versions],
   );
-
-  const versionsFor = (templateId) =>
-    templateId
-      ? versionsOf(versions, templateId).filter((v) => v.status === TEMPLATE_STATUS.PUBLISHED)
-      : [];
 
   // Kuesioner ditugaskan sejak tahap qualification; menunggu status preferred
   // justru membalik urutannya, sebab hasil kuesioner ikut dinilai manager.
@@ -85,34 +67,7 @@ export default function AssignmentCreate() {
       reviewerId: required(header.reviewerId, 'Peninjau'),
     });
 
-    /*
-     * Baris diperiksa satu per satu supaya galatnya menempel pada baris yang
-     * bersangkutan, bukan menjadi satu pesan umum di atas formulir yang
-     * memaksa pengguna menebak baris mana yang bermasalah.
-     */
-    const rowErrors = {};
-    rows.forEach((row) => {
-      const rowFound = collectErrors({
-        templateId: required(row.templateId, 'Kuesioner'),
-        versionId: required(row.versionId, 'Versi'),
-        dueDate: required(row.dueDate, 'Tanggal pengisian'),
-      });
-      if (Object.keys(rowFound).length > 0) rowErrors[row.key] = rowFound;
-    });
-
-    // Kuesioner yang sama dua kali untuk satu pemasok bukan dua tugas.
-    const seen = new Set();
-    rows.forEach((row) => {
-      if (!row.templateId) return;
-      if (seen.has(row.templateId)) {
-        rowErrors[row.key] = {
-          ...rowErrors[row.key],
-          templateId: 'Kuesioner ini sudah ada pada baris lain.',
-        };
-      }
-      seen.add(row.templateId);
-    });
-
+    const rowErrors = validateAssignmentRows(rows);
     setErrors({ ...found, rows: rowErrors });
 
     if (Object.keys(found).length > 0 || Object.keys(rowErrors).length > 0) {
@@ -201,83 +156,16 @@ export default function AssignmentCreate() {
               title={`Kuesioner yang ditugaskan (${rows.length})`}
               subtitle="Satu baris untuk satu kuesioner"
               style={{ marginTop: 'var(--sp-5)' }}
-              actions={
-                <Button variant="secondary" size="sm" onClick={addRow}>
-                  Tambah kuesioner
-                </Button>
-              }
             >
-              {rows.map((row, index) => {
-                const rowError = errors.rows?.[row.key] ?? {};
-                const rowVersions = versionsFor(row.templateId);
-
-                return (
-                  <fieldset key={row.key} className="taxdoc">
-                    <legend className="taxdoc__legend">
-                      Kuesioner {index + 1}
-                      {rows.length > 1 && (
-                        <button
-                          type="button"
-                          className="link-danger"
-                          onClick={() => removeRow(row.key)}
-                          style={{ marginLeft: 'var(--sp-3)' }}
-                        >
-                          Hapus
-                        </button>
-                      )}
-                    </legend>
-
-                    <div className="field-grid">
-                      <SelectField
-                        label="Nama kuesioner"
-                        options={publishable.map((t) => ({ value: t.id, label: t.name }))}
-                        value={row.templateId}
-                        onChange={(e) =>
-                          setRow(row.key, { templateId: e.target.value, versionId: '' })
-                        }
-                        error={rowError.templateId}
-                        required
-                      />
-                      <SelectField
-                        label="Versi"
-                        options={rowVersions.map((v) => ({
-                          value: v.id,
-                          label: v.versionLabel,
-                        }))}
-                        value={row.versionId}
-                        onChange={(e) => setRow(row.key, { versionId: e.target.value })}
-                        error={rowError.versionId}
-                        disabled={!row.templateId}
-                        hint="Hanya versi terbit yang dapat ditugaskan."
-                        required
-                      />
-                      <TextField
-                        label="Tanggal pengisian"
-                        type="date"
-                        value={row.dueDate}
-                        onChange={(e) => setRow(row.key, { dueDate: e.target.value })}
-                        error={rowError.dueDate}
-                        hint="Tenggat pemasok menyelesaikan pengisian."
-                        required
-                      />
-                      <SelectField
-                        label="Prioritas"
-                        options={PRIORITIES.map((p) => ({ value: p.id, label: p.label }))}
-                        value={row.priority}
-                        onChange={(e) => setRow(row.key, { priority: e.target.value })}
-                      />
-                      <TextAreaField
-                        label="Instruksi tambahan"
-                        className="span-full"
-                        rows={2}
-                        value={row.instructions}
-                        onChange={(e) => setRow(row.key, { instructions: e.target.value })}
-                        hint="Ditampilkan kepada pemasok di atas kuesioner ini. Opsional."
-                      />
-                    </div>
-                  </fieldset>
-                );
-              })}
+              <AssignmentRows
+                rows={rows}
+                errors={errors.rows}
+                templates={publishable}
+                versions={versions}
+                onChange={setRow}
+                onAdd={addRow}
+                onRemove={removeRow}
+              />
 
               <div className="form-actions">
                 <Button variant="secondary" to="/internal/penugasan">
