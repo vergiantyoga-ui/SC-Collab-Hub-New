@@ -25,7 +25,7 @@ rancangan**, bukan kode yang berjalan — proyek ini memang tanpa server.
 Perintah · Akun demo · Menelusuri kedua jalur
 
 **Bagian B — Cara kerja**
-Struktur berkas · Modul questionnaire · Tanda tangan elektronik (Privi) ·
+Struktur berkas · Modul questionnaire · Navigasi portal pemasok · Tanda tangan elektronik (Privi) ·
 Pokayoke penugasan kuesioner sebelum onboarding · Verifikasi dokumen sebagai
 checklist seluruh field · Dua gerbang menuju qualification · Modul Master Data
 Management & SAP · Status Active/Blocked · Dashboard kepatuhan kuesioner ·
@@ -185,7 +185,7 @@ src/
   pages/
     auth/       SupplierLogin, StaffLogin, ForgotPassword
     supplier/   RegisterWizard, ChangePassword, SupplierProfile,
-                ConsentPage, SupplierStatus
+                ConsentPage, RegistrationProgress, AccountProfile
     internal/   InternalHome, QueueDashboard, SubmissionReview,
                 InternalRegistration, ManagerApprovals, DocumentVerification
   qualification/
@@ -659,7 +659,7 @@ terkunci selama masih ada field yang ditandai.
 
 Bentuk data catatan berganti dari `{ document, reason }` menjadi
 `{ field, reason }` supaya sesuai dengan cakupannya yang tidak lagi cuma
-dokumen. `SupplierProfile.jsx` dan `SupplierStatus.jsx` — dua layar yang
+dokumen. `SupplierProfile.jsx` dan `RegistrationProgress.jsx` — dua layar yang
 menampilkan catatan ini kepada pemasok — dibaca lewat `note.field ?? note.document`
 supaya tetap kompatibel bila ada data lama berbentuk sebelumnya.
 
@@ -878,6 +878,49 @@ Karena proyek ini tanpa server, pencocokannya dilakukan atas data yang ada di
 memori lewat `findTaxIdDuplicate()` di `AppStore.jsx` — satu-satunya tempat yang
 perlu diganti bila backend menyusul.
 
+## Navigasi portal pemasok
+
+Sidebar pemasok dirampingkan menjadi **Profil** (ditambah Persetujuan saat
+onboarding) dan **Kuesioner saya**. Tiga hal berpindah keluar darinya.
+
+**Status pendaftaran melebur ke Profil.** Dulu keduanya halaman terpisah yang
+selalu dibuka berbarengan: pemasok membaca statusnya, lalu pindah ke Profil
+untuk menindaklanjutinya. Isinya kini menjadi tab **Status & riwayat** di dalam
+Profil — notice tindakan berikutnya, ringkasan pendaftaran, dan riwayat proses —
+dirender komponen `RegistrationProgress.jsx`. Tab **Data perusahaan** tetap
+menjadi tab awal, karena itulah yang paling sering dikerjakan. Rute
+`/portal/status` dipertahankan sebagai pengalihan supaya tautan lama tidak
+mati.
+
+**Notifikasi menjadi lonceng pada bilah atas**, di sebelah tombol tema, lengkap
+dengan penanda jumlah yang belum dibaca. Sifatnya selingan — dibuka sebentar
+lalu ditinggalkan — bukan tujuan navigasi yang setara dengan Profil.
+
+**Tombol keluar pindah ke menu identitas** di pojok kanan atas. Menekan nama
+perusahaan membuka tiga pilihan: **Profil akun**, **Profil perusahaan**, dan
+**Keluar**. Menunya ditutup oleh klik di luar, tombol Escape (fokus kembali ke
+tombolnya), dan pergantian rute. Selama `userMenu` diisi, tombol keluar pada
+sidebar disembunyikan supaya tidak ada dua jalan keluar di tempat berbeda —
+konsol internal yang tidak mengisinya tetap memakai tombol sidebar seperti
+semula.
+
+### Profil akun
+
+`/portal/akun` menjawab "siapa saya dan bagaimana saya masuk", terpisah dari
+Profil perusahaan yang menjawab "data apa yang Paragon simpan tentang
+perusahaan saya". Isinya nama, bidang pekerjaan, email akun, nomor ponsel, dan
+nomor kantor — seluruhnya dapat disunting — beserta identitas akun portal dan
+penggantian kata sandi.
+
+Datanya berasal dari `submission.contact`, yaitu penanggung jawab yang
+mendaftarkan akun, sehingga tidak ada entitas pengguna baru yang perlu dijaga
+konsistensinya.
+
+⚠️ Tanpa backend tidak ada kata sandi sungguhan untuk dicocokkan, jadi yang
+diperiksa hanyalah bentuknya: sandi saat ini terisi, sandi baru minimal 8
+karakter, konfirmasi cocok, dan sandi baru berbeda dari yang lama. Begitu
+autentikasi nyata tersedia, pemeriksaan "sandi saat ini" pindah ke server.
+
 ## Bahasa antarmuka
 
 Tersedia **Bahasa Indonesia, English, dan 中文**, dapat diganti lewat tombol
@@ -938,6 +981,9 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Dokumen lolos periksa menahan pemasok di `Menunggu validasi kuesioner` | `AppStore.verifyDocuments` |
 | Qualification terbuka hanya setelah seluruh kuesioner disetujui | `ReviewDetail.jsx`, `AppStore.advanceToQualification` |
 | Kualifikasi selesai langsung menjadikan pemasok preferred | `AppStore.saveQualification` |
+| Status pendaftaran menjadi tab di dalam Profil pemasok | `SupplierProfile.jsx`, `RegistrationProgress.jsx` |
+| Notifikasi pemasok menjadi lonceng bilah atas, bukan butir sidebar | `AppShell.notifications`, `SupplierLayout.jsx` |
+| Tombol keluar pindah ke menu identitas saat `userMenu` diisi | `AppShell.UserMenu` |
 | Pilihan dropdown master data dibangun lewat `asOptions()` | `masterData.asOptions`, `SupplierOverview.jsx` |
 | Penyuntingan internal tidak memicu verifikasi ulang | `AppStore.updateVendorSection` |
 | Hanya role MDM yang dapat mengirim data ke SAP | `sapRules.canSubmitToSap`, `SapReview.jsx`, `PreferredReview.jsx` |

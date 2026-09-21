@@ -82,6 +82,56 @@ function renderAs(email, route) {
   return text;
 }
 
+/** Masuk sebagai pemasok, untuk merender portal dengan sesi yang sungguhan. */
+function SignInSupplier({ accountId, children }) {
+  const actions = useAppActions();
+  const [ready, setReady] = React.useState(false);
+
+  React.useEffect(() => {
+    actions.signInSupplier(accountId);
+    setReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return ready ? children : null;
+}
+
+function renderAsSupplier(accountId, route) {
+  let tree;
+  act(() => {
+    tree = TestRenderer.create(
+      React.createElement(
+        MemoryRouter,
+        { initialEntries: [route] },
+        React.createElement(
+          LanguageProvider,
+          null,
+          React.createElement(
+            ThemeProvider,
+            null,
+            React.createElement(
+              AppStoreProvider,
+              null,
+              React.createElement(
+                SignInSupplier,
+                { accountId },
+                React.createElement(
+                  QuestionnaireStoreProvider,
+                  null,
+                  React.createElement(ToastProvider, null, React.createElement(App)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  });
+  const text = JSON.stringify(tree.toJSON() ?? '');
+  tree.unmount();
+  return text;
+}
+
 const STAFF_EMAIL = 'dewi.anggraini@paragon-corp.com';
 const MDM_EMAIL = 'bayu.nugroho@paragon-corp.com';
 
@@ -197,6 +247,52 @@ try {
   );
 } catch (error) {
   check('ringkasan profil memuat kedelapan bagian', false, error.message);
+}
+
+/*
+ * Navigasi portal pemasok sesudah dirombak: status pendaftaran melebur ke
+ * dalam Profil, notifikasi menjadi lonceng di bilah atas, dan tombol keluar
+ * pindah ke menu identitas. Yang diperiksa di sini adalah akibatnya yang
+ * paling mudah rusak — halaman baru yang gagal render, dan butir menu lama
+ * yang tertinggal di sidebar.
+ */
+console.log('\nNavigasi portal pemasok:');
+
+const SUPPLIER_ACCOUNT = 'SUP-PAC-0131';
+
+const SUPPLIER_CASES = [
+  { route: '/portal/akun', expect: 'Profil akun', label: 'halaman profil akun' },
+  { route: '/portal/akun', expect: 'Bidang pekerjaan', label: 'profil akun memuat bidang pekerjaan' },
+  { route: '/portal/akun', expect: 'kata sandi', label: 'profil akun memuat reset kata sandi' },
+  // Isi tab hanya dirender saat tabnya aktif, jadi yang diperiksa keberadaan
+  // tabnya — bukti riwayat sudah punya tempat di dalam Profil.
+  { route: '/portal/profil', expect: 'Status & riwayat', label: 'Profil punya tab status & riwayat' },
+  // Butir menu identitas baru muncul saat menu dibuka; yang diperiksa adalah
+  // tombolnya sudah menjadi menu, bukan sekadar label seperti sebelumnya.
+  { route: '/portal/profil', expect: 'aria-haspopup', label: 'identitas menjadi menu' },
+  { route: '/portal/profil', expect: '/portal/notifikasi', label: 'lonceng notifikasi di bilah atas' },
+];
+
+for (const { route, expect, label } of SUPPLIER_CASES) {
+  try {
+    const text = renderAsSupplier(SUPPLIER_ACCOUNT, route);
+    check(label, text.toLowerCase().includes(expect.toLowerCase()), `tidak memuat "${expect}"`);
+  } catch (error) {
+    check(label, false, error.message);
+  }
+}
+
+// Status pendaftaran sudah bukan butir menu; kalau tertinggal, pemasok punya
+// dua pintu ke isi yang sama.
+try {
+  const text = renderAsSupplier(SUPPLIER_ACCOUNT, '/portal/profil');
+  check(
+    'status pendaftaran tidak lagi menjadi butir sidebar',
+    !text.includes('/portal/status'),
+    'tautan /portal/status masih ada di sidebar',
+  );
+} catch (error) {
+  check('status pendaftaran tidak lagi menjadi butir sidebar', false, error.message);
 }
 
 console.log(
