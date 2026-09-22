@@ -8,6 +8,11 @@ Aplikasi ini **front-end saja**. Tidak ada backend, tidak ada panggilan jaringan
 Seluruh data hidup di memori selama sesi berlangsung, sehingga menyegarkan
 halaman akan mengembalikan data contoh ke kondisi awal.
 
+Registrasi dan onboarding pemasok dibahas di dokumen ini. Bagian **Order
+Collaboration** — perjalanan purchase order dari terbit sampai ditagihkan,
+beserta kedua berandanya — dibahas terpisah di
+[`README-ORDER-COLLABORATION.md`](./README-ORDER-COLLABORATION.md).
+
 Dokumen ini terbagi tiga bagian:
 
 | Bagian | Isi | Untuk siapa |
@@ -224,6 +229,11 @@ src/
                 pages/            SapReview (memuat SapFailureLog),
                                   VendorDataUpdate,
                                   SupplierOverview
+  orders/       orderRules.js     tahapan PO, kartu, aging (murni, teruji)
+                orderMockData.js  data contoh PO (pengganti data SAP)
+                components/       OrderVisuals (kartu & grafik SVG)
+                pages/            SupplierOrderHome, OrderCollaborationSummary
+                → selengkapnya di README-ORDER-COLLABORATION.md
   styles/       global.css   token warna, tipografi, komponen dasar
                 patterns.css pola tata letak lintas halaman
 scripts/        check.mjs           menjalankan seluruh rangkaian di bawah
@@ -232,6 +242,7 @@ scripts/        check.mjs           menjalankan seluruh rangkaian di bawah
                 questionnaire-check.mjs, qualification-check.mjs,
                 masterdata-check.mjs
                 sap-check.mjs       gerbang SAP, duplikasi pajak, tanda tangan
+                orders-check.mjs    tahapan PO, kartu, aging
                 render-check.jsx, mdm-render-check.jsx  render & guard akses
 ```
 
@@ -963,7 +974,7 @@ Menu dikelompokkan menurut pekerjaan, bukan menurut modul yang membangunnya:
 
 | Kelompok | Isi |
 |---|---|
-| Beranda | Ringkasan |
+| Beranda | Ringkasan supplier registration · Ringkasan order collaboration |
 | Questionnaire | Template · Penugasan · Tinjauan |
 | **Registrasi supplier** | Supplier request · Registrasi · Kualifikasi · Preferred supplier · Kirim ke SAP (MDM & manager) |
 | **Data vendor** | Update data vendor |
@@ -982,6 +993,12 @@ menyesatkan.
 
 **Dashboard & Audit Trail** menyatukan ketiga layar yang dibaca, bukan
 dikerjakan.
+
+Kelompok **Beranda** kini memuat dua ringkasan. Yang lama diberi nama tegas
+**"Ringkasan supplier registration"**, karena sejak ada ringkasan kedua,
+sebutan "Ringkasan" saja tidak lagi memberi tahu ringkasan yang mana. Yang
+kedua, **"Ringkasan order collaboration"**, dibahas di
+[`README-ORDER-COLLABORATION.md`](./README-ORDER-COLLABORATION.md).
 
 Seperti pada portal pemasok, **notifikasi menjadi lonceng pada bilah atas** dan
 **tombol keluar pindah ke menu identitas** di pojok kanan atas, yang berisi dua
@@ -1002,8 +1019,14 @@ sehingga perubahannya ikut hilang saat keluar.
 
 ## Navigasi portal pemasok
 
-Sidebar pemasok dirampingkan menjadi **Profil** (ditambah Persetujuan saat
-onboarding) dan **Kuesioner saya**. Tiga hal berpindah keluar darinya.
+Sidebar pemasok memuat **Beranda**, **Profil** (ditambah Persetujuan saat
+onboarding), dan **Kuesioner saya**. Tiga hal berpindah keluar darinya.
+
+**Beranda adalah halaman pendaratan pemasok aktif** setelah masuk,
+menggantikan Profil: pekerjaan hariannya ada di sana, sedangkan profil hanya
+dibuka saat ada yang perlu diperbarui. Pemasok yang registrasinya belum tuntas
+tetap diarahkan ke Profil, tempat langkah berikutnya berada. Isi berandanya
+dibahas di [`README-ORDER-COLLABORATION.md`](./README-ORDER-COLLABORATION.md).
 
 **Status pendaftaran melebur ke Profil.** Dulu keduanya halaman terpisah yang
 selalu dibuka berbarengan: pemasok membaca statusnya, lalu pindah ke Profil
@@ -1122,6 +1145,8 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Satu template dapat menyasar beberapa jenis material | `schema.MATERIAL_TYPES`, `makeTemplate.materialTypes` |
 | Satu penugasan dapat memuat beberapa kuesioner sekaligus | `AssignmentRows.jsx`, dipakai `AssignmentCreate.jsx` dan `SubmissionReview.jsx` |
 | E-sign hanya sakelar aktif/nonaktif, penyedia tetap Privi | `QuestionnaireBuilder.jsx`, `schema.makeESignConfig` |
+| Beranda pemasok aktif adalah Order Collaboration, bukan Profil | `SupplierLogin.jsx`, `App.jsx` |
+| Kedua beranda memakai definisi kartu tahapan yang sama | `orderRules.ORDER_CARDS` |
 | Kuesioner ber-e-sign tidak dapat dikirim sebelum ditandatangani | `ResponseWizard.jsx` (`eSignPending`), `ESignBlock.jsx` |
 
 ## Catatan implementasi

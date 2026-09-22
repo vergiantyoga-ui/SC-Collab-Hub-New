@@ -28,6 +28,7 @@ try {
   run('Kualifikasi pemasok', process.execPath, ['scripts/qualification-check.mjs']);
   run('Master data Data Umum', process.execPath, ['scripts/masterdata-check.mjs']);
   run('SAP, duplikasi pajak & tanda tangan', process.execPath, ['scripts/sap-check.mjs']);
+  run('Order collaboration', process.execPath, ['scripts/orders-check.mjs']);
 
   execFileSync(
     'npx',

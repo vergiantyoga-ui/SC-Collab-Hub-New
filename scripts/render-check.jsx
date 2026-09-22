@@ -18,6 +18,7 @@ const PUBLIC_ROUTES = ['/masuk', '/daftar', '/lupa-sandi', '/internal/masuk', '/
 
 const GUARDED_ROUTES = [
   '/portal/status',
+  '/portal/beranda',
   '/portal/profil',
   '/portal/akun',
   '/portal/persetujuan',

@@ -163,6 +163,16 @@ const CASES = [
   { email: STAFF_EMAIL, route: '/internal/akun', expect: 'kata sandi' },
   // Kelompok menu yang dirombak.
   { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Registrasi supplier' },
+  // Dua ringkasan berdampingan pada kelompok Beranda.
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Ringkasan supplier registration' },
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Ringkasan order collaboration' },
+  // Ketujuh kartu tahapan pada ringkasan order collaboration.
+  { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'New order' },
+  { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Item to confirm' },
+  { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Order to goods receipt' },
+  { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Order to invoice' },
+  { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Total spending' },
+  { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Aging PO belum dikonfirmasi' },
   { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Dashboard & Audit Trail' },
   { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Data vendor' },
   // Notifikasi menjadi lonceng bilah atas; identitas menjadi menu.
@@ -290,9 +300,14 @@ try {
 console.log('\nNavigasi portal pemasok:');
 
 const SUPPLIER_ACCOUNT = 'SUP-PAC-0131';
+/** Pemasok aktif; hanya pemasok tuntas registrasi yang punya purchase order. */
+const ACTIVE_SUPPLIER_ACCOUNT = 'SUP-RAW-0118';
 
 const SUPPLIER_CASES = [
   { route: '/portal/akun', expect: 'Profil akun', label: 'halaman profil akun' },
+  // Pemasok yang registrasinya belum tuntas belum punya PO sama sekali,
+  // sehingga berandanya menampilkan keadaan kosong — bukan kartu bernilai nol.
+  { route: '/portal/beranda', expect: 'Belum ada purchase order', label: 'beranda pemasok baru menampilkan keadaan kosong' },
   { route: '/portal/akun', expect: 'Bidang pekerjaan', label: 'profil akun memuat bidang pekerjaan' },
   { route: '/portal/akun', expect: 'kata sandi', label: 'profil akun memuat reset kata sandi' },
   // Isi tab hanya dirender saat tabnya aktif, jadi yang diperiksa keberadaan
@@ -307,6 +322,25 @@ const SUPPLIER_CASES = [
 for (const { route, expect, label } of SUPPLIER_CASES) {
   try {
     const text = renderAsSupplier(SUPPLIER_ACCOUNT, route);
+    check(label, text.toLowerCase().includes(expect.toLowerCase()), `tidak memuat "${expect}"`);
+  } catch (error) {
+    check(label, false, error.message);
+  }
+}
+
+// Beranda Order Collaboration pemasok aktif: ketujuh kartu dan grafiknya.
+const ACTIVE_SUPPLIER_CASES = [
+  { expect: 'New order', label: 'beranda pemasok memuat kartu new order' },
+  { expect: 'Item to confirm', label: 'beranda pemasok memuat kartu item to confirm' },
+  { expect: 'Goods receipt', label: 'beranda pemasok memuat kartu goods receipt' },
+  { expect: 'Order to invoice', label: 'beranda pemasok memuat kartu order to invoice' },
+  { expect: 'Aging invoice', label: 'beranda pemasok memuat aging invoice' },
+  { expect: 'terealisasi', label: 'beranda pemasok memuat nilai terealisasi' },
+];
+
+for (const { expect, label } of ACTIVE_SUPPLIER_CASES) {
+  try {
+    const text = renderAsSupplier(ACTIVE_SUPPLIER_ACCOUNT, '/portal/beranda');
     check(label, text.toLowerCase().includes(expect.toLowerCase()), `tidak memuat "${expect}"`);
   } catch (error) {
     check(label, false, error.message);
