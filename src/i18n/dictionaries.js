@@ -77,6 +77,7 @@ const id = {
   'role.procurement_staff': 'Staf Procurement',
   'role.procurement_admin': 'Staf Procurement Admin',
   'role.procurement_manager': 'Manager Procurement',
+  'role.master_data_management': 'Master Data Management',
 
   /* Bagian profil */
   'section.general': 'Data umum',
@@ -209,6 +210,7 @@ const en = {
   'role.procurement_staff': 'Procurement Staff',
   'role.procurement_admin': 'Procurement Admin',
   'role.procurement_manager': 'Procurement Manager',
+  'role.master_data_management': 'Master Data Management',
 
   'section.general': 'General information',
   'section.general.hint': 'Identity and supply type',
@@ -335,6 +337,7 @@ const zh = {
   'role.procurement_staff': '采购专员',
   'role.procurement_admin': '采购管理员',
   'role.procurement_manager': '采购经理',
+  'role.master_data_management': '主数据管理',
 
   'section.general': '基本信息',
   'section.general.hint': '企业身份与供应类别',

@@ -43,7 +43,10 @@ export default function SupplierLogin() {
       navigate('/portal/ganti-sandi');
       return;
     }
-    navigate(hasFinishedRegistration(submission.status) ? '/portal/profil' : '/portal/status');
+    // Pemasok yang registrasinya tuntas mendarat di beranda Order
+    // Collaboration — pekerjaan hariannya ada di sana, bukan di profil.
+    // Yang belum tuntas diarahkan ke profil, tempat langkah berikutnya berada.
+    navigate(hasFinishedRegistration(submission.status) ? '/portal/beranda' : '/portal/profil');
     toast.notify(`Selamat datang kembali, ${submission.contact.name}.`);
   }
 

@@ -50,10 +50,10 @@ export default function InternalHome() {
   return (
     <>
       <PageHeader
-        trail={[{ label: t('common.home') }]}
+        trail={[{ label: t('common.home') }, { label: 'Supplier registration' }]}
         icon="home"
         title={`Selamat datang, ${user.name.split(' ')[0]}`}
-        description="Ringkasan pekerjaan yang menunggu tindakan Anda hari ini."
+        description="Ringkasan supplier registration — pekerjaan onboarding yang menunggu tindakan Anda hari ini."
       />
 
       <TileGrid tiles={tiles} />

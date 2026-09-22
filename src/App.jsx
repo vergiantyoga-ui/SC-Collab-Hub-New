@@ -19,6 +19,8 @@ import PreferredQueue from './pages/internal/PreferredQueue.jsx';
 import PreferredReview from './pages/internal/PreferredReview.jsx';
 import DocumentVerification from './pages/internal/DocumentVerification.jsx';
 import InternalAccount from './pages/internal/InternalAccount.jsx';
+import OrderCollaborationSummary from './orders/pages/OrderCollaborationSummary.jsx';
+import SupplierOrderHome from './orders/pages/SupplierOrderHome.jsx';
 
 import SapReview from './sap/pages/SapReview.jsx';
 import VendorDataUpdate from './sap/pages/VendorDataUpdate.jsx';
@@ -56,7 +58,8 @@ export default function App() {
 
       {/* Portal pemasok */}
       <Route path="/portal" element={<SupplierLayout />}>
-        <Route index element={<Navigate to="/portal/profil" replace />} />
+        <Route index element={<Navigate to="/portal/beranda" replace />} />
+        <Route path="beranda" element={<SupplierOrderHome />} />
         <Route path="ganti-sandi" element={<ChangePassword />} />
         {/* Status pendaftaran kini menjadi tab di dalam Profil. */}
         <Route path="status" element={<Navigate to="/portal/profil" replace />} />
@@ -104,6 +107,7 @@ export default function App() {
         <Route path="ringkasan-pemasok" element={<SupplierOverview />} />
         <Route path="update-vendor" element={<VendorDataUpdate />} />
         <Route path="akun" element={<InternalAccount />} />
+        <Route path="order-collaboration" element={<OrderCollaborationSummary />} />
         <Route path="sap" element={<SapReview />} />
         {/* Log kegagalan kini menjadi bagian dari halaman Kirim ke SAP. */}
         <Route path="sap/log" element={<Navigate to="/internal/sap" replace />} />
