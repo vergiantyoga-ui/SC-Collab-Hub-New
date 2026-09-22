@@ -8,7 +8,7 @@
 }
 .compliance__stat {
   border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
+  border-left: 3px solid var(--blue-600);
   border-radius: var(--radius);
   padding: var(--sp-3) var(--sp-4);
   background: var(--surface);

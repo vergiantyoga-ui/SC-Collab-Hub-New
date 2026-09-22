@@ -47,7 +47,24 @@ export default function InternalLayout() {
   const groups = [
     {
       label: t('nav.group.home'),
-      items: [{ to: '/internal/beranda', label: t('nav.summary'), icon: 'home', end: true }],
+      /*
+       * Dua ringkasan berdampingan. Yang lama diberi nama tegas — "Ringkasan
+       * supplier registration" — karena sejak ada ringkasan kedua, sebutan
+       * "Ringkasan" saja tidak lagi memberi tahu ringkasan yang mana.
+       */
+      items: [
+        {
+          to: '/internal/beranda',
+          label: 'Ringkasan supplier registration',
+          icon: 'home',
+          end: true,
+        },
+        {
+          to: '/internal/order-collaboration',
+          label: 'Ringkasan order collaboration',
+          icon: 'queue',
+        },
+      ],
     },
     {
       label: 'Questionnaire',

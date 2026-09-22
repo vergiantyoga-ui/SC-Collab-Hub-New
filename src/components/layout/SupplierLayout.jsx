@@ -44,6 +44,10 @@ export default function SupplierLayout() {
    */
   const groups = [
     {
+      label: t('nav.group.home'),
+      items: [{ to: '/portal/beranda', label: t('nav.summary'), icon: 'home', end: true }],
+    },
+    {
       label: t('nav.group.company'),
       items: [
         { to: '/portal/profil', label: t('nav.profile'), icon: 'profile' },
