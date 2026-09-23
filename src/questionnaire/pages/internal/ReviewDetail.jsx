@@ -116,7 +116,7 @@ export default function ReviewDetail() {
         );
         if (allApproved && appActions.advanceToQualification(supplier.id, actor)) {
           toast.success(
-            `Seluruh kuesioner ${supplier.general.vendorName} tervalidasi — pemasok lanjut ke tahap qualification.`,
+            `Seluruh kuesioner ${supplier.general.vendorName} tervalidasi — menunggu persetujuan manager procurement.`,
           );
         }
       }

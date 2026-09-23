@@ -56,6 +56,7 @@ export default function ProfileSectionForm({
   onCancel,
   submitLabel,
   submissionId = null,
+  vendorName = null,
 }) {
   const { submissions } = useAppState();
   const [values, setValues] = useState(value);
@@ -65,7 +66,13 @@ export default function ProfileSectionForm({
 
   function handleSubmit(event) {
     event.preventDefault();
-    const found = validateSection(sectionId, values);
+    // Nama perusahaan diperlukan bagian Pembayaran & Tagihan untuk mencocokkan
+    // pemilik rekening pertama; diambil dari pengajuan bila tidak dioper.
+    const owner =
+      vendorName ??
+      submissions.find((item) => item.id === submissionId)?.general?.vendorName ??
+      null;
+    const found = validateSection(sectionId, values, { vendorName: owner });
 
     /*
      * Pemeriksaan duplikasi NIK dan NPWP.

@@ -90,11 +90,30 @@ export default function InternalLayout() {
           icon: 'queue',
           count: count(STATUS.SUPPLIER_REQUEST),
         },
+        /*
+         * Verifikasi dokumen disembunyikan dari Manager Procurement.
+         *
+         * Profil pemasok melewati dua review berurutan: staf/admin memeriksa
+         * kelengkapan tiap field, lalu manager menilai profil dan kuesionernya
+         * sekaligus. Membiarkan manager mengerjakan langkah pertama membuat
+         * satu orang dapat meninjau pekerjaannya sendiri, sehingga pemisahan
+         * kedua review itu hanya tersusun di alur tetapi tidak ditegakkan.
+         */
+        ...(user.role === ROLE.MANAGER
+          ? []
+          : [
+              {
+                to: '/internal/verifikasi',
+                label: t('nav.verification'),
+                icon: 'verify',
+                count: count(STATUS.REGISTRATION),
+              },
+            ]),
         {
-          to: '/internal/verifikasi',
-          label: t('nav.verification'),
-          icon: 'verify',
-          count: count(STATUS.REGISTRATION),
+          to: '/internal/persetujuan-profil',
+          label: 'Persetujuan profil',
+          icon: 'approval',
+          count: count(STATUS.AWAITING_MANAGER_REVIEW),
         },
         {
           to: '/internal/kualifikasi',
