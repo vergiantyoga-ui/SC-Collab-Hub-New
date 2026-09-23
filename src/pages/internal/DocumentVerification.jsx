@@ -8,7 +8,7 @@ import DataList from '../../components/ui/DataList.jsx';
 import { TextAreaField, TextField } from '../../components/ui/Field.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
-import { PATH, STATUS } from '../../lib/constants.js';
+import { PATH, ROLE, STATUS } from '../../lib/constants.js';
 import { formatDate, orDash } from '../../lib/format.js';
 import { formatBytes, formatNpwp } from '../../lib/validation.js';
 import {
@@ -232,6 +232,17 @@ export default function DocumentVerification() {
   const [rejecting, setRejecting] = useState(false);
   const [approving, setApproving] = useState(false);
 
+  /*
+   * Manager Procurement sengaja tidak dapat memutuskan di layar ini.
+   * Profil melewati dua review berurutan — staf memeriksa kelengkapan field,
+   * manager menilai profil dan kuesionernya sekaligus pada layar Persetujuan
+   * profil. Bila manager boleh menyetujui di sini, satu orang meninjau
+   * pekerjaannya sendiri dan kedua review itu kehilangan artinya.
+   *
+   * Menunya sudah disembunyikan; pemeriksaan ini menutup jalan lewat URL.
+   */
+  const canDecide = session.user?.role !== ROLE.MANAGER;
+
   const queue = submissions.filter((s) => s.status === STATUS.REGISTRATION);
   const selected = queue.find((s) => s.id === selectedId) ?? queue[0] ?? null;
 
@@ -338,6 +349,16 @@ export default function DocumentVerification() {
         title={t('verify.title')}
         description="Periksa seluruh data pemasok — data umum, alamat, kontak, pajak, dokumen legalitas, lisensi, pembayaran, hingga kontak perusahaan."
       />
+
+      {!canDecide && (
+        <div className="notice notice--info" style={{ marginBottom: 'var(--sp-4)' }}>
+          <span className="notice__title">Mode baca</span>
+          Pemeriksaan kelengkapan field dikerjakan staf atau admin procurement. Penilaian
+          Anda atas profil dan kuesioner dilakukan pada layar{' '}
+          <a href="/internal/persetujuan-profil">Persetujuan profil</a>, setelah pemeriksaan
+          ini selesai.
+        </div>
+      )}
 
       <div className="queue-layout">
         <aside className="queue-panel" aria-label="Menunggu verifikasi">
@@ -481,14 +502,14 @@ export default function DocumentVerification() {
             <div className="form-actions">
               <Button
                 variant="danger"
-                disabled={flaggedCount === 0 || hasEmptyReason}
+                disabled={!canDecide || flaggedCount === 0 || hasEmptyReason}
                 onClick={() => setRejecting(true)}
               >
                 Minta perbaikan{flaggedCount > 0 ? ` (${flaggedCount})` : ''}
               </Button>
               <Button
                 variant="success"
-                disabled={flaggedCount > 0}
+                disabled={!canDecide || flaggedCount > 0}
                 onClick={() => setApproving(true)}
               >
                 Setujui dan aktifkan

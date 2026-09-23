@@ -376,9 +376,13 @@ export function AppStoreProvider({ children }) {
       },
 
       /**
-       * Melewatkan pemasok ke tahap qualification. Dipanggil setelah kuesioner
-       * terakhir yang ditugaskan disetujui peninjau, sehingga kedua syarat
-       * pokayoke — profil lolos periksa dan kuesioner tervalidasi — terpenuhi.
+       * Kuesioner terakhir yang ditugaskan sudah disetujui peninjau.
+       *
+       * Pemasok TIDAK langsung masuk qualification: profil dan kuesionernya
+       * masih harus disetujui manager procurement lebih dulu. Verifikasi
+       * dokumen dan tinjauan kuesioner dikerjakan staf; gerbang ini adalah
+       * tempat manager menilai keduanya sekaligus sebelum pemasok dikualifikasi.
+       *
        * Aman dipanggil berulang: status selain AWAITING_QUESTIONNAIRE diabaikan.
        */
       advanceToQualification(id, actor) {
@@ -386,10 +390,65 @@ export function AppStoreProvider({ children }) {
         if (submission?.status !== STATUS.AWAITING_QUESTIONNAIRE) return false;
         patch(
           id,
-          { status: STATUS.QUALIFICATION, qualificationOpenedAt: now() },
-          entry('Kuesioner tervalidasi, lanjut ke tahap qualification', actor?.name ?? 'Sistem'),
+          { status: STATUS.AWAITING_MANAGER_REVIEW, questionnaireValidatedAt: now() },
+          entry(
+            'Kuesioner tervalidasi, menunggu persetujuan manager procurement',
+            actor?.name ?? 'Sistem',
+          ),
         );
         return true;
+      },
+
+      /**
+       * Manager procurement menyetujui profil dan kuesioner sekaligus.
+       * Inilah satu-satunya jalan masuk ke tahap qualification.
+       */
+      approveProfileAndQuestionnaire(id, note, actor) {
+        patch(
+          id,
+          {
+            status: STATUS.QUALIFICATION,
+            qualificationOpenedAt: now(),
+            managementReview: {
+              decision: 'approved',
+              note: note ?? '',
+              decidedAt: now(),
+              decidedBy: actor?.name ?? '',
+            },
+          },
+          entry('Profil dan kuesioner disetujui manager, lanjut ke qualification', actor?.name ?? ''),
+        );
+      },
+
+      /**
+       * Manager mengembalikan pemasok untuk diperbaiki.
+       *
+       * Dikembalikan ke `NEEDS_DOCUMENT_FIX` — bukan ke status menunggu
+       * sebelumnya — karena yang perlu terjadi berikutnya adalah pemasok
+       * memperbaiki datanya, dan status itulah yang sudah membuka jalur
+       * perbaikan beserta catatan per fieldnya.
+       */
+      returnForRevision(id, note, actor) {
+        patch(
+          id,
+          (s) => ({
+            status: STATUS.NEEDS_DOCUMENT_FIX,
+            managementReview: {
+              decision: 'returned',
+              note: note ?? '',
+              decidedAt: now(),
+              decidedBy: actor?.name ?? '',
+            },
+            verification: {
+              ...s.verification,
+              status: 'revision_requested',
+              requestedAt: now(),
+              requestedBy: actor?.name ?? '',
+              notes: [{ field: 'Tinjauan manager', reason: note ?? '' }],
+            },
+          }),
+          entry('Manager mengembalikan profil untuk diperbaiki', actor?.name ?? ''),
+        );
       },
 
       requestDocumentFix(id, notes, actor) {

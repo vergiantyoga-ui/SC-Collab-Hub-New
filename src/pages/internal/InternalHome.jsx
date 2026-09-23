@@ -3,7 +3,7 @@ import TileGrid from '../../components/ui/TileGrid.jsx';
 import Card from '../../components/ui/Card.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import { useAppState } from '../../store/AppStore.jsx';
-import { STATUS, STATUS_LABEL, STATUS_PIPELINE } from '../../lib/constants.js';
+import { ROLE, STATUS, STATUS_LABEL, STATUS_PIPELINE } from '../../lib/constants.js';
 import { formatDate } from '../../lib/format.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
@@ -18,11 +18,34 @@ export default function InternalHome() {
   const user = session.user;
   const count = (status) => submissions.filter((s) => s.status === status).length;
 
+  const isManager = user.role === ROLE.MANAGER;
+
+  /*
+   * Pintasan mengikuti menu samping, termasuk pembatasannya: verifikasi dokumen
+   * tidak ditawarkan kepada Manager Procurement, karena langkah itu dikerjakan
+   * staf sebelum manager menilai profil dan kuesionernya. Sebagai gantinya
+   * manager melihat pintasan ke layar persetujuannya sendiri.
+   */
   const tiles = [
     { to: '/internal/antrian', label: 'Supplier request', icon: 'queue', count: count(STATUS.SUPPLIER_REQUEST) },
-    { to: '/internal/verifikasi', label: 'Registrasi', icon: 'verify', count: count(STATUS.REGISTRATION) },
+    ...(isManager
+      ? []
+      : [
+          {
+            to: '/internal/verifikasi',
+            label: 'Registrasi',
+            icon: 'verify',
+            count: count(STATUS.REGISTRATION),
+          },
+        ]),
+    {
+      to: '/internal/persetujuan-profil',
+      label: 'Persetujuan profil',
+      icon: 'approval',
+      count: count(STATUS.AWAITING_MANAGER_REVIEW),
+    },
     { to: '/internal/kualifikasi', label: 'Qualification', icon: 'approval', count: count(STATUS.QUALIFICATION) },
-    { to: '/internal/preferred', label: 'Preferred', icon: 'profile', count: count(STATUS.AWAITING_PREFERRED) },
+    { to: '/internal/preferred', label: 'Preferred', icon: 'profile', count: count(STATUS.PREFERRED) },
   ];
 
   /**

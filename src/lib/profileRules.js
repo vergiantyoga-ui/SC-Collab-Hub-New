@@ -35,7 +35,14 @@ export const LICENSES = [
   { key: 'halal', label: 'Sertifikat halal', full: 'Sertifikasi halal produk' },
 ];
 
-export function validateSection(sectionId, values) {
+/**
+ * @param {string} sectionId
+ * @param {object} values
+ * @param {{vendorName?: string}} [context] data di luar bagian yang sedang
+ *   divalidasi, tetapi diperlukan aturannya — sekarang hanya nama perusahaan,
+ *   untuk mencocokkan pemilik rekening pertama.
+ */
+export function validateSection(sectionId, values, context = {}) {
   if (sectionId === 'general') {
     return collectErrors({
       legalStatus: required(values.legalStatus, 'Status badan hukum'),
@@ -174,7 +181,7 @@ export function validateSection(sectionId, values) {
           : null,
     });
 
-    Object.assign(found, validateBankLines(values.lines ?? []));
+    Object.assign(found, validateBankLines(values.lines ?? [], context.vendorName));
     return found;
   }
 
@@ -211,13 +218,36 @@ export function validateSection(sectionId, values) {
 }
 
 /**
+ * Membandingkan nama untuk pencocokan pemilik rekening.
+ *
+ * Bank menuliskan nama pemilik rekening dengan ejaan yang tidak selalu sama
+ * dengan akta: huruf besar semua, titik pada "PT.", atau spasi ganda. Yang
+ * dibandingkan karena itu hanya huruf dan angkanya, bukan tulisan persisnya —
+ * kalau tidak, pemasok yang sah akan tertahan oleh sebuah titik.
+ */
+const normaliseHolder = (value) =>
+  String(value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+/**
  * Baris rekening bank.
  *
  * Minimal satu rekening wajib ada. Baris kedua dan seterusnya boleh dikosongkan
  * seluruhnya, tetapi begitu satu kolomnya diisi, sisanya ikut diwajibkan —
  * rekening setengah terisi tidak dapat dipakai membayar.
+ *
+ * **Rekening pertama harus atas nama perusahaan yang mendaftar.** Rekening
+ * itulah yang dipakai sebagai rekening utama pembayaran, dan membayar ke
+ * rekening atas nama pihak lain adalah persoalan kepatuhan, bukan sekadar
+ * ketidakcocokan data. Rekening kedua dan seterusnya bebas — pemasok memang
+ * kadang memakai rekening afiliasi atau rekening khusus proyek.
+ *
+ * @param {Array} lines
+ * @param {string} [vendorName] nama perusahaan yang mendaftar; bila tidak
+ *   diberikan, pencocokan dilewati agar pemanggil lama tidak ikut rusak.
  */
-export function validateBankLines(lines) {
+export function validateBankLines(lines, vendorName) {
   const found = {};
   const meaningful = lines.filter(isBankLineTouched);
 
@@ -228,7 +258,7 @@ export function validateBankLines(lines) {
 
   const seen = new Set();
 
-  meaningful.forEach((line) => {
+  meaningful.forEach((line, index) => {
     const prefix = `lines.${line.id}`;
 
     if (!ACCOUNT_TYPES.some((item) => item.code === line.accountType)) {
@@ -242,6 +272,13 @@ export function validateBankLines(lines) {
     }
     if (!line.accountHolder?.trim()) {
       found[`${prefix}.accountHolder`] = 'Nama pemilik rekening wajib diisi.';
+    } else if (
+      index === 0 &&
+      vendorName &&
+      normaliseHolder(line.accountHolder) !== normaliseHolder(vendorName)
+    ) {
+      found[`${prefix}.accountHolder`] =
+        `Rekening pertama harus atas nama perusahaan yang mendaftar (${vendorName}). Rekening atas nama lain dapat ditambahkan sebagai rekening kedua.`;
     }
     if (!line.statement) {
       found[`${prefix}.statement`] = 'Bank account statement wajib diunggah.';

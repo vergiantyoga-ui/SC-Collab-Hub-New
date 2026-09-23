@@ -75,10 +75,11 @@ export function ineligibilityReason(submission) {
     [STATUS.REGISTRATION]: 'dokumennya masih diperiksa staf procurement',
     [STATUS.NEEDS_DOCUMENT_FIX]: 'dokumennya diminta diperbaiki',
     [STATUS.AWAITING_QUESTIONNAIRE]: 'kuesioner yang ditugaskan belum selesai divalidasi',
+    [STATUS.AWAITING_MANAGER_REVIEW]: 'profil dan kuesionernya belum disetujui manager procurement',
     [STATUS.DISQUALIFIED]: 'pemasok didiskualifikasi',
   }[submission.status];
 
-  return `Kualifikasi terbuka setelah dokumen lolos periksa dan seluruh kuesioner divalidasi; saat ini ${stage ?? 'profilnya belum dikirim'}.`;
+  return `Kualifikasi terbuka setelah dokumen lolos periksa, seluruh kuesioner divalidasi, dan manager procurement menyetujuinya; saat ini ${stage ?? 'profilnya belum dikirim'}.`;
 }
 
 /* ------------------------------------------------------------------ */

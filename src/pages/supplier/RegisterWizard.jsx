@@ -85,7 +85,12 @@ export default function RegisterWizard() {
     setForm((f) => ({ ...f, [sectionId]: { ...f[sectionId], ...patch } }));
 
   function goNext() {
-    const found = validateSection(current.id, form[current.id]);
+    // Pendaftaran awal hanya memuat tiga bagian pertama, jadi belum ada bagian
+    // rekening di sini — nama perusahaan tetap dioper agar aturannya berlaku
+    // seragam bila kelak wizard ini diperluas.
+    const found = validateSection(current.id, form[current.id], {
+      vendorName: form.general?.vendorName,
+    });
     setErrors(found);
     if (Object.keys(found).length > 0) {
       document.querySelector('[aria-invalid="true"]')?.focus();

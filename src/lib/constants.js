@@ -32,6 +32,12 @@ export const STATUS = {
    * validasi tuntas — lihat `advanceToQualification` di AppStore.
    */
   AWAITING_QUESTIONNAIRE: 'awaiting_questionnaire',
+  /**
+   * Profil lolos periksa dan seluruh kuesioner sudah divalidasi peninjau,
+   * tetapi manager procurement belum menyetujui keduanya. Gerbang terakhir
+   * sebelum kualifikasi dibuka.
+   */
+  AWAITING_MANAGER_REVIEW: 'awaiting_manager_review',
   QUALIFICATION: 'qualification',
   AWAITING_PREFERRED: 'awaiting_preferred',
   PREFERRED: 'preferred',
@@ -129,6 +135,7 @@ export const SAP_STATUS_TONE = {
  */
 export const POST_REGISTRATION_STATUSES = [
   STATUS.AWAITING_QUESTIONNAIRE,
+  STATUS.AWAITING_MANAGER_REVIEW,
   STATUS.QUALIFICATION,
   STATUS.AWAITING_PREFERRED,
   STATUS.PREFERRED,
@@ -144,6 +151,7 @@ export const STATUS_PIPELINE = [
   STATUS.SUPPLIER_REQUEST,
   STATUS.REGISTRATION,
   STATUS.AWAITING_QUESTIONNAIRE,
+  STATUS.AWAITING_MANAGER_REVIEW,
   STATUS.QUALIFICATION,
   STATUS.PREFERRED,
 ];
@@ -164,6 +172,7 @@ export const STATUS_LABEL = {
   [STATUS.REGISTRATION]: 'Registrasi',
   [STATUS.NEEDS_DOCUMENT_FIX]: 'Perlu perbaikan dokumen',
   [STATUS.AWAITING_QUESTIONNAIRE]: 'Menunggu validasi kuesioner',
+  [STATUS.AWAITING_MANAGER_REVIEW]: 'Menunggu persetujuan manager',
   [STATUS.QUALIFICATION]: 'Qualification',
   [STATUS.AWAITING_PREFERRED]: 'Menunggu preferred',
   [STATUS.PREFERRED]: 'Preferred supplier',
@@ -182,6 +191,7 @@ export const STATUS_TONE = {
   [STATUS.REGISTRATION]: 'pending',
   [STATUS.NEEDS_DOCUMENT_FIX]: 'danger',
   [STATUS.AWAITING_QUESTIONNAIRE]: 'pending',
+  [STATUS.AWAITING_MANAGER_REVIEW]: 'pending',
   [STATUS.QUALIFICATION]: 'progress',
   [STATUS.AWAITING_PREFERRED]: 'pending',
   [STATUS.PREFERRED]: 'success',
