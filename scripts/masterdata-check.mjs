@@ -267,6 +267,42 @@ check('P22 termin ketiga mengulang ditolak',
   Boolean(validateSection('banking', { ...bankLengkap, termsOfPayment2: 'D045', termsOfPayment3: 'D045' }).termsOfPayment3), true);
 check('P23 fiscal position boleh kosong',
   Boolean(validateSection('banking', { ...bankLengkap, fiscalPosition: '' }).fiscalPosition), false);
+/* ---- Pokayoke pemilik rekening pertama ---- */
+
+const holderErr = (lines, vendorName) =>
+  validateSection('banking', { ...bankLengkap, lines }, { vendorName });
+
+const barisPihakLain = makeBankLine({
+  accountType: 'AT02', bankCode: 'BCA', accountNumber: '9988776655',
+  accountHolder: 'PT Pihak Lain', statement: { name: 'koran2.pdf' },
+});
+
+// Tanpa nama perusahaan, pencocokan dilewati — pemanggil lama tidak ikut rusak.
+check('P31 tanpa nama perusahaan pencocokan dilewati',
+  Object.keys(validateSection('banking', bankLengkap)).length, 0);
+
+check('P32 rekening pertama atas nama perusahaan lolos',
+  Object.keys(holderErr([barisSah], 'PT Uji')).length, 0);
+
+const mismatch = holderErr([barisSah], 'PT Perusahaan Berbeda');
+check('P33 rekening pertama atas nama lain ditolak',
+  Boolean(mismatch[`lines.${barisSah.id}.accountHolder`]), true);
+// Pesannya harus menyebut nama yang benar, bukan sekadar "tidak cocok".
+check('P34 pesan menyebut nama perusahaan',
+  /PT Perusahaan Berbeda/.test(mismatch[`lines.${barisSah.id}.accountHolder`]), true);
+
+// Ejaan bank kerap berbeda dari akta; yang dibandingkan hanya huruf dan angka.
+check('P35 huruf besar diabaikan',
+  Object.keys(holderErr([{ ...barisSah, accountHolder: 'PT UJI' }], 'PT Uji')).length, 0);
+check('P36 titik dan spasi ganda diabaikan',
+  Object.keys(holderErr([{ ...barisSah, accountHolder: 'PT.  Uji' }], 'PT Uji')).length, 0);
+
+// Rekening kedua dan seterusnya bebas atas nama siapa pun.
+check('P37 rekening kedua boleh atas nama lain',
+  Boolean(holderErr([barisSah, barisPihakLain], 'PT Uji')[`lines.${barisPihakLain.id}.accountHolder`]), false);
+check('P38 rekening kedua tidak lolos hanya karena urutan',
+  Boolean(holderErr([barisPihakLain, barisSah], 'PT Uji')[`lines.${barisPihakLain.id}.accountHolder`]), true);
+
 check('P24 fiscal position asing ditolak',
   Boolean(validateSection('banking', { ...bankLengkap, fiscalPosition: 'FP99' }).fiscalPosition), true);
 

@@ -141,6 +141,7 @@ function renderAsSupplier(accountId, route) {
 }
 
 const STAFF_EMAIL = 'dewi.anggraini@paragon-corp.com';
+const MANAGER_EMAIL = 'lestari.handayani@paragon-corp.com';
 const MDM_EMAIL = 'bayu.nugroho@paragon-corp.com';
 
 const CASES = [
@@ -151,6 +152,13 @@ const CASES = [
   { email: STAFF_EMAIL, route: '/internal/dashboard-kuesioner', expect: 'Kepatuhan pengisian' },
   { email: STAFF_EMAIL, route: '/internal/dashboard-kuesioner', expect: 'Belum ditugaskan' },
   { email: STAFF_EMAIL, route: '/internal/akun', expect: 'Profil akun' },
+  // Gerbang persetujuan manager sebelum kualifikasi.
+  { email: MANAGER_EMAIL, route: '/internal/persetujuan-profil', expect: 'Persetujuan profil' },
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Persetujuan profil' },
+  // Staf tetap melihat menu verifikasi dokumen.
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: '/internal/verifikasi' },
+  // Manager yang membuka layar verifikasi lewat URL melihat mode baca.
+  { email: MANAGER_EMAIL, route: '/internal/verifikasi', expect: 'Mode baca' },
   // Formulir template: kode dibangkitkan, jenis material jamak, dua field hilang.
   { email: STAFF_EMAIL, route: '/internal/questionnaire/baru', expect: 'Indirect Material' },
   { email: STAFF_EMAIL, route: '/internal/questionnaire/baru', expect: 'QST-akronim' },
@@ -425,6 +433,22 @@ check(
   Object.keys(validateAssignmentRows([makeAssignmentRow()])).length,
   1,
 );
+
+/*
+ * Dua review berurutan hanya berarti bila orangnya berbeda. Menu verifikasi
+ * dokumen karena itu tidak boleh muncul untuk Manager Procurement — kalau
+ * muncul, satu orang dapat meninjau pekerjaannya sendiri.
+ */
+try {
+  const text = renderAs(MANAGER_EMAIL, '/internal/beranda');
+  check(
+    'menu verifikasi dokumen disembunyikan dari manager',
+    !text.includes('/internal/verifikasi'),
+    'tautan /internal/verifikasi masih muncul untuk manager',
+  );
+} catch (error) {
+  check('menu verifikasi dokumen disembunyikan dari manager', false, error.message);
+}
 
 console.log(
   failures === 0

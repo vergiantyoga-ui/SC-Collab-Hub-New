@@ -34,7 +34,7 @@ Struktur berkas · Modul questionnaire · Membuat template · Menugaskan kuesion
 Navigasi konsol internal ·
 Navigasi portal pemasok · Tanda tangan elektronik (Privi) ·
 Pokayoke penugasan kuesioner sebelum onboarding · Verifikasi dokumen sebagai
-checklist seluruh field · Dua gerbang menuju qualification · Modul Master Data
+checklist seluruh field · Tiga gerbang menuju qualification · Modul Master Data
 Management & SAP · Status Active/Blocked · Dashboard kepatuhan kuesioner ·
 Ringkasan pemasok · Update data vendor (MMI001) · Duplikasi NIK & NPWP ·
 Bahasa antarmuka · Bahasa visual · Aturan yang tercermin di kode ·
@@ -99,7 +99,7 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 |---|---|---|
 | `dewi.anggraini@paragon-corp.com` | Staf Procurement | Tinjau pendaftaran, kedua jalur onboarding, periksa dokumen, isi kualifikasi, ajukan preferred |
 | `rangga.prasetyo@paragon-corp.com` | Staf Procurement Admin | Wewenang sama persis dengan Staf Procurement |
-| `lestari.handayani@paragon-corp.com` | Manager Procurement | Menetapkan preferred supplier atau mendiskualifikasi |
+| `lestari.handayani@paragon-corp.com` | Manager Procurement | Menyetujui profil & kuesioner sebelum qualification, menetapkan preferred supplier atau mendiskualifikasi. **Tidak dapat memverifikasi dokumen** — itu langkah staf |
 | `bayu.nugroho@paragon-corp.com` | Master Data Management | Meninjau pemasok preferred, mengirim datanya ke SAP, meminta revisi, menelusuri log gagal kirim |
 
 **Portal pemasok — `/masuk`**
@@ -129,10 +129,14 @@ di Bagian B. Kedua jalur di bawah ini sudah menyertakan langkah tersebut.
    field yang bermasalah satu per satu. Setelah disetujui, pemasok berstatus
    **Menunggu validasi kuesioner**.
 8. Buka **Tinjauan**, setujui kuesioner yang tadi ditugaskan. Begitu seluruhnya
-   disetujui, pemasok pindah ke tahap **Qualification**.
-9. Buka **Kualifikasi**, tetapkan cara pemilihan pemasok (open tender atau direct
-   choose), isi barisnya, lalu selesaikan — pemasok langsung menjadi **Preferred**.
-10. Keluar, masuk sebagai Master Data Management (`bayu.nugroho@paragon-corp.com`),
+   disetujui, pemasok pindah ke **Menunggu persetujuan manager**.
+9. Keluar, masuk sebagai Manager Procurement (`lestari.handayani@paragon-corp.com`),
+   buka **Persetujuan profil**. Buka kedua tab — profil dan hasil kuesioner —
+   lalu setujui. Pemasok masuk tahap **Qualification**.
+10. Masuk kembali sebagai staf, buka **Kualifikasi**, tetapkan cara pemilihan
+    pemasok (open tender atau direct choose), isi barisnya, lalu selesaikan —
+    pemasok langsung menjadi **Preferred**.
+11. Keluar, masuk sebagai Master Data Management (`bayu.nugroho@paragon-corp.com`),
     buka **Kirim ke SAP**, lalu kirim atau minta revisi. Pemasok bertanda open
     tender akan tertahan sampai hasil tendernya awardee.
 
@@ -142,9 +146,12 @@ di Bagian B. Kedua jalur di bawah ini sudah menyertakan langkah tersebut.
    sama — lalu setujui sebuah pengajuan.
 2. Tekan **Tugaskan kuesioner** terlebih dahulu, seperti pada Jalur A.
 3. Pilih **Mulai registrasi internal**, tentukan asal dokumen (email atau WhatsApp).
-4. Isi kelima bagian, lalu **Selesai dan kirim akun**. Tidak ada persetujuan
-   manager di tengah jalan; akun pemasok langsung dibuat.
+4. Isi kelima bagian, lalu **Selesai dan kirim akun**. Akun pemasok langsung
+   dibuat tanpa persetujuan manager pada langkah ini.
 5. Masuk sebagai pemasok memakai ID akun tersebut untuk meninjau dan menyetujui.
+6. Jalurnya lalu bertemu Jalur A: verifikasi dokumen, validasi kuesioner, dan
+   **persetujuan manager** atas profil dan kuesioner sebelum qualification
+   terbuka.
 
 **Menelusuri preferred supplier dan pengiriman ke SAP**
 
@@ -194,6 +201,7 @@ src/
     supplier/   RegisterWizard, ChangePassword, SupplierProfile,
                 ConsentPage, RegistrationProgress, AccountProfile
     internal/   InternalHome, QueueDashboard, SubmissionReview, InternalAccount,
+                ManagementReview,
                 InternalRegistration, ManagerApprovals, DocumentVerification
   qualification/
     data/       referenceData.js  UNSPSC (subset) dan negara ISO 3166-1
@@ -432,6 +440,27 @@ Rekening dengan nomor sama pada bank yang sama ditolak. Baris kedua dan
 seterusnya boleh dikosongkan seluruhnya, tetapi begitu satu kolomnya diisi,
 sisanya ikut diwajibkan — rekening setengah terisi tidak dapat dipakai membayar.
 
+#### Pemilik rekening pertama harus perusahaan yang mendaftar
+
+**Rekening pertama wajib atas nama perusahaan yang mendaftar.** Rekening itulah
+yang dipakai sebagai rekening utama pembayaran, dan membayar ke rekening atas
+nama pihak lain adalah persoalan kepatuhan, bukan sekadar ketidakcocokan data.
+
+**Rekening kedua dan seterusnya bebas.** Pemasok memang kadang memakai rekening
+afiliasi atau rekening khusus proyek, dan mewajibkan seluruhnya atas nama
+perusahaan akan mengunci pemasok yang sah.
+
+Pencocokannya **mengabaikan huruf besar, tanda baca, dan spasi ganda**: bank
+menuliskan nama pemilik rekening dengan ejaan yang tidak selalu sama dengan
+akta — `PT. UJI` dan `PT Uji` adalah perusahaan yang sama, dan menahan pemasok
+karena sebuah titik hanya menghasilkan keluhan. Yang dibandingkan hanya huruf
+dan angkanya.
+
+Pesan galatnya menyebut nama perusahaan yang seharusnya dipakai, bukan sekadar
+"nama tidak cocok", dan mengarahkan ke rekening kedua bila memang nama itu yang
+dikehendaki. Aturannya ada pada `validateBankLines(lines, vendorName)` di
+`profileRules.js`, diuji `P31`–`P38` pada `masterdata-check.mjs`.
+
 **Kode BIC dan negara tidak disimpan pada baris**, melainkan diturunkan dari bank
 yang dipilih setiap kali ditampilkan. Alasannya sama dengan penanda e-invoice:
 menyimpan nilai turunan membuka peluang datanya menyimpang bila daftar bank
@@ -446,10 +475,13 @@ dipakai untuk pembayaran sungguhan.
 Perjalanan pemasok mengikuti lima langkah berurutan, ditampilkan pada ringkasan beranda:
 
 ```
-Supplier request → Registrasi → Menunggu validasi kuesioner → Qualification
-                        ↘ Perlu perbaikan dokumen
-                                                    → Preferred supplier → dikirim ke SAP
-                                                             ↘ Disqualification
+Supplier request → Registrasi → Menunggu validasi kuesioner
+                        ↘ Perlu perbaikan dokumen ↖
+                                                   ╲
+              → Menunggu persetujuan manager ──────╯ (dikembalikan)
+                        ↓ (disetujui)
+                   Qualification → Preferred supplier → dikirim ke SAP
+                                          ↘ Disqualification
 ```
 
 | Tahap | Artinya |
@@ -457,6 +489,7 @@ Supplier request → Registrasi → Menunggu validasi kuesioner → Qualificatio
 | **Supplier request** | Pendaftaran baru masuk, menunggu ditinjau staf procurement |
 | **Registrasi** | Profil sudah dikirim, dokumennya sedang diperiksa |
 | **Menunggu validasi kuesioner** | Dokumen lolos periksa; menunggu seluruh kuesioner yang ditugaskan disetujui peninjau |
+| **Menunggu persetujuan manager** | Profil dan kuesioner sudah lengkap; menunggu manager procurement menyetujui keduanya |
 | **Qualification** | Staf mengisi kualifikasi komoditas dan menetapkan cara pemilihan pemasok |
 | **Preferred supplier** | Kualifikasi selesai; menunggu ditinjau tim Master Data Management untuk dikirim ke SAP |
 | **Disqualification** | Manager menolak; masih dapat dikembalikan ke tahap qualification |
@@ -468,7 +501,7 @@ sebagai `Diundang`, `Registrasi internal`, `Terhubung`, dan `Melengkapi profil`.
 ## Modul Preferred Supplier
 
 Sejak alur berganti, status preferred **ditetapkan otomatis** begitu kualifikasi
-diselesaikan — lihat [Dua gerbang menuju qualification](#dua-gerbang-menuju-qualification).
+diselesaikan — lihat [Tiga gerbang menuju qualification](#tiga-gerbang-menuju-qualification).
 Manager procurement tidak lagi menjadi gerbang di tengah jalan; penilaiannya
 sudah terjadi lebih dulu lewat verifikasi dokumen dan validasi kuesioner.
 
@@ -775,36 +808,99 @@ menghasilkan `{ enabled, provider }` — supaya menambah pengaturan baru kelak
 (misalnya siapa yang menandatangani) menjadi perubahan yang disengaja, bukan
 bidang yang terlanjur ada tanpa dipakai.
 
-## Dua gerbang menuju qualification
+## Tiga gerbang menuju qualification
 
 Sebelumnya dokumen yang lolos periksa langsung membuka tahap qualification.
-Sekarang ada dua gerbang berurutan, dan keduanya harus terpenuhi:
+Sekarang ada tiga gerbang berurutan, dan ketiganya harus terpenuhi:
 
 ```
 Registrasi → [1] dokumen lolos periksa → Menunggu validasi kuesioner
-           → [2] seluruh kuesioner disetujui → Qualification
+           → [2] seluruh kuesioner disetujui → Menunggu persetujuan manager
+           → [3] manager menyetujui profil & kuesioner → Qualification
            → kualifikasi diisi → Preferred supplier
-           → [3] ditinjau MDM → dikirim ke SAP
+           → [4] ditinjau MDM → dikirim ke SAP
 ```
 
-**Gerbang pertama** ada pada `verifyDocuments`, yang kini memindahkan pemasok ke
-status baru `Menunggu validasi kuesioner` (`AWAITING_QUESTIONNAIRE`), bukan
-langsung ke qualification.
+**Gerbang pertama** ada pada `verifyDocuments`, yang memindahkan pemasok ke
+status `Menunggu validasi kuesioner` (`AWAITING_QUESTIONNAIRE`).
 
 **Gerbang kedua** ada pada `ReviewDetail.jsx`. Ketika seorang peninjau menyetujui
 sebuah kuesioner, layar itu memeriksa apakah *seluruh* kuesioner yang ditugaskan
 kepada pemasok tersebut sudah disetujui; bila ya, `advanceToQualification`
-melepaskannya ke tahap qualification. Pemeriksaannya diletakkan di sini karena
-hanya di titik inilah kedua store — pengajuan dan kuesioner — sama-sama terbaca.
-Aksinya aman dipanggil berulang: pemasok yang statusnya bukan
-`AWAITING_QUESTIONNAIRE` diabaikan.
+memindahkannya ke `Menunggu persetujuan manager` (`AWAITING_MANAGER_REVIEW`).
+Pemeriksaannya diletakkan di sini karena hanya di titik inilah kedua store —
+pengajuan dan kuesioner — sama-sama terbaca. Aksinya aman dipanggil berulang:
+pemasok yang statusnya bukan `AWAITING_QUESTIONNAIRE` diabaikan.
+
+**Gerbang ketiga** ada pada layar **Persetujuan profil** (`/internal/persetujuan-profil`).
+
+### Persetujuan manager atas profil dan kuesioner
+
+Dua gerbang pertama dikerjakan staf procurement dan sifatnya memeriksa
+kelengkapan: apakah tiap field sudah benar, apakah tiap jawaban sudah sesuai.
+Gerbang ketiga berbeda — manager menilai **keduanya sekaligus**: apakah pemasok
+ini memang layak dilanjutkan, bukan apakah datanya sudah rapi.
+
+#### Dua reviewer, dua orang berbeda
+
+Profil pemasok selalu melewati **dua review berurutan oleh role yang berbeda**:
+
+| Urutan | Siapa | Di mana | Menilai apa |
+|---|---|---|---|
+| 1 | Staf / Admin Procurement | **Registration** (`/internal/verifikasi`) | Kelengkapan dan kebenaran tiap field profil |
+| 2 | Manager Procurement | **Persetujuan profil** (`/internal/persetujuan-profil`) | Profil dan hasil kuesioner sekaligus |
+
+Pemisahan itu **ditegakkan, bukan sekadar tersusun di alur**. Manager
+Procurement tidak melihat menu maupun kartu pintasan Registration, dan bila
+membuka `/internal/verifikasi` lewat URL langsung, layarnya tampil dalam mode
+baca dengan kedua tombol keputusan terkunci beserta keterangan ke mana ia
+seharusnya memutuskan. Tanpa itu, satu orang manager dapat menyetujui di
+langkah pertama lalu menyetujui lagi pekerjaannya sendiri di langkah kedua,
+dan dua review itu kehilangan artinya.
+
+Urutannya tidak dapat dibalik: selama `verifyDocuments` belum dijalankan staf,
+pemasok tidak akan pernah mencapai `AWAITING_MANAGER_REVIEW`. Sebaliknya,
+`approveProfileAndQuestionnaire` adalah **satu-satunya** jalan masuk pertama
+kali ke tahap qualification — `reopenQualification` hanya mengembalikan pemasok
+yang sudah pernah melewati seluruh gerbang lalu didiskualifikasi.
+
+Berlaku untuk kedua jalur onboarding. Baik pemasok yang mengisi profilnya
+sendiri maupun profil yang disiapkan admin procurement pada jalur registrasi
+internal sama-sama berhenti di gerbang ini.
+
+Layarnya menampilkan dua tab:
+
+| Tab | Isi |
+|---|---|
+| **Profil pemasok** | Seluruh data yang dikirim dan sudah lolos periksa staf |
+| **Hasil kuesioner** | Setiap kuesioner yang ditugaskan beserta peninjau, keadaan, skor, dan pintasan ke layar tinjauannya |
+
+Tombol keputusan baru terbuka setelah **kedua tab dibuka**, mengikuti pola yang
+sudah dipakai pada tinjauan pendaftaran dan preferred supplier: keputusan atas
+berkas yang belum dilihat bukan keputusan.
+
+Dua keputusan tersedia:
+
+- **Setujui dan buka qualification** (`approveProfileAndQuestionnaire`) —
+  pemasok masuk tahap qualification. Catatannya opsional.
+- **Kembalikan untuk diperbaiki** (`returnForRevision`) — catatan **wajib**,
+  minimal 15 karakter: pemasok tidak dapat memperbaiki apa pun dari kata
+  "ditolak" saja.
+
+Pemasok yang dikembalikan masuk ke status `Perlu perbaikan dokumen`, bukan ke
+status menunggu sebelumnya. Alasannya: yang perlu terjadi berikutnya adalah
+pemasok memperbaiki datanya, dan status itulah yang sudah membuka jalur
+perbaikan beserta catatan per fieldnya. Catatan manager ikut tersalin ke sana
+sebagai satu entri bernama "Tinjauan manager".
+
+Role selain Manager Procurement melihat layar ini dalam mode baca — berguna
+bagi staf yang ingin tahu apa yang sedang ditunggu, tanpa dapat memutuskannya.
 
 **Kualifikasi yang selesai langsung menjadikan pemasok preferred.** Tidak ada
-lagi antrean persetujuan manager di tengah jalan, karena penilaian sudah terjadi
-lebih dulu lewat verifikasi dokumen dan validasi kuesioner — menahan pemasok
-sekali lagi hanya menambah waktu tunggu. Modul Preferred Supplier tetap ada:
-manager masih dapat meninjau berkasnya dan mendiskualifikasi bila perlu, dan
-pemasok yang didiskualifikasi masih dapat dikembalikan ke tahap qualification.
+antrean persetujuan manager kedua setelahnya, karena penilaian manager sudah
+terjadi di gerbang ketiga ini. Modul Preferred Supplier tetap ada: manager masih
+dapat meninjau berkasnya dan mendiskualifikasi bila perlu, dan pemasok yang
+didiskualifikasi masih dapat dikembalikan ke tahap qualification.
 
 ## Modul Master Data Management & SAP
 
@@ -976,7 +1072,7 @@ Menu dikelompokkan menurut pekerjaan, bukan menurut modul yang membangunnya:
 |---|---|
 | Beranda | Ringkasan supplier registration · Ringkasan order collaboration |
 | Questionnaire | Template · Penugasan · Tinjauan |
-| **Registrasi supplier** | Supplier request · Registrasi · Kualifikasi · Preferred supplier · Kirim ke SAP (MDM & manager) |
+| **Registrasi supplier** | Supplier request · Registrasi · Persetujuan profil · Kualifikasi · Preferred supplier · Kirim ke SAP (MDM & manager) |
 | **Data vendor** | Update data vendor |
 | **Dashboard & Audit Trail** | Dashboard kuesioner · Ringkasan pemasok · Jejak audit |
 
@@ -1125,6 +1221,10 @@ sehingga penyesuaian merek cukup dilakukan di satu tempat.
 | Perubahan dokumen setelah aktif memicu verifikasi ulang | `ActiveProfile.jsx`, `AppStore.updateActiveProfile` |
 | Dokumen lolos periksa menahan pemasok di `Menunggu validasi kuesioner` | `AppStore.verifyDocuments` |
 | Qualification terbuka hanya setelah seluruh kuesioner disetujui | `ReviewDetail.jsx`, `AppStore.advanceToQualification` |
+| Manager procurement menyetujui profil dan kuesioner sebelum qualification | `ManagementReview.jsx`, `AppStore.approveProfileAndQuestionnaire` |
+| Manager tidak dapat memverifikasi dokumen — dua review harus dua orang | `InternalLayout.jsx`, `InternalHome.jsx`, `DocumentVerification.canDecide` |
+| Pengembalian oleh manager wajib beralasan | `ManagementReview.jsx`, `AppStore.returnForRevision` |
+| Rekening bank pertama harus atas nama perusahaan yang mendaftar | `profileRules.validateBankLines`, diuji di `masterdata-check.mjs` |
 | Kualifikasi selesai langsung menjadikan pemasok preferred | `AppStore.saveQualification` |
 | Kepatuhan pengisian menjadi bagian dashboard kuesioner | `QuestionnaireDashboard.jsx`, `ComplianceSection.jsx` |
 | Log gagal kirim menjadi bagian halaman Kirim ke SAP | `SapReview.jsx`, `SapFailureLog.jsx` |

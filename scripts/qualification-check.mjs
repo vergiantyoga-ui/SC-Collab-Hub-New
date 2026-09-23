@@ -74,6 +74,17 @@ check(
   isEligible({ status: STATUS.AWAITING_QUESTIONNAIRE }),
   false,
 );
+// Gerbang ketiga: persetujuan manager atas profil dan kuesioner.
+check(
+  'Q22d menunggu persetujuan manager belum layak',
+  isEligible({ status: STATUS.AWAITING_MANAGER_REVIEW }),
+  false,
+);
+check(
+  'Q22e alasan menyebut persetujuan manager',
+  /manager/.test(ineligibilityReason({ status: STATUS.AWAITING_MANAGER_REVIEW })),
+  true,
+);
 check(
   'Q22c alasan menyebut gerbang yang menahan',
   /kuesioner/.test(ineligibilityReason({ status: STATUS.AWAITING_QUESTIONNAIRE })),

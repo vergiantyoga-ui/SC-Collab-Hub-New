@@ -278,17 +278,38 @@ check(
 );
 check('A23 tanggal registrasi tercatat', Boolean(a.supplier(idA).registeredAt), true);
 
-// Gerbang kedua: kuesioner tervalidasi barulah qualification terbuka.
+/*
+ * Gerbang kedua: kuesioner tervalidasi. Pemasok TIDAK langsung masuk
+ * qualification — masih menunggu persetujuan manager atas profil dan
+ * kuesionernya sekaligus.
+ */
 a.run((actions) => actions.advanceToQualification(idA, STAFF));
-check('A24 kuesioner tervalidasi membuka qualification', a.supplier(idA).status, STATUS.QUALIFICATION);
+check(
+  'A24 kuesioner tervalidasi menunggu persetujuan manager',
+  a.supplier(idA).status,
+  STATUS.AWAITING_MANAGER_REVIEW,
+);
 
 // Memanggilnya dua kali tidak boleh memindahkan status lagi.
 a.run((actions) => actions.advanceToQualification(idA, STAFF));
-check('A25 pemanggilan ulang tidak mengubah status', a.supplier(idA).status, STATUS.QUALIFICATION);
+check(
+  'A25 pemanggilan ulang tidak mengubah status',
+  a.supplier(idA).status,
+  STATUS.AWAITING_MANAGER_REVIEW,
+);
+
+// Gerbang ketiga: manager menyetujui profil dan kuesioner.
+a.run((actions) => actions.approveProfileAndQuestionnaire(idA, 'Lengkap dan sesuai.', MANAGER));
+check('A25b persetujuan manager membuka qualification', a.supplier(idA).status, STATUS.QUALIFICATION);
+check(
+  'A25c keputusan manager tercatat',
+  a.supplier(idA).managementReview.decision,
+  'approved',
+);
 
 /*
- * Kualifikasi selesai langsung menjadikan pemasok preferred; tidak ada lagi
- * antrean persetujuan manager di tengah jalan.
+ * Kualifikasi selesai langsung menjadikan pemasok preferred; penilaiannya
+ * sudah terjadi pada gerbang persetujuan manager di atas.
  */
 a.run((actions) =>
   actions.saveQualification(
