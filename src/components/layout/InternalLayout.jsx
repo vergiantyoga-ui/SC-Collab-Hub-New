@@ -3,6 +3,7 @@ import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState } from '../../store/AppStore.jsx';
 import { ROLE, SAP_STATUS, STATUS } from '../../lib/constants.js';
 import { useQuestionnaireState } from '../../questionnaire/store/QuestionnaireStore.jsx';
+import { useOrderState } from '../../orders/store/OrderStore.jsx';
 import { QUALIFIABLE_STATUSES } from '../../qualification/qualificationRules.js';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
@@ -14,6 +15,7 @@ export default function InternalLayout() {
   const t = useT();
   const { session, submissions, qualifications, sapLogs } = useAppState();
   const questionnaireState = useQuestionnaireState();
+  const orderState = useOrderState();
   const { signOut } = useAppActions();
   const navigate = useNavigate();
 
@@ -37,6 +39,10 @@ export default function InternalLayout() {
     (item) => item.status === 'submitted' || item.status === 'under_review',
   ).length;
   const isMdm = user.role === ROLE.MDM;
+  // Usulan perubahan yang menunggu keputusan procurement.
+  const pendingProposals = Object.values(orderState.confirmations).filter(
+    (c) => c.proposal?.status === 'pending',
+  ).length;
   // Pemasok preferred yang belum terkirim ke SAP — antrean kerja tim MDM.
   const awaitingSap = submissions.filter(
     (item) =>
@@ -63,6 +69,12 @@ export default function InternalLayout() {
           to: '/internal/order-collaboration',
           label: 'Ringkasan order collaboration',
           icon: 'queue',
+        },
+        {
+          to: '/internal/konfirmasi-pemasok',
+          label: 'Konfirmasi pemasok',
+          icon: 'verify',
+          count: pendingProposals,
         },
       ],
     },

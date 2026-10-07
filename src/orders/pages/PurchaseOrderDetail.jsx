@@ -1,21 +1,26 @@
-import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import PageHeader from '../../components/ui/PageHeader.jsx';
 import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
+import DataList from '../../components/ui/DataList.jsx';
 import { useToast } from '../../components/ui/Toast.jsx';
 import { useCurrentSubmission } from '../../store/AppStore.jsx';
+import { findOrder, useOrderActions, useOrderState } from '../store/OrderStore.jsx';
 import {
-  findOrder,
-  useOrderActions,
-  useOrderState,
+  PO_STAGE,
+  PO_STAGE_LABEL,
+  PO_STAGE_TONE,
   CONFIRMATION_LABEL,
+  CONFIRMATION_TYPE,
   LINE_STATUS_LABEL,
   LINE_STATUS_TONE,
-} from '../store/OrderStore.jsx';
-import { PO_STAGE, PO_STAGE_LABEL, PO_STAGE_TONE } from '../orderRules.js';
-import OrderConfirmationDialog from '../components/OrderConfirmationDialog.jsx';
+  PROPOSAL_STATUS,
+  PROPOSAL_STATUS_LABEL,
+  PROPOSAL_STATUS_TONE,
+  lineStatusFor,
+} from '../orderRules.js';
+import OrderConfirmationPanel from '../components/OrderConfirmationPanel.jsx';
 import { formatDate, formatDateTime } from '../../lib/format.js';
 import './po-document.css';
 
@@ -64,8 +69,7 @@ export default function PurchaseOrderDetail() {
   const submission = useCurrentSubmission();
 
   const state = useOrderState();
-  const { submitConfirmation } = useOrderActions();
-  const [confirming, setConfirming] = useState(false);
+  const { submitConfirmation, syncFromSap } = useOrderActions();
 
   const order = findOrder(state, poId);
   const confirmation = state.confirmations[poId];
@@ -97,7 +101,15 @@ export default function PurchaseOrderDetail() {
     );
   }
 
-  const canConfirm = [PO_STAGE.NEW, PO_STAGE.PARTIAL].includes(order.stage);
+  /*
+   * Pemasok dapat menanggapi PO yang menunggu, yang baru sebagian, dan yang
+   * usulan perubahannya ditolak — ketiganya sama-sama belum tuntas.
+   */
+  const canConfirm = [PO_STAGE.NEW, PO_STAGE.PARTIAL, PO_STAGE.CHANGES_REJECTED].includes(
+    order.stage,
+  );
+  const proposal = confirmation?.proposal;
+  const canSync = proposal?.status === PROPOSAL_STATUS.APPROVED && !order.syncedAt;
 
   function handleSubmit(payload) {
     submitConfirmation(order.id, payload, submission.contact?.name ?? 'Pemasok');
@@ -119,9 +131,9 @@ export default function PurchaseOrderDetail() {
           <div className="row">
             <StatusBadge tone={PO_STAGE_TONE[order.stage]} label={PO_STAGE_LABEL[order.stage]} />
             <Button variant="secondary" onClick={() => window.print()}>
-              Unduh PDF
+              Download PDF
             </Button>
-            {canConfirm && <Button onClick={() => setConfirming(true)}>Order confirmation</Button>}
+            {canConfirm && <OrderConfirmationPanel order={order} onSubmit={handleSubmit} />}
           </div>
         }
       />
@@ -129,7 +141,7 @@ export default function PurchaseOrderDetail() {
       {confirmation && (
         <div
           className={`notice ${
-            confirmation.type === 'reject' ? 'notice--danger' : 'notice--success'
+            confirmation.type === CONFIRMATION_TYPE.REJECT ? 'notice--danger' : 'notice--success'
           } po-noprint`}
           style={{ marginBottom: 'var(--sp-4)' }}
         >
@@ -146,6 +158,63 @@ export default function PurchaseOrderDetail() {
             </div>
           )}
           {confirmation.reason && <div>{confirmation.reason}</div>}
+        </div>
+      )}
+
+      {/* ---- Keadaan usulan perubahan ---- */}
+      {proposal && (
+        <div className="card po-noprint" style={{ marginBottom: 'var(--sp-4)' }}>
+          <div className="card__head">
+            <div className="row row--between" style={{ width: '100%' }}>
+              <h2 className="card__title">Proposed changes</h2>
+              <StatusBadge
+                tone={PROPOSAL_STATUS_TONE[proposal.status]}
+                label={PROPOSAL_STATUS_LABEL[proposal.status]}
+              />
+            </div>
+          </div>
+          <div className="card__body">
+            {proposal.status === PROPOSAL_STATUS.PENDING && (
+              <p className="text-sm muted">
+                Waiting for Paragon procurement to review your proposal. The order stays
+                pending until they decide.
+              </p>
+            )}
+            {proposal.status !== PROPOSAL_STATUS.PENDING && (
+              <DataList
+                items={[
+                  { label: 'Decided by', value: proposal.decidedBy },
+                  { label: 'Decided at', value: formatDateTime(proposal.decidedAt) },
+                  { label: 'Note', value: proposal.note },
+                ]}
+              />
+            )}
+
+            {canSync && (
+              <div className="notice notice--info" style={{ marginTop: 'var(--sp-3)' }}>
+                <span className="notice__title">Purchase order updated in SAP</span>
+                Procurement has approved the changes and updated the order in SAP. Pull the
+                revised lines into this order.
+                <div style={{ marginTop: 'var(--sp-3)' }}>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      syncFromSap(order.id, submission.contact?.name ?? 'Supplier');
+                      toast.success(`Purchase order ${order.poNumber} synced from SAP.`);
+                    }}
+                  >
+                    Sync this PO from SAP
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {order.syncedAt && (
+              <p className="text-xs muted" style={{ marginTop: 'var(--sp-3)' }}>
+                Synced from SAP {formatDateTime(order.syncedAt)} · {order.syncedBy}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -307,10 +376,10 @@ export default function PurchaseOrderDetail() {
       </article>
 
       {/* ---------- Baris hasil konfirmasi ---------- */}
-      {confirmation?.lines?.length > 0 && confirmation.type === 'update_lines' && (
+      {confirmation?.lines?.length > 0 && confirmation.type === CONFIRMATION_TYPE.UPDATE_LINES && (
         <div className="card po-noprint" style={{ marginTop: 'var(--sp-5)' }}>
           <div className="card__head">
-            <h2 className="card__title">Line items — hasil konfirmasi</h2>
+            <h2 className="card__title">Line items — confirmation result</h2>
           </div>
           <div className="card__body table-scroll">
             <table className="order-table">
@@ -324,41 +393,36 @@ export default function PurchaseOrderDetail() {
                 </tr>
               </thead>
               <tbody>
-                {confirmation.lines.map((l) => (
-                  <tr key={l.no}>
-                    <td>{l.no}</td>
-                    <td>{l.item}</td>
-                    <td>
-                      {l.orderedQty} {l.unit}
-                    </td>
-                    <td>
-                      {l.confirmedQty} {l.unit}
-                    </td>
-                    <td>
-                      <StatusBadge
-                        tone={LINE_STATUS_TONE[l.status]}
-                        label={LINE_STATUS_LABEL[l.status]}
-                      />
-                      {l.newDate && (
-                        <span className="order-table__meta">
-                          Estimated delivery {formatDate(l.newDate)}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {confirmation.lines.map((l) => {
+                  const st = lineStatusFor(l.confirmedQty, l.orderedQty);
+                  return (
+                    <tr key={l.no}>
+                      <td>{l.no}</td>
+                      <td>{l.item}</td>
+                      <td>
+                        {l.orderedQty} {l.unit}
+                      </td>
+                      <td>
+                        {l.confirmedQty} {l.unit}
+                      </td>
+                      <td>
+                        <StatusBadge tone={LINE_STATUS_TONE[st]} label={LINE_STATUS_LABEL[st]} />
+                        {l.lineDeliveryDate && (
+                          <span className="order-table__meta">
+                            Est. delivery {formatDate(l.lineDeliveryDate)}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      <OrderConfirmationDialog
-        open={confirming}
-        order={order}
-        onClose={() => setConfirming(false)}
-        onSubmit={handleSubmit}
-      />
+
     </>
   );
 }

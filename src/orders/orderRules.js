@@ -33,17 +33,35 @@ export const PO_STAGE = {
   GR_CONFIRMED: 'gr_confirmed',
   /** Invoice sudah dikirim pemasok. */
   INVOICED: 'invoiced',
+  /**
+   * Usulan perubahan dari pemasok ditolak procurement. PO kembali menunggu
+   * tanggapan pemasok, jadi ikut terhitung pada kartu New order.
+   */
+  CHANGES_REJECTED: 'changes_rejected',
+  /**
+   * Usulan perubahan disetujui. Procurement memperbarui PO di SAP, lalu
+   * menarik versi terbarunya lewat tombol sync pada baris PO.
+   */
+  CHANGES_APPROVED: 'changes_approved',
 };
 
+/*
+ * Seluruh status Order Collaboration ditulis dalam bahasa Inggris, mengikuti
+ * istilah yang dipakai portal pemasok dan SAP. Pemasok lintas negara membaca
+ * layar yang sama, dan istilah seperti "goods receipt" atau "backordered"
+ * memang tidak punya padanan Indonesia yang lazim di lingkungan procurement.
+ */
 export const PO_STAGE_LABEL = {
-  [PO_STAGE.NEW]: 'Menunggu konfirmasi',
-  [PO_STAGE.CONFIRMED]: 'Dikonfirmasi',
-  [PO_STAGE.PARTIAL]: 'Konfirmasi sebagian',
-  [PO_STAGE.REJECTED]: 'Ditolak',
-  [PO_STAGE.ASN_CREATED]: 'ASN dibuat, menunggu GR',
-  [PO_STAGE.GR_POSTED]: 'GR menunggu konfirmasi',
-  [PO_STAGE.GR_CONFIRMED]: 'Siap ditagihkan',
-  [PO_STAGE.INVOICED]: 'Invoice terkirim',
+  [PO_STAGE.NEW]: 'Pending confirmation',
+  [PO_STAGE.CONFIRMED]: 'Confirmed',
+  [PO_STAGE.PARTIAL]: 'Partially confirmed',
+  [PO_STAGE.REJECTED]: 'Rejected',
+  [PO_STAGE.ASN_CREATED]: 'ASN created, awaiting GR',
+  [PO_STAGE.GR_POSTED]: 'GR awaiting confirmation',
+  [PO_STAGE.GR_CONFIRMED]: 'Ready to invoice',
+  [PO_STAGE.INVOICED]: 'Invoice submitted',
+  [PO_STAGE.CHANGES_REJECTED]: 'Changes rejected',
+  [PO_STAGE.CHANGES_APPROVED]: 'Changes approved',
 };
 
 export const PO_STAGE_TONE = {
@@ -55,6 +73,8 @@ export const PO_STAGE_TONE = {
   [PO_STAGE.GR_POSTED]: 'pending',
   [PO_STAGE.GR_CONFIRMED]: 'progress',
   [PO_STAGE.INVOICED]: 'success',
+  [PO_STAGE.CHANGES_REJECTED]: 'danger',
+  [PO_STAGE.CHANGES_APPROVED]: 'progress',
 };
 
 /**
@@ -69,8 +89,10 @@ export const ORDER_CARDS = [
   {
     id: 'new_order',
     label: 'New order',
-    description: 'PO dikirim SAP, belum dikonfirmasi pemasok',
-    stages: [PO_STAGE.NEW],
+    description: 'Sent by SAP, not yet confirmed by supplier',
+    // Usulan perubahan yang ditolak mengembalikan PO ke antrean ini: pemasok
+    // harus menanggapinya lagi.
+    stages: [PO_STAGE.NEW, PO_STAGE.CHANGES_REJECTED],
     tone: 'pending',
     /** Kartu yang menuntut tindakan pemasok; ditandai agar mudah dikenali. */
     actionable: true,
@@ -78,7 +100,7 @@ export const ORDER_CARDS = [
   {
     id: 'order',
     label: 'Order',
-    description: 'PO yang sudah dikonfirmasi atau ditolak',
+    description: 'Confirmed, rejected, or with approved changes',
     stages: [
       PO_STAGE.CONFIRMED,
       PO_STAGE.REJECTED,
@@ -86,6 +108,7 @@ export const ORDER_CARDS = [
       PO_STAGE.GR_POSTED,
       PO_STAGE.GR_CONFIRMED,
       PO_STAGE.INVOICED,
+      PO_STAGE.CHANGES_APPROVED,
     ],
     tone: 'neutral',
     actionable: false,
@@ -93,7 +116,7 @@ export const ORDER_CARDS = [
   {
     id: 'item_to_confirm',
     label: 'Item to confirm',
-    description: 'PO yang baru dikonfirmasi sebagian',
+    description: 'Partially confirmed by supplier',
     stages: [PO_STAGE.PARTIAL],
     tone: 'progress',
     actionable: true,
@@ -101,7 +124,7 @@ export const ORDER_CARDS = [
   {
     id: 'order_to_gr',
     label: 'Order to goods receipt',
-    description: 'ASN sudah dibuat, menunggu GR',
+    description: 'ASN created, awaiting goods receipt',
     stages: [PO_STAGE.ASN_CREATED],
     tone: 'progress',
     actionable: false,
@@ -109,7 +132,7 @@ export const ORDER_CARDS = [
   {
     id: 'goods_receipt',
     label: 'Goods receipt',
-    description: 'GR terbentuk, menunggu konfirmasi pemasok',
+    description: 'GR posted, awaiting supplier confirmation',
     stages: [PO_STAGE.GR_POSTED],
     tone: 'pending',
     actionable: true,
@@ -117,7 +140,7 @@ export const ORDER_CARDS = [
   {
     id: 'order_to_invoice',
     label: 'Order to invoice',
-    description: 'GR dikonfirmasi, belum ditagihkan',
+    description: 'GR confirmed, not yet invoiced',
     stages: [PO_STAGE.GR_CONFIRMED],
     tone: 'progress',
     actionable: true,
@@ -125,7 +148,7 @@ export const ORDER_CARDS = [
   {
     id: 'invoice',
     label: 'Invoice',
-    description: 'Invoice sudah dikirim pemasok',
+    description: 'Invoice submitted by supplier',
     stages: [PO_STAGE.INVOICED],
     tone: 'success',
     actionable: false,
@@ -284,30 +307,58 @@ export const CONFIRMATION_LABEL = {
   [CONFIRMATION_TYPE.PROPOSE_CHANGES]: 'Propose changes',
 };
 
-/** Keadaan tiap baris setelah dikonfirmasi. */
+/**
+ * Keadaan tiap baris setelah dikonfirmasi.
+ *
+ * Tidak lagi dipilih pemasok, melainkan **diturunkan dari kuantitas** yang ia
+ * konfirmasi — lihat `lineStatusFor()`. Membiarkan pemasok memilih status
+ * sekaligus mengetik kuantitas membuka peluang keduanya bertentangan, misalnya
+ * "Confirmed" dengan kuantitas nol.
+ */
 export const LINE_STATUS = {
   CONFIRMED: 'confirmed',
-  CONFIRMED_NEW_DATE: 'confirmed_new_date',
   PARTIAL: 'partial',
-  BACKORDERED: 'backordered',
   REJECTED: 'rejected',
 };
 
 export const LINE_STATUS_LABEL = {
   [LINE_STATUS.CONFIRMED]: 'Confirmed',
-  [LINE_STATUS.CONFIRMED_NEW_DATE]: 'Confirmed With New Date',
-  [LINE_STATUS.PARTIAL]: 'Confirmed Partial',
-  [LINE_STATUS.BACKORDERED]: 'Backordered',
+  [LINE_STATUS.PARTIAL]: 'Confirmed partial',
   [LINE_STATUS.REJECTED]: 'Rejected',
 };
 
 export const LINE_STATUS_TONE = {
   [LINE_STATUS.CONFIRMED]: 'success',
-  [LINE_STATUS.CONFIRMED_NEW_DATE]: 'progress',
   [LINE_STATUS.PARTIAL]: 'progress',
-  [LINE_STATUS.BACKORDERED]: 'pending',
   [LINE_STATUS.REJECTED]: 'danger',
 };
+
+/**
+ * Status sebuah baris, dihitung dari kuantitas yang dikonfirmasi.
+ *
+ * Nol berarti ditolak, penuh berarti diterima, di antaranya berarti sebagian.
+ * Satu aturan ini dipakai pemasok maupun layar internal, sehingga keduanya
+ * tidak mungkin menampilkan status berbeda untuk baris yang sama.
+ */
+export function lineStatusFor(confirmedQty, orderedQty) {
+  const qty = Number(confirmedQty);
+  if (!Number.isFinite(qty) || qty <= 0) return LINE_STATUS.REJECTED;
+  if (qty >= orderedQty) return LINE_STATUS.CONFIRMED;
+  return LINE_STATUS.PARTIAL;
+}
+
+/**
+ * Status PO dari gabungan status barisnya.
+ *
+ * Seluruh baris ditolak berarti PO ditolak; seluruhnya penuh berarti
+ * dikonfirmasi; sisanya konfirmasi sebagian.
+ */
+export function stageFromLines(lines) {
+  const statuses = lines.map((l) => lineStatusFor(l.confirmedQty, l.orderedQty));
+  if (statuses.every((st) => st === LINE_STATUS.REJECTED)) return PO_STAGE.REJECTED;
+  if (statuses.every((st) => st === LINE_STATUS.CONFIRMED)) return PO_STAGE.CONFIRMED;
+  return PO_STAGE.PARTIAL;
+}
 
 /**
  * Nomor konfirmasi diturunkan dari nomor PO dengan akhiran `OC`, mengikuti
@@ -322,11 +373,46 @@ export const confirmationNumberFor = (poNumber) => `${poNumber}OC`;
  * Usulan perubahan sengaja tidak memindahkan tahapan: mengusulkan bukan
  * berarti disetujui, dan PO tetap menunggu sampai Paragon menanggapinya.
  */
-export function stageAfterConfirmation(type) {
+export function stageAfterConfirmation(type, lines = []) {
+  if (type === CONFIRMATION_TYPE.UPDATE_LINES) return stageFromLines(lines);
   return {
     [CONFIRMATION_TYPE.CONFIRM_ALL]: PO_STAGE.CONFIRMED,
     [CONFIRMATION_TYPE.REJECT]: PO_STAGE.REJECTED,
-    [CONFIRMATION_TYPE.UPDATE_LINES]: PO_STAGE.PARTIAL,
     [CONFIRMATION_TYPE.PROPOSE_CHANGES]: PO_STAGE.NEW,
   }[type];
+}
+
+/**
+ * Keadaan sebuah usulan perubahan di mata procurement.
+ */
+export const PROPOSAL_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+};
+
+export const PROPOSAL_STATUS_LABEL = {
+  [PROPOSAL_STATUS.PENDING]: 'Awaiting decision',
+  [PROPOSAL_STATUS.APPROVED]: 'Changes approved',
+  [PROPOSAL_STATUS.REJECTED]: 'Changes rejected',
+};
+
+export const PROPOSAL_STATUS_TONE = {
+  [PROPOSAL_STATUS.PENDING]: 'pending',
+  [PROPOSAL_STATUS.APPROVED]: 'success',
+  [PROPOSAL_STATUS.REJECTED]: 'danger',
+};
+
+/** Tahapan PO setelah procurement memutuskan sebuah usulan perubahan. */
+export function stageAfterProposalDecision(approved) {
+  return approved ? PO_STAGE.CHANGES_APPROVED : PO_STAGE.CHANGES_REJECTED;
+}
+
+/** Apakah sebuah baris usulan benar-benar mengubah sesuatu. */
+export function proposalLineChanged(line) {
+  return (
+    Number(line.proposedQty) !== Number(line.orderedQty) ||
+    Number(line.proposedPrice) !== Number(line.unitPrice) ||
+    (line.proposedDate || '') !== (line.deliveryDate || '').slice(0, 10)
+  );
 }

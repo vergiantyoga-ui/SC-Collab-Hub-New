@@ -320,3 +320,67 @@
 .modal.modal--wide {
   width: min(940px, 100%);
 }
+
+/* ---- Dropdown pemilihan jenis konfirmasi ---- */
+.ocmenu { position: relative; display: inline-block; }
+.ocmenu__list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  width: min(360px, 90vw);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.16);
+}
+.ocmenu__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink-700);
+}
+.ocmenu__item:hover { background: var(--surface-sunk); }
+.ocmenu__item strong { display: block; font-size: var(--text-sm); }
+.ocmenu__item small {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+.ocmenu__dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  margin-top: 6px; flex: none; background: var(--ink-400);
+}
+.ocmenu__dot--success { background: #15803d; }
+.ocmenu__dot--progress { background: var(--blue-600); }
+.ocmenu__dot--pending { background: #b45309; }
+.ocmenu__dot--danger { background: var(--danger); }
+
+/* ---- Perbandingan nilai lama dan usulan ---- */
+.prop-old {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--ink-400);
+  text-decoration: line-through;
+}
+.prop-new {
+  display: block;
+  font-weight: 700;
+  color: var(--blue-600);
+}
+/* Baris yang berubah diberi latar tipis supaya yang perlu ditimbang
+   procurement langsung terlihat di antara baris yang tidak berubah. */
+.prop-changed {
+  background: color-mix(in srgb, var(--blue-600) 5%, transparent);
+}

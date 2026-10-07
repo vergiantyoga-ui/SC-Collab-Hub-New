@@ -1,6 +1,11 @@
 import { createContext, useContext, useMemo, useReducer } from 'react';
 import { PURCHASE_ORDERS } from '../orderMockData.js';
-import { stageAfterConfirmation } from '../orderRules.js';
+import {
+  stageAfterConfirmation,
+  stageAfterProposalDecision,
+  CONFIRMATION_TYPE,
+  PROPOSAL_STATUS,
+} from '../orderRules.js';
 
 /**
  * Store Order Collaboration.
@@ -27,6 +32,10 @@ export {
   LINE_STATUS,
   LINE_STATUS_LABEL,
   LINE_STATUS_TONE,
+  PROPOSAL_STATUS,
+  PROPOSAL_STATUS_LABEL,
+  PROPOSAL_STATUS_TONE,
+  lineStatusFor,
   confirmationNumberFor,
 } from '../orderRules.js';
 
@@ -46,6 +55,66 @@ function reducer(state, action) {
           order.id === action.poId ? { ...order, stage: action.stage } : order,
         ),
       };
+
+    case 'DECIDE_PROPOSAL':
+      return {
+        ...state,
+        confirmations: {
+          ...state.confirmations,
+          [action.poId]: { ...state.confirmations[action.poId], proposal: action.proposal },
+        },
+        orders: state.orders.map((o) => (o.id === action.poId ? { ...o, stage: action.stage } : o)),
+      };
+
+    /*
+     * Perhitungan sync tinggal di reducer, bukan di dalam aksi.
+     *
+     * Aksi dibuat sekali lewat `useMemo([])`, sehingga `state` yang tertangkap
+     * closure-nya adalah state awal — membaca pesanan dari sana menghasilkan
+     * data basi dan sync tidak mengubah apa pun. Reducer selalu menerima state
+     * terkini, jadi di sinilah tempatnya.
+     */
+    case 'SYNC_PO': {
+      const order = state.orders.find((o) => o.id === action.poId);
+      const record = state.confirmations[action.poId];
+      if (!order || !record?.lines?.length) return state;
+
+      const lines = order.lines.map((line) => {
+        const prop = record.lines.find((l) => l.no === line.no);
+        if (!prop) return line;
+        const quantity = Number(prop.proposedQty ?? line.quantity);
+        const unitPrice = Number(prop.proposedPrice ?? line.unitPrice);
+        return {
+          ...line,
+          quantity,
+          unitPrice,
+          amount: quantity * unitPrice,
+          deliveryDate: prop.proposedDate
+            ? new Date(prop.proposedDate).toISOString()
+            : line.deliveryDate,
+        };
+      });
+
+      const untaxedAmount = lines.reduce((sum, l) => sum + l.amount, 0);
+      const taxes = Math.round(untaxedAmount * 0.11);
+
+      return {
+        ...state,
+        orders: state.orders.map((o) =>
+          o.id === action.poId
+            ? {
+                ...o,
+                lines,
+                untaxedAmount,
+                taxes,
+                amount: untaxedAmount + taxes,
+                syncedAt: action.at,
+                syncedBy: action.actor,
+              }
+            : o,
+        ),
+      };
+    }
 
     case 'RESET':
       return initialState;
@@ -67,7 +136,7 @@ export function OrderStoreProvider({ children }) {
        * dan tabel daftar tidak perlu menghitung ulang artinya sendiri.
        */
       submitConfirmation(poId, { type, header, lines, reason }, actor) {
-        const stage = stageAfterConfirmation(type);
+        const stage = stageAfterConfirmation(type, lines ?? []);
 
         dispatch({
           type: 'CONFIRM',
@@ -80,8 +149,48 @@ export function OrderStoreProvider({ children }) {
             reason: reason ?? '',
             submittedAt: now(),
             submittedBy: actor ?? '',
+            // Usulan perubahan menunggu keputusan procurement; jenis lain
+            // tidak punya tahap persetujuan sama sekali.
+            proposal:
+              type === CONFIRMATION_TYPE.PROPOSE_CHANGES
+                ? { status: PROPOSAL_STATUS.PENDING }
+                : null,
           },
         });
+      },
+
+      /**
+       * Procurement menyetujui atau menolak usulan perubahan pemasok.
+       *
+       * Ditolak, PO kembali menunggu tanggapan pemasok (kartu New order).
+       * Disetujui, PO menunggu pembaruan dari SAP — perubahan harganya baru
+       * benar-benar berlaku setelah ditarik lewat tombol sync.
+       */
+      decideProposal(poId, approved, note, actor) {
+        dispatch({
+          type: 'DECIDE_PROPOSAL',
+          poId,
+          stage: stageAfterProposalDecision(approved),
+          proposal: {
+            status: approved ? PROPOSAL_STATUS.APPROVED : PROPOSAL_STATUS.REJECTED,
+            note: note ?? '',
+            decidedAt: now(),
+            decidedBy: actor ?? '',
+            synced: false,
+          },
+        });
+      },
+
+      /**
+       * Menarik PO yang sudah diperbarui dari SAP.
+       *
+       * Hanya untuk satu PO, bukan seluruhnya: pembaruan massal akan menimpa
+       * PO lain yang sedang ditanggapi pemasok. Tanpa backend, nilai usulan
+       * pemasok yang disetujui diterapkan langsung ke barisnya — itulah yang
+       * akan dikembalikan SAP setelah procurement memperbaruinya di sana.
+       */
+      syncFromSap(poId, actor) {
+        dispatch({ type: 'SYNC_PO', poId, actor: actor ?? '', at: now() });
       },
 
       reset: () => dispatch({ type: 'RESET' }),
