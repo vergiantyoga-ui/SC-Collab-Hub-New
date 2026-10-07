@@ -21,9 +21,29 @@
   color: inherit;
 }
 
-a.ordercards__card:hover {
+a.ordercards__card:hover,
+button.ordercards__card:hover {
   background: var(--surface-sunk);
   border-color: var(--blue-600);
+}
+button.ordercards__card {
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+/* Kartu yang sedang dipakai sebagai saringan. */
+.ordercards__card--active {
+  outline: 2px solid var(--blue-600);
+  outline-offset: -1px;
+}
+
+.po-link {
+  font-weight: 700;
+  color: var(--blue-600);
+  text-decoration: none;
+}
+.po-link:hover {
+  text-decoration: underline;
 }
 
 .ordercards__card--pending { border-left-color: #b45309; }

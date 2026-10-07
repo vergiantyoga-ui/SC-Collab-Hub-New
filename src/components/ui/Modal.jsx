@@ -9,7 +9,8 @@ const FOCUSABLE =
  * fokus berpindah ke dalam saat dibuka, Tab berputar di dalam dialog,
  * Escape menutup, dan fokus kembali ke pemicu saat ditutup.
  */
-export default function Modal({ open, onClose, title, description, children, footer }) {
+export default function Modal({
+  className = '', open, onClose, title, description, children, footer }) {
   const dialogRef = useRef(null);
   const returnFocusRef = useRef(null);
   const titleId = useId();
@@ -65,7 +66,7 @@ export default function Modal({ open, onClose, title, description, children, foo
       }}
     >
       <div
-        className="modal"
+        className={`modal ${className}`.trim()}
         ref={dialogRef}
         role="dialog"
         aria-modal="true"

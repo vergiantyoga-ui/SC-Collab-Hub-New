@@ -51,6 +51,25 @@ const STAGE_WEIGHTS = [
 
 const STAGE_POOL = STAGE_WEIGHTS.flatMap(([stage, weight]) => Array(weight).fill(stage));
 
+/**
+ * Baris item PO. Satu PO memuat beberapa baris, seperti dokumen PO Paragon
+ * yang sebenarnya: formula, kemasan, inner box, master carton.
+ */
+const LINE_TEMPLATES = [
+  { item: 'Formula', suffix: '(700gr)', unit: 'PC' },
+  { item: 'Formula + Packaging', suffix: '', unit: 'PC' },
+  { item: 'Formula + Packaging + Unit Box', suffix: '', unit: 'PC' },
+  { item: 'Blank Inner Box', suffix: '', unit: 'PC' },
+  { item: 'Blank Master Carton', suffix: '', unit: 'PC' },
+];
+
+const PROJECTS = [
+  'Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3',
+  'Project Aurora - Emina Cushion C-BLZ-4471',
+  'Project Terra - Kahf Face Wash K-FWS-2210',
+  'Project Lumen - Wardah Sunscreen W-SPF-3050',
+];
+
 const MATERIALS = [
   { name: 'Cetyl Alcohol', unit: 'KG' },
   { name: 'Glycerin USP', unit: 'KG' },
@@ -125,6 +144,44 @@ function ordersForSupplier(submission, index) {
 
     const confirmedReached = stage !== PO_STAGE.NEW && stage !== PO_STAGE.REJECTED;
 
+    /*
+     * Baris item dibangkitkan dari seed yang sama supaya jumlah dan nilainya
+     * tetap; `amount` PO dihitung dari jumlah barisnya, bukan sebaliknya,
+     * agar dokumen PO dan kartu beranda tidak pernah berbeda angka.
+     */
+    const lineCount = (s % 4) + 2;
+    const project = PROJECTS[s % PROJECTS.length];
+    const lines = Array.from({ length: lineCount }, (_, li) => {
+      const ls = hash(`${submission.id}#${i}#${li}`);
+      const tpl = LINE_TEMPLATES[li % LINE_TEMPLATES.length];
+      /*
+       * Meniru bentuk PO Paragon yang sebenarnya: baris pertama adalah formula
+       * dengan harga satuan besar dan kuantitas satu, sisanya komponen kemasan
+       * berharga satuan kecil dengan kuantitas besar. Sebaran rata membuat
+       * dokumennya terlihat tidak masuk akal bagi orang yang mengenalinya.
+       */
+      const isFormula = li === 0;
+      const qty = isFormula ? 1 : (ls % 600) + 20;
+      const unitPrice = isFormula
+        ? 3_500_000 + (ls % 1200) * 1000
+        : ((ls % 20) + 1) * 270;
+      return {
+        no: li + 1,
+        item: `${tpl.item} ${tpl.suffix}`.trim(),
+        description: `${project}\n${tpl.item}`,
+        note: 'Sample Material - PM',
+        deliveryDate: daysAgoIso(orderedDaysAgo - 14),
+        unitPrice,
+        quantity: qty,
+        unit: tpl.unit,
+        discount: 0,
+        amount: unitPrice * qty,
+      };
+    });
+
+    const untaxed = lines.reduce((sum, l) => sum + l.amount, 0);
+    const taxes = Math.round(untaxed * 0.11);
+
     return {
       id: `PO-${String(4500000 + seed % 90000 + i).slice(0, 10)}-${i}`,
       poNumber: `45${String((seed + i * 17) % 100000000).padStart(8, '0')}`,
@@ -137,8 +194,20 @@ function ordersForSupplier(submission, index) {
       /** Kuantitas yang benar-benar diterima pemasok — beda hanya saat parsial. */
       confirmedQuantity:
         stage === PO_STAGE.PARTIAL ? Math.floor(quantity * 0.6) : confirmedReached ? quantity : 0,
-      amount,
+      lines,
+      untaxedAmount: untaxed,
+      taxes,
+      amount: untaxed + taxes,
       currency: 'IDR',
+      /* Bidang dokumen PO, mengikuti bentuk PO Paragon yang sebenarnya. */
+      vendorCode: `10000${(seed % 90000) + 10000}`,
+      incoterm: 'Delivered Duty Paid Tangerang',
+      paymentTerms: '30 Net Days',
+      paymentType: '30 Net Days after invoice received',
+      deliveryTo:
+        'Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang',
+      issuedBy: 'HELTA.AANGGU',
+      issuedAt: daysAgoIso(orderedDaysAgo),
       stage,
       orderedAt: daysAgoIso(orderedDaysAgo),
       confirmedAt: confirmedReached ? daysAgoIso(confirmedDaysAgo) : null,

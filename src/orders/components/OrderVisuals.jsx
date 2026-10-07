@@ -26,8 +26,13 @@ export const formatIdr = (amount) => {
   return `Rp ${value.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
 };
 
-/** Ketujuh kartu tahapan order. */
-export function OrderCardGrid({ cards, linkFor }) {
+/**
+ * Ketujuh kartu tahapan order.
+ *
+ * Kartunya dapat berperan sebagai saringan bila `onSelect` diberikan: kartu
+ * yang sedang dipakai ditandai, dan menekannya kembali melepas saringan.
+ */
+export function OrderCardGrid({ cards, linkFor, onSelect, activeId }) {
   return (
     <div className="ordercards">
       {cards.map((card) => {
@@ -42,14 +47,30 @@ export function OrderCardGrid({ cards, linkFor }) {
 
         const className = `ordercards__card ordercards__card--${card.tone}${
           card.actionable && card.count > 0 ? ' ordercards__card--action' : ''
-        }`;
+        }${activeId === card.id ? ' ordercards__card--active' : ''}`;
 
         const to = linkFor?.(card);
-        return to ? (
-          <Link key={card.id} to={to} className={className}>
-            {body}
-          </Link>
-        ) : (
+        if (to) {
+          return (
+            <Link key={card.id} to={to} className={className}>
+              {body}
+            </Link>
+          );
+        }
+        if (onSelect) {
+          return (
+            <button
+              key={card.id}
+              type="button"
+              className={className}
+              aria-pressed={activeId === card.id}
+              onClick={() => onSelect(card)}
+            >
+              {body}
+            </button>
+          );
+        }
+        return (
           <div key={card.id} className={className}>
             {body}
           </div>

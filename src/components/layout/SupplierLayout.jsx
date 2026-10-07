@@ -3,6 +3,7 @@ import AppShell from './AppShell.jsx';
 import { useAppActions, useAppState, useCurrentSubmission } from '../../store/AppStore.jsx';
 import { hasFinishedRegistration } from '../../lib/constants.js';
 import { useQuestionnaireState } from '../../questionnaire/store/QuestionnaireStore.jsx';
+import { useOrderState } from '../../orders/store/OrderStore.jsx';
 import { useT } from '../../i18n/LanguageContext.jsx';
 
 /**
@@ -14,6 +15,7 @@ export default function SupplierLayout() {
   const { session } = useAppState();
   const submission = useCurrentSubmission();
   const questionnaireState = useQuestionnaireState();
+  const orderState = useOrderState();
   const { signOut } = useAppActions();
   const navigate = useNavigate();
 
@@ -32,6 +34,11 @@ export default function SupplierLayout() {
     return response && response.status !== 'submitted';
   }).length;
 
+  // Jumlah PO yang menunggu konfirmasi, ditampilkan sebagai lencana menu.
+  const newOrderCount = orderState.orders.filter(
+    (order) => order.supplierId === submission.id && order.stage === 'new',
+  ).length;
+
   const unreadNotifications = questionnaireState.notifications.filter(
     (item) => item.audience === 'supplier' && !item.read,
   ).length;
@@ -46,6 +53,22 @@ export default function SupplierLayout() {
     {
       label: t('nav.group.home'),
       items: [{ to: '/portal/beranda', label: t('nav.summary'), icon: 'home', end: true }],
+    },
+    /*
+     * Order Collaboration berdiri sebagai kelompok sendiri, bukan disisipkan
+     * ke kelompok Perusahaan: isinya pekerjaan harian pemasok, sedangkan
+     * Perusahaan berisi data yang jarang disentuh setelah onboarding.
+     */
+    {
+      label: 'Order collaboration',
+      items: [
+        {
+          to: '/portal/order-confirmation',
+          label: 'Order confirmation',
+          icon: 'queue',
+          count: newOrderCount,
+        },
+      ],
     },
     {
       label: t('nav.group.company'),

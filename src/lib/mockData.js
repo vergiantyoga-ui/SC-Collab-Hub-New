@@ -619,6 +619,103 @@ export const SUBMISSIONS = [
       { at: daysAgo(18), label: 'Ditetapkan sebagai preferred supplier', actor: 'Lestari Handayani' },
     ],
   },
+
+  /*
+   * Jalur B, menunggu tinjauan pemasok.
+   *
+   * Profilnya disiapkan admin procurement dari dokumen yang dikirim lewat
+   * email; akunnya sudah dibuat, tetapi pemasok belum meninjau dan menyetujui
+   * isinya. Tanpa satu pun pemasok pada keadaan ini, langkah tinjauan pemasok
+   * pada jalur registrasi internal tidak dapat ditelusuri sama sekali.
+   */
+  {
+    id: 'SUP-2026-0145',
+    status: STATUS.CONNECTED,
+    submittedAt: daysAgo(12),
+    decidedAt: daysAgo(10),
+    onboardingPath: PATH.INTERNAL,
+    account: {
+      accountId: 'SUP-PKG-0145',
+      inviteToken: 'pgn-inv-9c07de',
+      emailSentAt: daysAgo(3),
+      passwordChanged: true,
+    },
+    internalDraft: {
+      documentSource: 'email',
+      filledBy: 'Rangga Prasetyo',
+      startedAt: daysAgo(9),
+      finishedAt: daysAgo(3),
+    },
+    general: {
+      legalStatus: 'Z2',
+      entityType: '0001',
+      vendorName: 'PT Tirta Kemasan Jaya',
+      vendorType: '0002',
+      vendorTypeDetail: '0001',
+      targetCompanies: ['Paragon Corp Indonesia'],
+      otvStatus: 'C1',
+      vendorDirectType: 'Z002',
+      companyEmail: 'procurement@tirtakemasan.co.id',
+      officePhone: '(021) 655-8890',
+      mobilePhone: '+62 813-5566-7788',
+      website: 'https://www.tirtakemasan.co.id',
+    },
+    address: {
+      street: 'Kawasan Industri Delta Silicon Blok F No. 12',
+      country: 'Indonesia',
+      province: 'Jawa Barat',
+      city: 'Bekasi',
+      postalCode: '17530',
+      district: 'Cikarang Selatan',
+      subdistrict: 'Sukaresmi',
+    },
+    contact: {
+      name: 'Bagus Santoso',
+      title: 'Mr',
+      jobPosition: 'Sales Manager',
+      email: 'bagus.s@tirtakemasan.co.id',
+      phone: '(021) 655-8891',
+      mobile: '+62 813-5566-7799',
+      notes: 'Dokumen dikirim lewat email pada 10 hari lalu.',
+    },
+    profile: filledProfile({
+      tax: {
+        ...filledProfile().tax,
+        taxName: 'PT Tirta Kemasan Jaya',
+        taxAddress: 'Kawasan Industri Delta Silicon Blok F No. 12, Bekasi 17530',
+        nik: '3216050707880004',
+        npwp: '0298877665501000',
+      },
+      banking: {
+        ...filledProfile().banking,
+        lines: filledProfile().banking.lines.map((line) => ({
+          ...line,
+          accountHolder: 'PT Tirta Kemasan Jaya',
+        })),
+      },
+      contacts: [
+        {
+          id: 'ct-0145-1',
+          title: 'Mr',
+          name: 'Bagus Santoso',
+          jobPosition: 'Sales',
+          email: 'bagus.s@tirtakemasan.co.id',
+          phone: '(021) 655-8891',
+          mobile: '+62 813-5566-7799',
+          notes: 'Kontak utama penawaran harga.',
+          isPrimary: true,
+        },
+      ],
+    }),
+    consent: null,
+    verification: null,
+    timeline: [
+      { at: daysAgo(12), label: 'Registrasi dikirim pemasok', actor: 'Bagus Santoso' },
+      { at: daysAgo(10), label: 'Registrasi disetujui', actor: 'Rangga Prasetyo' },
+      { at: daysAgo(9), label: 'Registrasi internal dimulai (dokumen via email)', actor: 'Rangga Prasetyo' },
+      { at: daysAgo(3), label: 'Profil selesai diisi, akun dikirim ke pemasok', actor: 'Rangga Prasetyo' },
+    ],
+  },
 ];
 
 export { emptyProfile };

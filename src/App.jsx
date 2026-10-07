@@ -22,6 +22,8 @@ import InternalAccount from './pages/internal/InternalAccount.jsx';
 import ManagementReview from './pages/internal/ManagementReview.jsx';
 import OrderCollaborationSummary from './orders/pages/OrderCollaborationSummary.jsx';
 import SupplierOrderHome from './orders/pages/SupplierOrderHome.jsx';
+import SupplierOrderConfirmation from './orders/pages/SupplierOrderConfirmation.jsx';
+import PurchaseOrderDetail from './orders/pages/PurchaseOrderDetail.jsx';
 
 import SapReview from './sap/pages/SapReview.jsx';
 import VendorDataUpdate from './sap/pages/VendorDataUpdate.jsx';
@@ -61,6 +63,8 @@ export default function App() {
       <Route path="/portal" element={<SupplierLayout />}>
         <Route index element={<Navigate to="/portal/beranda" replace />} />
         <Route path="beranda" element={<SupplierOrderHome />} />
+        <Route path="order-confirmation" element={<SupplierOrderConfirmation />} />
+        <Route path="order-confirmation/:poId" element={<PurchaseOrderDetail />} />
         <Route path="ganti-sandi" element={<ChangePassword />} />
         {/* Status pendaftaran kini menjadi tab di dalam Profil. */}
         <Route path="status" element={<Navigate to="/portal/profil" replace />} />

@@ -263,3 +263,70 @@ export function topSuppliers(orders, limit = 5) {
   });
   return [...map.values()].sort((a, b) => b.value - a.value).slice(0, limit);
 }
+
+
+/* ------------------------------------------------------------------
+   Konfirmasi pesanan
+   ------------------------------------------------------------------ */
+
+/** Jenis keputusan konfirmasi yang dapat diambil pemasok atas sebuah PO. */
+export const CONFIRMATION_TYPE = {
+  CONFIRM_ALL: 'confirm_all',
+  REJECT: 'reject',
+  UPDATE_LINES: 'update_lines',
+  PROPOSE_CHANGES: 'propose_changes',
+};
+
+export const CONFIRMATION_LABEL = {
+  [CONFIRMATION_TYPE.CONFIRM_ALL]: 'Confirm entire order',
+  [CONFIRMATION_TYPE.REJECT]: 'Reject order',
+  [CONFIRMATION_TYPE.UPDATE_LINES]: 'Update line items',
+  [CONFIRMATION_TYPE.PROPOSE_CHANGES]: 'Propose changes',
+};
+
+/** Keadaan tiap baris setelah dikonfirmasi. */
+export const LINE_STATUS = {
+  CONFIRMED: 'confirmed',
+  CONFIRMED_NEW_DATE: 'confirmed_new_date',
+  PARTIAL: 'partial',
+  BACKORDERED: 'backordered',
+  REJECTED: 'rejected',
+};
+
+export const LINE_STATUS_LABEL = {
+  [LINE_STATUS.CONFIRMED]: 'Confirmed',
+  [LINE_STATUS.CONFIRMED_NEW_DATE]: 'Confirmed With New Date',
+  [LINE_STATUS.PARTIAL]: 'Confirmed Partial',
+  [LINE_STATUS.BACKORDERED]: 'Backordered',
+  [LINE_STATUS.REJECTED]: 'Rejected',
+};
+
+export const LINE_STATUS_TONE = {
+  [LINE_STATUS.CONFIRMED]: 'success',
+  [LINE_STATUS.CONFIRMED_NEW_DATE]: 'progress',
+  [LINE_STATUS.PARTIAL]: 'progress',
+  [LINE_STATUS.BACKORDERED]: 'pending',
+  [LINE_STATUS.REJECTED]: 'danger',
+};
+
+/**
+ * Nomor konfirmasi diturunkan dari nomor PO dengan akhiran `OC`, mengikuti
+ * pola portal pemasok yang umum — nomornya dapat ditebak dari PO-nya, jadi
+ * pemasok tidak perlu mencatat dua nomor berbeda.
+ */
+export const confirmationNumberFor = (poNumber) => `${poNumber}OC`;
+
+/**
+ * Tahapan PO setelah sebuah keputusan konfirmasi.
+ *
+ * Usulan perubahan sengaja tidak memindahkan tahapan: mengusulkan bukan
+ * berarti disetujui, dan PO tetap menunggu sampai Paragon menanggapinya.
+ */
+export function stageAfterConfirmation(type) {
+  return {
+    [CONFIRMATION_TYPE.CONFIRM_ALL]: PO_STAGE.CONFIRMED,
+    [CONFIRMATION_TYPE.REJECT]: PO_STAGE.REJECTED,
+    [CONFIRMATION_TYPE.UPDATE_LINES]: PO_STAGE.PARTIAL,
+    [CONFIRMATION_TYPE.PROPOSE_CHANGES]: PO_STAGE.NEW,
+  }[type];
+}

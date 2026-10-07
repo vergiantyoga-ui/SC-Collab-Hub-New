@@ -1,0 +1,322 @@
+/* ------------------------------------------------------------
+   Dokumen purchase order — tata letak mengikuti PO Paragon,
+   beserta aturan cetak untuk "Save as PDF".
+   ------------------------------------------------------------ */
+
+.po-doc {
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 32px 34px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  max-width: 900px;
+}
+
+/* Dokumen ini meniru kertas, jadi warnanya tetap terang di mode gelap —
+   sebuah PO putih yang berubah menjadi hitam tidak lagi mengenali dirinya. */
+.po-doc p,
+.po-doc dd,
+.po-doc li,
+.po-doc td,
+.po-doc th {
+  color: #111;
+}
+
+.po-doc__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  border-bottom: 0;
+}
+.po-doc__company {
+  color: #5b7a99;
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  letter-spacing: 0.01em;
+}
+.po-doc__kv {
+  display: grid;
+  grid-template-columns: 58px 8px 1fr;
+  gap: 2px 0;
+  margin: 0;
+  font-size: 11px;
+}
+.po-doc__kv dt {
+  color: #5b7a99;
+  font-weight: 600;
+}
+.po-doc__kv dt::after {
+  content: ':';
+  margin-left: 8px;
+}
+.po-doc__kv dd {
+  grid-column: 3;
+  margin: 0;
+  color: #5b7a99;
+}
+
+.po-doc__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #2b3b55;
+}
+.po-doc__brand small {
+  display: block;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  font-weight: 500;
+  color: #5b7a99;
+}
+.po-doc__mark {
+  width: 34px;
+  height: 26px;
+  flex: none;
+  background: linear-gradient(160deg, #2f6fb5 0%, #1d3f73 100%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.po-doc__parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+  margin: 22px 0 26px;
+}
+.po-doc__parties p {
+  margin: 0 0 8px;
+}
+.po-doc__label {
+  font-weight: 700;
+  margin: 0 0 2px !important;
+}
+.po-doc__title {
+  font-size: 17px;
+  font-weight: 700;
+  text-decoration: underline;
+  margin: 6px 0 8px;
+}
+
+.po-doc__items {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.po-doc__items thead th {
+  border-bottom: 1px solid #333;
+  border-top: 1px solid #333;
+  padding: 6px 6px;
+  text-align: left;
+  font-weight: 700;
+  vertical-align: top;
+}
+.po-doc__items td {
+  padding: 8px 6px;
+  vertical-align: top;
+}
+.po-doc__items .num {
+  text-align: right;
+  white-space: nowrap;
+}
+.po-doc__items tbody tr + tr td {
+  border-top: 1px solid #eee;
+}
+.po-doc__items tfoot th {
+  text-align: left;
+  padding: 4px 6px;
+  font-weight: 700;
+  background: #f2f2f2;
+}
+.po-doc__items tfoot td.num {
+  padding: 4px 6px;
+  background: #f2f2f2;
+}
+.po-doc__total th,
+.po-doc__total td {
+  border-top: 1px solid #333;
+  font-weight: 700;
+}
+
+.po-doc__words {
+  background: #f2f2f2;
+  padding: 6px 8px;
+  margin: 10px 0 18px;
+  font-size: 11px;
+}
+
+.po-doc__terms {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  border-top: 1px solid #333;
+  border-bottom: 1px solid #ccc;
+  font-size: 11px;
+}
+.po-doc__terms > div {
+  padding: 10px 12px;
+}
+.po-doc__terms > div:first-child {
+  border-right: 1px solid #ccc;
+}
+.po-doc__terms p {
+  margin: 0 0 6px;
+}
+
+.po-doc__notes {
+  font-size: 11px;
+  margin: 18px 0 0;
+  padding-left: 18px;
+}
+.po-doc__notes li {
+  margin: 5px 0;
+}
+
+.po-doc__foot {
+  margin-top: 26px;
+  padding-top: 8px;
+  border-top: 1px solid #ccc;
+  text-align: center;
+  font-size: 10.5px;
+  color: #444;
+}
+
+@media (max-width: 720px) {
+  .po-doc__parties,
+  .po-doc__terms {
+    grid-template-columns: 1fr;
+  }
+  .po-doc {
+    padding: 20px 16px;
+  }
+}
+
+/* ---- Cetak / Save as PDF ----
+   Hanya dokumen PO yang dicetak; kerangka aplikasi disembunyikan supaya
+   hasilnya sama dengan PO yang dikirim lewat email. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  body {
+    background: #fff;
+  }
+  .shell__side,
+  .shell__topbar,
+  .shell__bar,
+  .page-header,
+  .po-noprint,
+  .modal,
+  .modal-backdrop,
+  .toast,
+  .toasts {
+    display: none !important;
+  }
+  .shell__main,
+  .shell__content,
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  .po-doc {
+    border: 0;
+    padding: 0;
+    max-width: none;
+    font-size: 10.5px;
+  }
+  .po-doc__items {
+    font-size: 9.5px;
+  }
+  /* Satu baris item tidak boleh terpotong dua halaman. */
+  .po-doc__items tr,
+  .po-doc__terms,
+  .po-doc__notes {
+    break-inside: avoid;
+  }
+}
+
+/* ---- Dialog konfirmasi pesanan ---- */
+.oc-choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.oc-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: var(--ink-700);
+}
+.oc-choice:hover {
+  border-color: var(--blue-600);
+  background: var(--surface-sunk);
+}
+.oc-choice strong {
+  display: block;
+  font-size: var(--text-sm);
+}
+.oc-choice small {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--ink-500);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+.oc-choice__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-top: 6px;
+  flex: none;
+  background: var(--ink-400);
+}
+.oc-choice__dot--success { background: #15803d; }
+.oc-choice__dot--progress { background: var(--blue-600); }
+.oc-choice__dot--pending { background: #b45309; }
+.oc-choice__dot--danger { background: var(--danger); }
+
+.oc-section {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin: var(--sp-4) 0 var(--sp-2);
+}
+.oc-qty,
+.oc-date,
+.oc-select {
+  width: 100%;
+  min-width: 96px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-700);
+  font: inherit;
+  font-size: var(--text-xs);
+}
+.oc-lines td {
+  vertical-align: middle;
+}
+
+/* Dialog konfirmasi memuat tabel baris item, jadi lebih lebar dari modal
+   biasa — kolom "New date" terpotong pada lebar bawaan 560px. */
+/* Spesifisitas ganda: `.modal` sendiri sudah menetapkan lebar, dan satu kelas
+   melawan satu kelas hasilnya bergantung urutan berkas CSS. */
+.modal.modal--wide {
+  width: min(940px, 100%);
+}

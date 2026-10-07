@@ -5,6 +5,7 @@ import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { AppStoreProvider } from './store/AppStore.jsx';
 import { QuestionnaireStoreProvider } from './questionnaire/store/QuestionnaireStore.jsx';
+import { OrderStoreProvider } from './orders/store/OrderStore.jsx';
 import { ToastProvider } from './components/ui/Toast.jsx';
 import { ThemeProvider } from './store/ThemeContext.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
@@ -18,12 +19,14 @@ createRoot(document.getElementById('root')).render(
         <ThemeProvider>
           <AppStoreProvider>
             <QuestionnaireStoreProvider>
+              <OrderStoreProvider>
               <ToastProvider>
                 {/* Menangkap galat render agar tidak berujung layar kosong. */}
                 <ErrorBoundary>
                   <App />
                 </ErrorBoundary>
               </ToastProvider>
+            </OrderStoreProvider>
             </QuestionnaireStoreProvider>
           </AppStoreProvider>
         </ThemeProvider>
