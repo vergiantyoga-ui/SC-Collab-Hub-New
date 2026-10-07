@@ -15,6 +15,7 @@ import { MemoryRouter } from 'react-router-dom';
 import App from '../src/App.jsx';
 import { AppStoreProvider, useAppActions } from '../src/store/AppStore.jsx';
 import { QuestionnaireStoreProvider } from '../src/questionnaire/store/QuestionnaireStore.jsx';
+import { OrderStoreProvider } from '../src/orders/store/OrderStore.jsx';
 import { ToastProvider } from '../src/components/ui/Toast.jsx';
 import { ThemeProvider } from '../src/store/ThemeContext.jsx';
 import { LanguageProvider } from '../src/i18n/LanguageContext.jsx';
@@ -75,7 +76,11 @@ function renderAs(email, route) {
                 React.createElement(
                   QuestionnaireStoreProvider,
                   null,
-                  React.createElement(ToastProvider, null, React.createElement(App)),
+                  React.createElement(
+                    OrderStoreProvider,
+                    null,
+                    React.createElement(ToastProvider, null, React.createElement(App)),
+                  ),
                 ),
               ),
             ),
@@ -126,7 +131,11 @@ function renderAsSupplier(accountId, route) {
                 React.createElement(
                   QuestionnaireStoreProvider,
                   null,
-                  React.createElement(ToastProvider, null, React.createElement(App)),
+                  React.createElement(
+                    OrderStoreProvider,
+                    null,
+                    React.createElement(ToastProvider, null, React.createElement(App)),
+                  ),
                 ),
               ),
             ),
@@ -176,6 +185,9 @@ const CASES = [
   { email: STAFF_EMAIL, route: '/internal/beranda', expect: 'Ringkasan order collaboration' },
   // Ketujuh kartu tahapan pada ringkasan order collaboration.
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'New order' },
+  // Layar tinjauan konfirmasi pemasok.
+  { email: STAFF_EMAIL, route: '/internal/konfirmasi-pemasok', expect: 'Supplier order confirmations' },
+  { email: STAFF_EMAIL, route: '/internal/beranda', expect: '/internal/konfirmasi-pemasok' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Item to confirm' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Order to goods receipt' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Order to invoice' },
@@ -251,7 +263,11 @@ function renderInProviders(element) {
               React.createElement(
                 QuestionnaireStoreProvider,
                 null,
-                React.createElement(ToastProvider, null, element),
+                React.createElement(
+                  OrderStoreProvider,
+                  null,
+                  React.createElement(ToastProvider, null, element),
+                ),
               ),
             ),
           ),
@@ -338,6 +354,11 @@ for (const { route, expect, label } of SUPPLIER_CASES) {
 
 // Beranda Order Collaboration pemasok aktif: ketujuh kartu dan grafiknya.
 const ACTIVE_SUPPLIER_CASES = [
+  { route: '/portal/order-confirmation', expect: 'PO number', label: 'daftar order confirmation memuat kolom PO number' },
+  { route: '/portal/order-confirmation', expect: 'Delivery date', label: 'daftar memuat kolom delivery date' },
+  { route: '/portal/order-confirmation', expect: 'po-link', label: 'nomor PO dapat diklik' },
+  // Status Order Collaboration seluruhnya berbahasa Inggris.
+  { route: '/portal/order-confirmation', expect: 'Pending confirmation', label: 'status PO berbahasa Inggris' },
   { expect: 'New order', label: 'beranda pemasok memuat kartu new order' },
   { expect: 'Item to confirm', label: 'beranda pemasok memuat kartu item to confirm' },
   { expect: 'Goods receipt', label: 'beranda pemasok memuat kartu goods receipt' },
@@ -346,9 +367,9 @@ const ACTIVE_SUPPLIER_CASES = [
   { expect: 'terealisasi', label: 'beranda pemasok memuat nilai terealisasi' },
 ];
 
-for (const { expect, label } of ACTIVE_SUPPLIER_CASES) {
+for (const { expect, label, route } of ACTIVE_SUPPLIER_CASES) {
   try {
-    const text = renderAsSupplier(ACTIVE_SUPPLIER_ACCOUNT, '/portal/beranda');
+    const text = renderAsSupplier(ACTIVE_SUPPLIER_ACCOUNT, route ?? '/portal/beranda');
     check(label, text.toLowerCase().includes(expect.toLowerCase()), `tidak memuat "${expect}"`);
   } catch (error) {
     check(label, false, error.message);

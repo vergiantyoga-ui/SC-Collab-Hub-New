@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Order Collaboration — Mockup Portal Pemasok</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f4f6fb; --surface:#fff; --sunk:#f6f7f9;
+  --ink-900:#0f172a; --ink-700:#334155; --ink-500:#64748b; --ink-400:#94a3b8;
+  --line:#e2e8f0; --blue:#2547b8; --danger:#b91c1c; --ok:#15803d; --warn:#b45309;
+  --radius:10px; --radius-sm:6px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1116; --surface:#161b22; --sunk:#1c222b;
+    --ink-900:#f1f5f9; --ink-700:#cbd5e1; --ink-500:#94a3b8; --ink-400:#64748b;
+    --line:#2b313a; --blue:#8fa9ff; --danger:#f87171; --ok:#4ade80; --warn:#fbbf24;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1116; --surface:#161b22; --sunk:#1c222b;
+  --ink-900:#f1f5f9; --ink-700:#cbd5e1; --ink-500:#94a3b8; --ink-400:#64748b;
+  --line:#2b313a; --blue:#8fa9ff; --danger:#f87171; --ok:#4ade80; --warn:#fbbf24;
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink-700);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif}
+h1,h2,h3,h4{color:var(--ink-900);line-height:1.3;margin:0}
+button{font:inherit}
+
+/* ---- Banner mockup ---- */
+.banner{background:#1d2a4d;color:#dbe4ff;padding:10px 18px;font-size:12.5px;
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.banner strong{color:#fff}
+.banner a{color:#9db4ff}
+
+/* ---- Kerangka ---- */
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+@media (max-width:860px){.shell{grid-template-columns:1fr}.side{display:none}}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:16px 12px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--blue);
+  font-size:15px;padding:6px 8px 18px}
+.brand span{width:22px;height:22px;border:2px solid currentColor;border-radius:5px;
+  display:grid;place-items:center;font-size:11px}
+.navgroup{font-size:11px;text-transform:uppercase;letter-spacing:.05em;
+  color:var(--ink-400);padding:14px 10px 6px;border-top:1px solid var(--line);margin-top:8px}
+.navgroup:first-of-type{border-top:0;margin-top:0}
+.navitem{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);
+  color:var(--ink-700);font-size:13.5px;cursor:default}
+.navitem.active{background:color-mix(in srgb,var(--blue) 12%,transparent);color:var(--blue);font-weight:600}
+.navitem .count{margin-left:auto;background:var(--blue);color:#fff;border-radius:999px;
+  font-size:11px;font-weight:700;padding:1px 7px}
+.topbar{display:flex;align-items:center;justify-content:flex-end;gap:12px;
+  padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+.who{text-align:right;font-size:12.5px}
+.who strong{display:block;color:var(--ink-900)}
+.who small{color:var(--ink-500)}
+.avatar{width:32px;height:32px;border-radius:50%;background:color-mix(in srgb,var(--blue) 15%,transparent);
+  color:var(--blue);display:grid;place-items:center;font-weight:700;font-size:12px}
+.main{padding:22px 24px 80px;max-width:1100px}
+@media (max-width:600px){.main{padding:16px 14px 60px}}
+
+/* ---- Umum ---- */
+.crumb{font-size:12.5px;color:var(--ink-500);margin-bottom:10px}
+.crumb b{color:var(--blue)}
+.pagehead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;
+  flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}
+.pagehead p{margin:4px 0 0;color:var(--ink-500);font-size:13px;max-width:62ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  margin-bottom:18px}
+.card__head{padding:14px 16px;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.card__head h3{font-size:14.5px}
+.card__head p{margin:2px 0 0;font-size:12px;color:var(--ink-500)}
+.card__body{padding:16px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink-700);
+  padding:8px 14px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600}
+.btn:hover{background:var(--sunk)}
+.btn--primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn--primary:hover{filter:brightness(1.08)}
+.btn--danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--line))}
+.btn--quiet{border-color:transparent;background:none;color:var(--blue)}
+.btn--sm{padding:5px 10px;font-size:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.pill--pending{background:#fef3c7;color:#92400e}
+.pill--progress{background:#dbeafe;color:#1e40af}
+.pill--success{background:#dcfce7;color:#166534}
+.pill--danger{background:#fee2e2;color:#991b1b}
+.pill--neutral{background:var(--sunk);color:var(--ink-500)}
+.notice{border-radius:var(--radius);padding:12px 14px;font-size:13px;margin-bottom:16px}
+.notice b{display:block;margin-bottom:2px}
+.notice--info{background:color-mix(in srgb,var(--blue) 9%,transparent);color:var(--ink-700)}
+.notice--ok{background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ink-700)}
+.notice--danger{background:color-mix(in srgb,var(--danger) 10%,transparent);color:var(--ink-700)}
+.muted{color:var(--ink-500);font-size:12.5px}
+.scroll{overflow-x:auto}
+
+/* ---- Kartu tahapan ---- */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:10px;margin-bottom:18px}
+.ocard{display:flex;flex-direction:column;gap:2px;padding:14px;border:1px solid var(--line);
+  border-left:3px solid var(--ink-400);border-radius:var(--radius);background:var(--surface);
+  text-align:left;cursor:pointer;color:inherit}
+.ocard:hover{background:var(--sunk);border-color:var(--blue)}
+.ocard--active{outline:2px solid var(--blue);outline-offset:-1px}
+.ocard--pending{border-left-color:var(--warn)}
+.ocard--progress{border-left-color:var(--blue)}
+.ocard--success{border-left-color:var(--ok)}
+.ocard--danger{border-left-color:var(--danger)}
+.ocard--neutral{border-left-color:var(--ink-400)}
+.ocard--act{background:color-mix(in srgb,var(--blue) 5%,var(--surface))}
+.ocard .lab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-500)}
+.ocard .num{font-size:26px;font-weight:700;line-height:1.1;color:var(--ink-900)}
+.ocard .val{font-size:13px;font-weight:600;color:var(--blue)}
+.ocard .desc{font-size:11.5px;color:var(--ink-400);margin-top:4px;line-height:1.45}
+
+/* ---- Tabel ---- */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--ink-500);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.strong{display:block;font-weight:600;color:var(--ink-900)}
+.meta{display:block;font-size:11.5px;color:var(--ink-500)}
+.polink{font-weight:700;color:var(--blue);background:none;border:0;padding:0;cursor:pointer;font-size:13px}
+.polink:hover{text-decoration:underline}
+.field{display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.field label{font-weight:600;color:var(--ink-700)}
+input,select,textarea{padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);
+  background:var(--surface);color:var(--ink-700);font:inherit;font-size:13px;width:100%}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+
+/* ---- Dokumen PO ---- */
+.podoc{background:#fff;color:#111;border:1px solid var(--line);border-radius:var(--radius);
+  padding:30px 32px;font-size:12.5px;line-height:1.45}
+.podoc *{color:#111}
+.podoc .co{color:#5b7a99;font-size:15px;font-weight:700;margin-bottom:8px}
+.podoc .kv{font-size:11px;color:#5b7a99}
+.podoc .head{display:flex;justify-content:space-between;gap:22px;flex-wrap:wrap}
+.podoc .mark{display:flex;align-items:center;gap:9px;font-size:20px;font-weight:700;
+  letter-spacing:.06em;color:#2b3b55}
+.podoc .mark i{width:32px;height:24px;background:linear-gradient(160deg,#2f6fb5,#1d3f73);
+  clip-path:polygon(0 0,100% 0,50% 100%);display:block}
+.podoc .mark small{display:block;font-size:8px;letter-spacing:.12em;color:#5b7a99;font-weight:500}
+.podoc .parties{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin:20px 0 24px}
+@media (max-width:700px){.podoc .parties{grid-template-columns:1fr}}
+.podoc .lbl{font-weight:700}
+.podoc .title{font-size:16px;font-weight:700;text-decoration:underline;margin:6px 0 8px}
+.podoc table{font-size:11px}
+.podoc thead th{border-top:1px solid #333;border-bottom:1px solid #333;color:#111;padding:6px}
+.podoc td{padding:8px 6px;border-bottom:1px solid #eee}
+.podoc .num2{text-align:right;white-space:nowrap}
+.podoc tfoot th{text-align:left;background:#f2f2f2;padding:4px 6px;border:0;color:#111;
+  text-transform:none;letter-spacing:0;font-size:11px}
+.podoc tfoot td{background:#f2f2f2;padding:4px 6px;border:0}
+.podoc .tot th,.podoc .tot td{border-top:1px solid #333;font-weight:700}
+.podoc .words{background:#f2f2f2;padding:6px 8px;margin:10px 0 18px;font-size:11px}
+.podoc .terms{display:grid;grid-template-columns:290px 1fr;border-top:1px solid #333;
+  border-bottom:1px solid #ccc;font-size:11px}
+@media (max-width:700px){.podoc .terms{grid-template-columns:1fr}}
+.podoc .terms>div{padding:10px 12px}
+.podoc .terms>div:first-child{border-right:1px solid #ccc}
+.podoc ul{font-size:11px;padding-left:18px}
+.podoc .foot{margin-top:22px;padding-top:8px;border-top:1px solid #ccc;text-align:center;
+  font-size:10.5px;color:#444}
+
+/* ---- Modal ---- */
+.backdrop{position:fixed;inset:0;background:rgba(15,23,42,.5);display:grid;place-items:center;
+  padding:20px;z-index:50}
+.modal{background:var(--surface);border-radius:12px;width:min(560px,100%);max-height:88vh;
+  overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal--wide{width:min(940px,100%)}
+.modal__body{padding:20px}
+.modal__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.choice{display:flex;gap:12px;align-items:flex-start;width:100%;padding:12px 14px;
+  border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);
+  text-align:left;cursor:pointer;margin-bottom:8px;color:var(--ink-700)}
+.choice:hover{border-color:var(--blue);background:var(--sunk)}
+.choice strong{display:block;font-size:13.5px;color:var(--ink-900)}
+.choice small{display:block;font-size:12px;color:var(--ink-500);margin-top:2px;line-height:1.5}
+.choice i{width:9px;height:9px;border-radius:50%;margin-top:6px;flex:none;background:var(--ink-400)}
+.choice i.ok{background:var(--ok)} .choice i.pr{background:var(--blue)}
+.choice i.pe{background:var(--warn)} .choice i.da{background:var(--danger)}
+.sec{font-size:13px;font-weight:700;color:var(--ink-900);margin:18px 0 8px}
+.err{color:var(--danger);font-size:12px;margin-top:4px}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#14532d;color:#fff;
+  padding:12px 18px;border-radius:8px;font-size:13px;z-index:60;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+
+@media print{
+  .banner,.side,.topbar,.crumb,.pagehead,.notice,.backdrop,.toast,.noprint{display:none!important}
+  body{background:#fff}
+  .shell{display:block}
+  .main{padding:0;max-width:none}
+  .podoc{border:0;padding:0;font-size:10.5px}
+  @page{size:A4;margin:14mm 12mm}
+}
+</style>
+</head>
+<body>
+<div class="banner">
+  <strong>Mockup</strong>
+  <span>Order Collaboration — portal pemasok. Dapat diklik: pilih kartu untuk menyaring, buka nomor PO, lalu coba dropdown Order confirmation.</span>
+  <button class="btn btn--sm" id="themeBtn" type="button">Mode gelap</button>
+</div>
+
+<div class="shell">
+  <aside class="side">
+    <div class="brand"><span>P</span>ParagonHub</div>
+    <div class="navgroup">Home</div>
+    <div class="navitem">Overview</div>
+    <div class="navgroup">Order collaboration</div>
+    <div class="navitem active">Order confirmation <b class="count" id="navCount">0</b></div>
+    <div class="navgroup">Company</div>
+    <div class="navitem">Profile</div>
+    <div class="navgroup">Kuesioner</div>
+    <div class="navitem">Kuesioner saya</div>
+  </aside>
+
+  <div>
+    <div class="topbar">
+      <div class="who"><strong id="whoName">—</strong><small id="whoId">—</small></div>
+      <div class="avatar" id="whoInit">—</div>
+    </div>
+    <main class="main" id="view"></main>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+
+<script id="po-data" type="application/json">{"supplierName":"PT Kimia Prima Lestari","accountId":"SUP-RAW-0118","cards":[{"id":"new_order","label":"New order","description":"Sent by SAP, not yet confirmed by supplier","stages":["new","changes_rejected"],"tone":"pending","actionable":true},{"id":"order","label":"Order","description":"Confirmed, rejected, or with approved changes","stages":["confirmed","rejected","asn_created","gr_posted","gr_confirmed","invoiced","changes_approved"],"tone":"neutral","actionable":false},{"id":"item_to_confirm","label":"Item to confirm","description":"Partially confirmed by supplier","stages":["partial"],"tone":"progress","actionable":true},{"id":"order_to_gr","label":"Order to goods receipt","description":"ASN created, awaiting goods receipt","stages":["asn_created"],"tone":"progress","actionable":false},{"id":"goods_receipt","label":"Goods receipt","description":"GR posted, awaiting supplier confirmation","stages":["gr_posted"],"tone":"pending","actionable":true},{"id":"order_to_invoice","label":"Order to invoice","description":"GR confirmed, not yet invoiced","stages":["gr_confirmed"],"tone":"progress","actionable":true},{"id":"invoice","label":"Invoice","description":"Invoice submitted by supplier","stages":["invoiced"],"tone":"success","actionable":false}],"stageLabel":{"new":"Pending confirmation","confirmed":"Confirmed","partial":"Partially confirmed","rejected":"Rejected","asn_created":"ASN created, awaiting GR","gr_posted":"GR awaiting confirmation","gr_confirmed":"Ready to invoice","invoiced":"Invoice submitted","changes_rejected":"Changes rejected","changes_approved":"Changes approved"},"stageTone":{"new":"pending","confirmed":"success","partial":"progress","rejected":"danger","asn_created":"progress","gr_posted":"pending","gr_confirmed":"progress","invoiced":"success","changes_rejected":"danger","changes_approved":"progress"},"lineStatusLabel":{"confirmed":"Confirmed","partial":"Confirmed partial","rejected":"Rejected"},"lineStatusTone":{"confirmed":"success","partial":"progress","rejected":"danger"},"confirmationLabel":{"confirm_all":"Confirm entire order","reject":"Reject order","update_lines":"Update line items","propose_changes":"Propose changes"},"orders":[{"id":"PO-4520157-0","poNumber":"4500110157","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Karton Master Box","unit":"PCS","quantity":445,"confirmedQuantity":267,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-30T09:00:00.000Z","unitPrice":4644000,"quantity":1,"unit":"PC","discount":0,"amount":4644000},{"no":2,"item":"Formula + Packaging","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-30T09:00:00.000Z","unitPrice":1620,"quantity":565,"unit":"PC","discount":0,"amount":915300},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-30T09:00:00.000Z","unitPrice":1890,"quantity":566,"unit":"PC","discount":0,"amount":1069740},{"no":4,"item":"Blank Inner Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-08-30T09:00:00.000Z","unitPrice":2160,"quantity":567,"unit":"PC","discount":0,"amount":1224720},{"no":5,"item":"Blank Master Carton","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Master Carton","note":"Sample Material - PM","deliveryDate":"2026-08-30T09:00:00.000Z","unitPrice":2430,"quantity":568,"unit":"PC","discount":0,"amount":1380240}],"untaxedAmount":9234000,"taxes":1015740,"amount":10249740,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-16T09:00:00.000Z","stage":"partial","orderedAt":"2026-08-16T09:00:00.000Z","confirmedAt":"2026-08-20T09:00:00.000Z","rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Bogor"},{"id":"PO-4520158-1","poNumber":"4500110174","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Label Sticker Roll","unit":"ROLL","quantity":446,"confirmedQuantity":446,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-29T09:00:00.000Z","unitPrice":4405000,"quantity":1,"unit":"PC","discount":0,"amount":4405000},{"no":2,"item":"Formula + Packaging","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-29T09:00:00.000Z","unitPrice":1890,"quantity":326,"unit":"PC","discount":0,"amount":616140}],"untaxedAmount":5021140,"taxes":552325,"amount":5573465,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-15T09:00:00.000Z","stage":"gr_confirmed","orderedAt":"2026-08-15T09:00:00.000Z","confirmedAt":"2026-08-16T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210158","asnAt":"2026-08-17T09:00:00.000Z","grNumber":"5000110164","grPostedAt":"2026-08-18T09:00:00.000Z","grConfirmedAt":"2026-08-19T09:00:00.000Z","invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Jatake"},{"id":"PO-4520159-2","poNumber":"4500110191","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Jasa Maintenance Mesin","unit":"LOT","quantity":447,"confirmedQuantity":0,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-28T09:00:00.000Z","unitPrice":4166000,"quantity":1,"unit":"PC","discount":0,"amount":4166000},{"no":2,"item":"Formula + Packaging","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-28T09:00:00.000Z","unitPrice":2160,"quantity":87,"unit":"PC","discount":0,"amount":187920},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-28T09:00:00.000Z","unitPrice":2430,"quantity":88,"unit":"PC","discount":0,"amount":213840}],"untaxedAmount":4567760,"taxes":502454,"amount":5070214,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-14T09:00:00.000Z","stage":"new","orderedAt":"2026-08-14T09:00:00.000Z","confirmedAt":null,"rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Cikarang"},{"id":"PO-4520160-3","poNumber":"4500110208","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Fragrance Compound","unit":"KG","quantity":448,"confirmedQuantity":448,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-27T09:00:00.000Z","unitPrice":3927000,"quantity":1,"unit":"PC","discount":0,"amount":3927000},{"no":2,"item":"Formula + Packaging","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-27T09:00:00.000Z","unitPrice":2430,"quantity":448,"unit":"PC","discount":0,"amount":1088640},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-27T09:00:00.000Z","unitPrice":2700,"quantity":449,"unit":"PC","discount":0,"amount":1212300},{"no":4,"item":"Blank Inner Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-08-27T09:00:00.000Z","unitPrice":2970,"quantity":450,"unit":"PC","discount":0,"amount":1336500}],"untaxedAmount":7564440,"taxes":832088,"amount":8396528,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-13T09:00:00.000Z","stage":"gr_posted","orderedAt":"2026-08-13T09:00:00.000Z","confirmedAt":"2026-08-16T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210160","asnAt":"2026-08-19T09:00:00.000Z","grNumber":"5000110178","grPostedAt":"2026-08-22T09:00:00.000Z","grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Bogor"},{"id":"PO-4520161-4","poNumber":"4500110225","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Tube Laminate 50ml","unit":"PCS","quantity":449,"confirmedQuantity":0,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-26T09:00:00.000Z","unitPrice":3688000,"quantity":1,"unit":"PC","discount":0,"amount":3688000},{"no":2,"item":"Formula + Packaging","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-26T09:00:00.000Z","unitPrice":2700,"quantity":209,"unit":"PC","discount":0,"amount":564300},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-26T09:00:00.000Z","unitPrice":2970,"quantity":210,"unit":"PC","discount":0,"amount":623700},{"no":4,"item":"Blank Inner Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-08-26T09:00:00.000Z","unitPrice":3240,"quantity":211,"unit":"PC","discount":0,"amount":683640},{"no":5,"item":"Blank Master Carton","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Master Carton","note":"Sample Material - PM","deliveryDate":"2026-08-26T09:00:00.000Z","unitPrice":3510,"quantity":212,"unit":"PC","discount":0,"amount":744120}],"untaxedAmount":6303760,"taxes":693414,"amount":6997174,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-12T09:00:00.000Z","stage":"new","orderedAt":"2026-08-12T09:00:00.000Z","confirmedAt":null,"rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Jatake"},{"id":"PO-4520162-5","poNumber":"4500110242","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Cetyl Alcohol","unit":"KG","quantity":450,"confirmedQuantity":450,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-25T09:00:00.000Z","unitPrice":4649000,"quantity":1,"unit":"PC","discount":0,"amount":4649000},{"no":2,"item":"Formula + Packaging","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-25T09:00:00.000Z","unitPrice":2970,"quantity":570,"unit":"PC","discount":0,"amount":1692900}],"untaxedAmount":6341900,"taxes":697609,"amount":7039509,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-11T09:00:00.000Z","stage":"gr_posted","orderedAt":"2026-08-11T09:00:00.000Z","confirmedAt":"2026-08-12T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210162","asnAt":"2026-08-14T09:00:00.000Z","grNumber":"5000110192","grPostedAt":"2026-08-16T09:00:00.000Z","grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Cikarang"},{"id":"PO-4520163-6","poNumber":"4500110259","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Glycerin USP","unit":"KG","quantity":451,"confirmedQuantity":0,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-24T09:00:00.000Z","unitPrice":4410000,"quantity":1,"unit":"PC","discount":0,"amount":4410000},{"no":2,"item":"Formula + Packaging","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-24T09:00:00.000Z","unitPrice":3240,"quantity":331,"unit":"PC","discount":0,"amount":1072440},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-24T09:00:00.000Z","unitPrice":3510,"quantity":332,"unit":"PC","discount":0,"amount":1165320}],"untaxedAmount":6647760,"taxes":731254,"amount":7379014,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-10T09:00:00.000Z","stage":"rejected","orderedAt":"2026-08-10T09:00:00.000Z","confirmedAt":null,"rejectedAt":"2026-08-12T09:00:00.000Z","asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Bogor"},{"id":"PO-4520164-7","poNumber":"4500110276","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Titanium Dioxide","unit":"KG","quantity":452,"confirmedQuantity":452,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-23T09:00:00.000Z","unitPrice":4171000,"quantity":1,"unit":"PC","discount":0,"amount":4171000},{"no":2,"item":"Formula + Packaging","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-23T09:00:00.000Z","unitPrice":3510,"quantity":92,"unit":"PC","discount":0,"amount":322920},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-23T09:00:00.000Z","unitPrice":3780,"quantity":93,"unit":"PC","discount":0,"amount":351540},{"no":4,"item":"Blank Inner Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-08-23T09:00:00.000Z","unitPrice":4050,"quantity":94,"unit":"PC","discount":0,"amount":380700}],"untaxedAmount":5226160,"taxes":574878,"amount":5801038,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-09T09:00:00.000Z","stage":"asn_created","orderedAt":"2026-08-09T09:00:00.000Z","confirmedAt":"2026-08-12T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210164","asnAt":"2026-08-13T09:00:00.000Z","grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Jatake"},{"id":"PO-4520165-8","poNumber":"4500110293","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Botol PET 100ml","unit":"PCS","quantity":453,"confirmedQuantity":453,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-22T09:00:00.000Z","unitPrice":3932000,"quantity":1,"unit":"PC","discount":0,"amount":3932000},{"no":2,"item":"Formula + Packaging","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-22T09:00:00.000Z","unitPrice":3780,"quantity":453,"unit":"PC","discount":0,"amount":1712340},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-22T09:00:00.000Z","unitPrice":4050,"quantity":454,"unit":"PC","discount":0,"amount":1838700},{"no":4,"item":"Blank Inner Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-08-22T09:00:00.000Z","unitPrice":4320,"quantity":455,"unit":"PC","discount":0,"amount":1965600},{"no":5,"item":"Blank Master Carton","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Master Carton","note":"Sample Material - PM","deliveryDate":"2026-08-22T09:00:00.000Z","unitPrice":4590,"quantity":456,"unit":"PC","discount":0,"amount":2093040}],"untaxedAmount":11541680,"taxes":1269585,"amount":12811265,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-08T09:00:00.000Z","stage":"invoiced","orderedAt":"2026-08-08T09:00:00.000Z","confirmedAt":"2026-08-12T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210165","asnAt":"2026-08-14T09:00:00.000Z","grNumber":"5000110213","grPostedAt":"2026-08-16T09:00:00.000Z","grConfirmedAt":"2026-08-17T09:00:00.000Z","invoiceNumber":"INV/2026/3165","invoicedAt":"2026-08-19T09:00:00.000Z","dueAt":"2026-09-18T09:00:00.000Z","plant":"Cikarang"},{"id":"PO-4520166-9","poNumber":"4500110310","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Tutup Flip-top","unit":"PCS","quantity":454,"confirmedQuantity":454,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-21T09:00:00.000Z","unitPrice":3693000,"quantity":1,"unit":"PC","discount":0,"amount":3693000},{"no":2,"item":"Formula + Packaging","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-21T09:00:00.000Z","unitPrice":4050,"quantity":214,"unit":"PC","discount":0,"amount":866700}],"untaxedAmount":4559700,"taxes":501567,"amount":5061267,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-08-07T09:00:00.000Z","stage":"confirmed","orderedAt":"2026-08-07T09:00:00.000Z","confirmedAt":"2026-08-08T09:00:00.000Z","rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Bogor"},{"id":"PO-4520167-10","poNumber":"4500110327","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Label Sticker Roll","unit":"ROLL","quantity":696,"confirmedQuantity":696,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-04T09:00:00.000Z","unitPrice":4487000,"quantity":1,"unit":"PC","discount":0,"amount":4487000},{"no":2,"item":"Formula + Packaging","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-04T09:00:00.000Z","unitPrice":2430,"quantity":408,"unit":"PC","discount":0,"amount":991440},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-04T09:00:00.000Z","unitPrice":2700,"quantity":409,"unit":"PC","discount":0,"amount":1104300},{"no":4,"item":"Blank Inner Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-08-04T09:00:00.000Z","unitPrice":2970,"quantity":410,"unit":"PC","discount":0,"amount":1217700}],"untaxedAmount":7800440,"taxes":858048,"amount":8658488,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-21T09:00:00.000Z","stage":"invoiced","orderedAt":"2026-07-21T09:00:00.000Z","confirmedAt":"2026-07-24T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210167","asnAt":"2026-07-26T09:00:00.000Z","grNumber":"5000110227","grPostedAt":"2026-07-28T09:00:00.000Z","grConfirmedAt":"2026-07-29T09:00:00.000Z","invoiceNumber":"INV/2026/3167","invoicedAt":"2026-07-31T09:00:00.000Z","dueAt":"2026-08-30T09:00:00.000Z","plant":"Cikarang"},{"id":"PO-4520168-11","poNumber":"4500110344","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Jasa Maintenance Mesin","unit":"LOT","quantity":697,"confirmedQuantity":697,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-03T09:00:00.000Z","unitPrice":4248000,"quantity":1,"unit":"PC","discount":0,"amount":4248000},{"no":2,"item":"Formula + Packaging","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-03T09:00:00.000Z","unitPrice":2700,"quantity":169,"unit":"PC","discount":0,"amount":456300},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-03T09:00:00.000Z","unitPrice":2970,"quantity":170,"unit":"PC","discount":0,"amount":504900},{"no":4,"item":"Blank Inner Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-08-03T09:00:00.000Z","unitPrice":3240,"quantity":171,"unit":"PC","discount":0,"amount":554040},{"no":5,"item":"Blank Master Carton","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Master Carton","note":"Sample Material - PM","deliveryDate":"2026-08-03T09:00:00.000Z","unitPrice":3510,"quantity":172,"unit":"PC","discount":0,"amount":603720}],"untaxedAmount":6366960,"taxes":700366,"amount":7067326,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-20T09:00:00.000Z","stage":"confirmed","orderedAt":"2026-07-20T09:00:00.000Z","confirmedAt":"2026-07-24T09:00:00.000Z","rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Bogor"},{"id":"PO-4520169-12","poNumber":"4500110361","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Fragrance Compound","unit":"KG","quantity":698,"confirmedQuantity":698,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-02T09:00:00.000Z","unitPrice":4009000,"quantity":1,"unit":"PC","discount":0,"amount":4009000},{"no":2,"item":"Formula + Packaging","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-02T09:00:00.000Z","unitPrice":2970,"quantity":530,"unit":"PC","discount":0,"amount":1574100}],"untaxedAmount":5583100,"taxes":614141,"amount":6197241,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-19T09:00:00.000Z","stage":"invoiced","orderedAt":"2026-07-19T09:00:00.000Z","confirmedAt":"2026-07-20T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210169","asnAt":"2026-07-21T09:00:00.000Z","grNumber":"5000110241","grPostedAt":"2026-07-22T09:00:00.000Z","grConfirmedAt":"2026-07-23T09:00:00.000Z","invoiceNumber":"INV/2026/3169","invoicedAt":"2026-07-24T09:00:00.000Z","dueAt":"2026-08-23T09:00:00.000Z","plant":"Jatake"},{"id":"PO-4520170-13","poNumber":"4500110378","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Tube Laminate 50ml","unit":"PCS","quantity":699,"confirmedQuantity":419,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula","note":"Sample Material - PM","deliveryDate":"2026-08-01T09:00:00.000Z","unitPrice":3770000,"quantity":1,"unit":"PC","discount":0,"amount":3770000},{"no":2,"item":"Formula + Packaging","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-08-01T09:00:00.000Z","unitPrice":3240,"quantity":291,"unit":"PC","discount":0,"amount":942840},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-08-01T09:00:00.000Z","unitPrice":3510,"quantity":292,"unit":"PC","discount":0,"amount":1024920}],"untaxedAmount":5737760,"taxes":631154,"amount":6368914,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-18T09:00:00.000Z","stage":"partial","orderedAt":"2026-07-18T09:00:00.000Z","confirmedAt":"2026-07-20T09:00:00.000Z","rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Cikarang"},{"id":"PO-4520171-14","poNumber":"4500110395","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Cetyl Alcohol","unit":"KG","quantity":700,"confirmedQuantity":700,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula","note":"Sample Material - PM","deliveryDate":"2026-07-31T09:00:00.000Z","unitPrice":3531000,"quantity":1,"unit":"PC","discount":0,"amount":3531000},{"no":2,"item":"Formula + Packaging","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-07-31T09:00:00.000Z","unitPrice":3510,"quantity":52,"unit":"PC","discount":0,"amount":182520},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-07-31T09:00:00.000Z","unitPrice":3780,"quantity":53,"unit":"PC","discount":0,"amount":200340},{"no":4,"item":"Blank Inner Box","description":"Project Terra - Kahf Face Wash K-FWS-2210\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-07-31T09:00:00.000Z","unitPrice":4050,"quantity":54,"unit":"PC","discount":0,"amount":218700}],"untaxedAmount":4132560,"taxes":454582,"amount":4587142,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-17T09:00:00.000Z","stage":"gr_confirmed","orderedAt":"2026-07-17T09:00:00.000Z","confirmedAt":"2026-07-20T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210171","asnAt":"2026-07-23T09:00:00.000Z","grNumber":"5000110255","grPostedAt":"2026-07-26T09:00:00.000Z","grConfirmedAt":"2026-07-27T09:00:00.000Z","invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Bogor"},{"id":"PO-4520172-15","poNumber":"4500110412","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Glycerin USP","unit":"KG","quantity":701,"confirmedQuantity":0,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula","note":"Sample Material - PM","deliveryDate":"2026-07-30T09:00:00.000Z","unitPrice":4492000,"quantity":1,"unit":"PC","discount":0,"amount":4492000},{"no":2,"item":"Formula + Packaging","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-07-30T09:00:00.000Z","unitPrice":3780,"quantity":413,"unit":"PC","discount":0,"amount":1561140},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-07-30T09:00:00.000Z","unitPrice":4050,"quantity":414,"unit":"PC","discount":0,"amount":1676700},{"no":4,"item":"Blank Inner Box","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Inner Box","note":"Sample Material - PM","deliveryDate":"2026-07-30T09:00:00.000Z","unitPrice":4320,"quantity":415,"unit":"PC","discount":0,"amount":1792800},{"no":5,"item":"Blank Master Carton","description":"Project Lumen - Wardah Sunscreen W-SPF-3050\nBlank Master Carton","note":"Sample Material - PM","deliveryDate":"2026-07-30T09:00:00.000Z","unitPrice":4590,"quantity":416,"unit":"PC","discount":0,"amount":1909440}],"untaxedAmount":11432080,"taxes":1257529,"amount":12689609,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-16T09:00:00.000Z","stage":"new","orderedAt":"2026-07-16T09:00:00.000Z","confirmedAt":null,"rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Jatake"},{"id":"PO-4520173-16","poNumber":"4500110429","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Titanium Dioxide","unit":"KG","quantity":702,"confirmedQuantity":702,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula","note":"Sample Material - PM","deliveryDate":"2026-07-29T09:00:00.000Z","unitPrice":4253000,"quantity":1,"unit":"PC","discount":0,"amount":4253000},{"no":2,"item":"Formula + Packaging","description":"Project Doodle - Wardah Lip Liner Pencil T-AEL-129B3\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-07-29T09:00:00.000Z","unitPrice":4050,"quantity":174,"unit":"PC","discount":0,"amount":704700}],"untaxedAmount":4957700,"taxes":545347,"amount":5503047,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-15T09:00:00.000Z","stage":"gr_posted","orderedAt":"2026-07-15T09:00:00.000Z","confirmedAt":"2026-07-16T09:00:00.000Z","rejectedAt":null,"asnNumber":"ASN-210173","asnAt":"2026-07-18T09:00:00.000Z","grNumber":"5000110269","grPostedAt":"2026-07-20T09:00:00.000Z","grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Cikarang"},{"id":"PO-4520174-17","poNumber":"4500110446","supplierId":"SUP-2026-0118","supplierName":"PT Kimia Prima Lestari","materialType":"Raw Material","material":"Botol PET 100ml","unit":"PCS","quantity":703,"confirmedQuantity":0,"lines":[{"no":1,"item":"Formula (700gr)","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula","note":"Sample Material - PM","deliveryDate":"2026-07-28T09:00:00.000Z","unitPrice":4014000,"quantity":1,"unit":"PC","discount":0,"amount":4014000},{"no":2,"item":"Formula + Packaging","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging","note":"Sample Material - PM","deliveryDate":"2026-07-28T09:00:00.000Z","unitPrice":4320,"quantity":535,"unit":"PC","discount":0,"amount":2311200},{"no":3,"item":"Formula + Packaging + Unit Box","description":"Project Aurora - Emina Cushion C-BLZ-4471\nFormula + Packaging + Unit Box","note":"Sample Material - PM","deliveryDate":"2026-07-28T09:00:00.000Z","unitPrice":4590,"quantity":536,"unit":"PC","discount":0,"amount":2460240}],"untaxedAmount":8785440,"taxes":966398,"amount":9751838,"currency":"IDR","vendorCode":"1000030157","incoterm":"Delivered Duty Paid Tangerang","paymentTerms":"30 Net Days","paymentType":"30 Net Days after invoice received","deliveryTo":"Kawasan Industri Jatake Blok AG No. 8 Jalan Industri Raya IV Jatiuwung 15136 Tangerang","issuedBy":"HELTA.AANGGU","issuedAt":"2026-07-14T09:00:00.000Z","stage":"new","orderedAt":"2026-07-14T09:00:00.000Z","confirmedAt":null,"rejectedAt":null,"asnNumber":null,"asnAt":null,"grNumber":null,"grPostedAt":null,"grConfirmedAt":null,"invoiceNumber":null,"invoicedAt":null,"dueAt":null,"plant":"Bogor"}]}</script>
+<script>/* Mockup Order Collaboration — logika tampilan.
+   Data berasal dari aplikasi sungguhan; konfirmasi hanya hidup di memori. */
+const DATA = JSON.parse(document.getElementById('po-data').textContent);
+
+const state = {
+  orders: DATA.orders.map((o) => ({ ...o })),
+  confirmations: {},
+  filter: 'all',
+  query: '',
+  sort: 'ordered_desc',
+  route: { name: 'list' },
+};
+
+/* ---------- Pembantu ---------- */
+const el = (id) => document.getElementById(id);
+const esc = (s) =>
+  String(s ?? '').replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const nf = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 });
+const idr = (n) => nf.format(n ?? 0);
+function idrShort(v) {
+  v = v ?? 0;
+  const r = (n) => n.toLocaleString('id-ID', { maximumFractionDigits: 1 });
+  if (Math.abs(v) >= 1e9) return 'Rp ' + r(v / 1e9) + ' mlr';
+  if (Math.abs(v) >= 1e6) return 'Rp ' + r(v / 1e6) + ' jt';
+  return 'Rp ' + idr(v);
+}
+const fdate = (iso) =>
+  iso ? new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
+const fdatetime = (iso) =>
+  iso ? new Date(iso).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const daysSince = (iso) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+
+const UNITS = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+function terbilang(n) {
+  n = Math.floor(n);
+  if (n < 12) return UNITS[n];
+  if (n < 20) return terbilang(n - 10) + ' belas';
+  if (n < 100) return (terbilang(Math.floor(n / 10)) + ' puluh ' + terbilang(n % 10)).trim();
+  if (n < 200) return ('seratus ' + terbilang(n - 100)).trim();
+  if (n < 1000) return (terbilang(Math.floor(n / 100)) + ' ratus ' + terbilang(n % 100)).trim();
+  if (n < 2000) return ('seribu ' + terbilang(n - 1000)).trim();
+  if (n < 1e6) return (terbilang(Math.floor(n / 1000)) + ' ribu ' + terbilang(n % 1000)).trim();
+  if (n < 1e9) return (terbilang(Math.floor(n / 1e6)) + ' juta ' + terbilang(n % 1e6)).trim();
+  return (terbilang(Math.floor(n / 1e9)) + ' miliar ' + terbilang(n % 1e9)).trim();
+}
+
+function toast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  el('toastRoot').appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+/* ---------- Turunan ---------- */
+const cardsSummary = () =>
+  DATA.cards.map((c) => {
+    const m = state.orders.filter((o) => c.stages.includes(o.stage));
+    return { ...c, count: m.length, value: m.reduce((s, o) => s + o.amount, 0) };
+  });
+
+const deliveryDateOf = (o) =>
+  o.lines && o.lines.length ? o.lines.map((l) => l.deliveryDate).sort()[0] : null;
+
+function visibleRows() {
+  const card = DATA.cards.find((c) => c.id === state.filter);
+  let list = card ? state.orders.filter((o) => card.stages.includes(o.stage)) : [...state.orders];
+  const q = state.query.trim().toLowerCase();
+  if (q) {
+    list = list.filter(
+      (o) => o.poNumber.toLowerCase().includes(q) || (o.material || '').toLowerCase().includes(q));
+  }
+  const by = {
+    ordered_desc: (a, b) => new Date(b.orderedAt) - new Date(a.orderedAt),
+    ordered_asc: (a, b) => new Date(a.orderedAt) - new Date(b.orderedAt),
+    amount_desc: (a, b) => b.amount - a.amount,
+    amount_asc: (a, b) => a.amount - b.amount,
+  }[state.sort];
+  return list.sort(by);
+}
+
+/* ---------- Tampilan: daftar ---------- */
+function renderList() {
+  const cards = cardsSummary();
+  const card = DATA.cards.find((c) => c.id === state.filter);
+  const rows = visibleRows();
+
+  el('view').innerHTML = `
+    <div class="crumb">Beranda › <b>Order confirmation</b></div>
+    <div class="pagehead">
+      <div>
+        <h1>Order confirmation</h1>
+        <p>Purchase order dari Paragon beserta keadaan konfirmasinya. Pilih sebuah kartu untuk menyaring tabel.</p>
+      </div>
+    </div>
+
+    <div class="cards">
+      ${cards.map((c) => `
+        <button class="ocard ocard--${c.tone}${c.actionable && c.count ? ' ocard--act' : ''}${state.filter === c.id ? ' ocard--active' : ''}"
+                data-card="${c.id}">
+          <span class="lab">${esc(c.label)}</span>
+          <span class="num">${c.count}</span>
+          <span class="val">${idrShort(c.value)}</span>
+          <span class="desc">${esc(c.description)}</span>
+        </button>`).join('')}
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <div>
+          <h3>${card ? esc(card.label) + ' — ' + rows.length + ' PO' : 'Seluruh PO (' + rows.length + ')'}</h3>
+          <p>${card ? esc(card.description) : 'Klik nomor PO untuk membuka dokumennya'}</p>
+        </div>
+        ${card ? '<button class="btn btn--quiet btn--sm" id="clearFilter">Hapus saringan</button>' : ''}
+      </div>
+      <div class="card__body">
+        <div class="grid2">
+          <div class="field"><label for="q">Cari</label>
+            <input id="q" placeholder="Nomor PO atau material" value="${esc(state.query)}"></div>
+          <div class="field"><label for="sort">Urutkan</label>
+            <select id="sort">
+              <option value="ordered_desc">Order date — terbaru</option>
+              <option value="ordered_asc">Order date — terlama</option>
+              <option value="amount_desc">Amount — terbesar</option>
+              <option value="amount_asc">Amount — terkecil</option>
+            </select></div>
+        </div>
+
+        <div class="scroll" style="margin-top:16px">
+          <table>
+            <thead><tr>
+              <th>PO number</th><th>Nama supplier</th><th>Order date</th>
+              <th>Delivery date</th><th>Status</th><th>Amount</th>
+            </tr></thead>
+            <tbody>
+              ${rows.length === 0 ? '<tr><td colspan="6" class="muted">Tidak ada PO pada saringan ini.</td></tr>' :
+                rows.map((o) => `
+                <tr>
+                  <td><button class="polink" data-po="${esc(o.id)}">${esc(o.poNumber)}</button>
+                      <span class="meta">${esc(o.material)}</span></td>
+                  <td><span class="strong">${esc(o.supplierName)}</span>
+                      <span class="meta">${esc(o.plant)}</span></td>
+                  <td>${fdate(o.orderedAt)}</td>
+                  <td>${fdate(deliveryDateOf(o))}</td>
+                  <td><span class="pill pill--${DATA.stageTone[o.stage]}">${esc(DATA.stageLabel[o.stage])}</span>
+                      ${o.stage === 'new' ? `<span class="meta">menunggu ${daysSince(o.orderedAt)} hari</span>` : ''}</td>
+                  <td>${idrShort(o.amount)}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="notice notice--info" style="margin-top:16px">
+          <b>Data pesanan berasal dari SAP</b>
+          Sambungannya belum ada — ini mockup front-end. Konfirmasi yang dikirim hanya
+          berlaku pada sesi ini dan kembali ke keadaan semula saat halaman dimuat ulang.
+        </div>
+      </div>
+    </div>`;
+
+  el('sort').value = state.sort;
+  el('q').addEventListener('input', (e) => {
+    state.query = e.target.value;
+    const pos = e.target.selectionStart;
+    renderList();
+    const q = el('q'); q.focus(); q.setSelectionRange(pos, pos);
+  });
+  el('sort').addEventListener('change', (e) => { state.sort = e.target.value; renderList(); });
+  const cf = el('clearFilter');
+  if (cf) cf.addEventListener('click', () => { state.filter = 'all'; renderList(); });
+  document.querySelectorAll('[data-card]').forEach((b) =>
+    b.addEventListener('click', () => {
+      state.filter = state.filter === b.dataset.card ? 'all' : b.dataset.card;
+      renderList();
+    }));
+  document.querySelectorAll('[data-po]').forEach((b) =>
+    b.addEventListener('click', () => { state.route = { name: 'po', id: b.dataset.po }; render(); }));
+}
+
+/* ---------- Tampilan: dokumen PO ---------- */
+function renderPo(id) {
+  const o = state.orders.find((x) => x.id === id);
+  const c = state.confirmations[id];
+  const canConfirm = ['new', 'partial', 'changes_rejected'].includes(o.stage);
+
+  el('view').innerHTML = `
+    <div class="crumb"><button class="btn btn--quiet btn--sm" id="back" style="padding:0">Order confirmation</button> › <b>${esc(o.poNumber)}</b></div>
+    <div class="pagehead">
+      <div>
+        <h1>Purchase Order ${esc(o.poNumber)}</h1>
+        <p>Diterbitkan ${fdate(o.orderedAt)} · ${esc(o.plant)}</p>
+      </div>
+      <div class="row">
+        <span class="pill pill--${DATA.stageTone[o.stage]}">${esc(DATA.stageLabel[o.stage])}</span>
+        <button class="btn" id="dl">Download PDF</button>
+        ${canConfirm ? `<span class="ocmenu"><button class="btn btn--primary" id="oc">Order confirmation &#9662;</button>
+          <div class="ocmenu__list" id="ocmenu" hidden>
+            ${CHOICES.map((c)=>`<button class="ocmenu__item" data-ch="${c.type}">
+              <i class="${c.cls}"></i><span><strong>${esc(c.label)}</strong><small>${esc(c.hint)}</small></span>
+            </button>`).join('')}
+          </div></span>` : ''}
+      </div>
+    </div>
+
+    ${c ? `<div class="notice notice--${c.type === 'reject' ? 'danger' : 'ok'} noprint">
+        <b>${esc(c.label)} · ${fdatetime(c.at)}</b>
+        ${c.header && c.header.confirmationNumber ? `<div>Confirmation # ${esc(c.header.confirmationNumber)}</div>` : ''}
+        ${c.header && c.header.deliveryDate ? `<div>Est. shipping ${fdate(c.header.shippingDate)} · Est. delivery ${fdate(c.header.deliveryDate)}</div>` : ''}
+        ${c.reason ? `<div>${esc(c.reason)}</div>` : ''}
+      </div>` : ''}
+
+    <article class="podoc">
+      <div class="head">
+        <div>
+          <div class="co">PARAGON TECHNOLOGY AND INNOVATION</div>
+          <div class="kv"><b>Office</b> : JL. CILEDUG RAYA NO. 10 RT/RW 018/003 KOTA JAKARTA SELATAN 12250<br>
+          <b>Email</b> : procurement.indirect@paracorpgroup.com<br>procurement.direct@paracorpgroup.com</div>
+        </div>
+        <div class="mark"><i></i><span>PARAGON<small>TECHNOLOGY AND INNOVATION</small></span></div>
+      </div>
+
+      <div class="parties">
+        <div>
+          <p class="lbl">Invoice to :</p>
+          <p>JL. KAMPUNG BARU III NO.51 RT 04/ RW 02, ULUJAMI, PESANGGRAHAN<br>JAKARTA SELATAN, 12250<br>INDONESIA</p>
+          <p><b>Email</b> : ap.contactcenter@paracorpgroup.com<br><b>Attn</b> : Account Payable</p>
+        </div>
+        <div>
+          <p>KOTA ADM. JAKARTA SELATAN, ${fdate(o.issuedAt)}</p>
+          <div class="title">Purchase Order ${esc(o.poNumber)}</div>
+          <p><b>To : ${esc(o.supplierName.toUpperCase())}</b><br>
+             <b>Vendor Code : ${esc(o.vendorCode)}</b><br>
+             Kawasan Industri, ${esc(o.plant)}, Indonesia</p>
+        </div>
+      </div>
+
+      <table>
+        <thead><tr>
+          <th>No</th><th>Item</th><th>Delivery Date</th><th class="num2">Unit Price</th>
+          <th class="num2">Qty</th><th>Unit</th><th class="num2">Discount</th><th class="num2">Price(IDR)</th>
+        </tr></thead>
+        <tbody>
+          ${o.lines.map((l) => `<tr>
+            <td>${l.no}</td>
+            <td><b>${esc(l.item)}</b><br>${esc(l.description).replace(/\n/g, '<br>')}<br>( ${esc(l.note)} )</td>
+            <td>${fdate(l.deliveryDate)}</td>
+            <td class="num2">${idr(l.unitPrice)}</td>
+            <td class="num2">${idr(l.quantity)}</td>
+            <td>${esc(l.unit)}</td>
+            <td class="num2"></td>
+            <td class="num2">${idr(l.amount)}</td></tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="6"></td><th>Subtotal</th><td class="num2">${idr(o.untaxedAmount)}</td></tr>
+          <tr><td colspan="6"></td><th>Untaxed Amount</th><td class="num2">${idr(o.untaxedAmount)}</td></tr>
+          <tr><td colspan="6"></td><th>Taxes</th><td class="num2">${idr(o.taxes)}</td></tr>
+          <tr class="tot"><td colspan="6"></td><th>Total Amount</th><td class="num2">${idr(o.amount)}</td></tr>
+        </tfoot>
+      </table>
+
+      <p class="words">(In words: ${esc((terbilang(o.amount) || 'nol').replace(/\s+/g, ' ').trim())} rupiah)</p>
+
+      <div class="terms">
+        <div><p class="lbl">INCOTERM:</p><p>${esc(o.incoterm)}</p>
+             <p class="lbl">Payment Terms:</p><p>${esc(o.paymentTerms)}</p>
+             <p>Payment Type: ${esc(o.paymentType)}</p></div>
+        <div><p class="lbl">Delivery To:</p><p>${esc(o.deliveryTo)}</p></div>
+      </div>
+
+      <ul>
+        <li>User : ${esc(o.issuedBy)}</li>
+        <li>This Purchase Order is computer-generated; no signature is required.</li>
+        <li>The Seller must clearly state the Purchase Order number on all documents.</li>
+        <li>The prices listed in this Purchase Order are fixed, non-negotiable, and not subject to any increases or changes.</li>
+        <li>The payment term shall be calculated from the date on which Accounts Payable (AP) receives a complete and accurate invoice.</li>
+      </ul>
+      <div class="foot">http://www.paragon-innovation.com TIN: 0013 9882 5806 2000</div>
+    </article>
+
+    ${c && c.proposal ? `
+      <div class="card noprint">
+        <div class="card__head"><h3>Proposed changes</h3>
+          <span class="pill pill--${c.proposal.status === 'approved' ? 'success' : c.proposal.status === 'rejected' ? 'danger' : 'pending'}">
+            ${c.proposal.status === 'approved' ? 'Changes approved' : c.proposal.status === 'rejected' ? 'Changes rejected' : 'Awaiting decision'}</span>
+        </div>
+        <div class="card__body">
+          ${c.proposal.status === 'pending' ? `
+            <p class="muted">Waiting for Paragon procurement to review your proposal.</p>
+            <div class="notice notice--info" style="margin-top:12px">
+              <b>Mockup shortcut</b>
+              Di aplikasi sungguhnya keputusan ini diambil tim procurement pada layar
+              tersendiri. Di mockup, pakai tombol berikut untuk melihat kedua cabangnya.
+              <div class="row" style="margin-top:10px">
+                <button class="btn btn--sm" id="propApprove">Simulate: approve</button>
+                <button class="btn btn--sm btn--danger" id="propReject">Simulate: decline</button>
+              </div>
+            </div>` : `
+            <p class="muted">${esc(c.proposal.note || '')}</p>
+            ${c.proposal.status === 'approved' && !o.syncedAt ? `
+              <div class="notice notice--info" style="margin-top:12px">
+                <b>Purchase order updated in SAP</b>
+                Procurement approved the changes. Pull the revised lines into this order.
+                <div style="margin-top:10px"><button class="btn btn--primary btn--sm" id="sync">Sync this PO from SAP</button></div>
+              </div>` : ''}
+            ${o.syncedAt ? `<p class="muted">Synced from SAP ${fdatetime(o.syncedAt)}</p>` : ''}`}
+        </div>
+      </div>` : ''}
+
+    ${c && c.type === 'update_lines' && c.lines.length ? `
+      <div class="card noprint" style="margin-top:18px">
+        <div class="card__head"><h3>Line items — hasil konfirmasi</h3></div>
+        <div class="card__body scroll">
+          <table><thead><tr><th>Line #</th><th>Item</th><th>Ordered</th><th>Confirmed</th><th>Current order status</th></tr></thead>
+          <tbody>${c.lines.map((l) => `<tr>
+            <td>${l.no}</td><td>${esc(l.item)}</td>
+            <td>${l.orderedQty} ${esc(l.unit)}</td><td>${l.confirmedQty} ${esc(l.unit)}</td>
+            <td><span class="pill pill--${DATA.lineStatusTone[lineStatusFor(l.confirmedQty, l.orderedQty)]}">${esc(DATA.lineStatusLabel[lineStatusFor(l.confirmedQty, l.orderedQty)])}</span>
+            ${l.lineDeliveryDate ? `<span class="meta">Est. delivery ${fdate(l.lineDeliveryDate)}</span>` : ''}</td>
+          </tr>`).join('')}</tbody></table>
+        </div>
+      </div>` : ''}`;
+
+  el('back').addEventListener('click', () => { state.route = { name: 'list' }; render(); });
+  el('dl').addEventListener('click', () => window.print());
+  const oc = el('oc');
+  if (oc) {
+    const menu = el('ocmenu');
+    oc.addEventListener('click', (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+    document.addEventListener('click', () => { menu.hidden = true; }, { once: true });
+    menu.querySelectorAll('[data-ch]').forEach((b) =>
+      b.addEventListener('click', () => { menu.hidden = true; openForm(o, b.dataset.ch); }));
+  }
+  const approveBtn = el('propApprove');
+  if (approveBtn) approveBtn.addEventListener('click', () => {
+    state.confirmations[o.id].proposal = { status: 'approved', note: 'Approved by procurement; PO updated in SAP.' };
+    o.stage = 'changes_approved'; toast('Proposal approved.'); render();
+  });
+  const rejectBtn = el('propReject');
+  if (rejectBtn) rejectBtn.addEventListener('click', () => {
+    state.confirmations[o.id].proposal = { status: 'rejected', note: 'Declined by procurement; please confirm the order as issued.' };
+    o.stage = 'changes_rejected'; toast('Proposal declined.'); render();
+  });
+
+  const sync = el('sync');
+  if (sync) sync.addEventListener('click', () => {
+    const rec = state.confirmations[o.id];
+    o.lines = o.lines.map((l) => {
+      const p = rec.lines.find((x) => x.no === l.no);
+      if (!p) return l;
+      const quantity = Number(p.proposedQty), unitPrice = Number(p.proposedPrice);
+      return { ...l, quantity, unitPrice, amount: quantity * unitPrice,
+               deliveryDate: p.proposedDate ? new Date(p.proposedDate).toISOString() : l.deliveryDate };
+    });
+    o.untaxedAmount = o.lines.reduce((s2, l) => s2 + l.amount, 0);
+    o.taxes = Math.round(o.untaxedAmount * 0.11);
+    o.amount = o.untaxedAmount + o.taxes;
+    o.syncedAt = new Date().toISOString();
+    toast('Purchase order ' + o.poNumber + ' synced from SAP.');
+    render();
+  });
+}
+
+/* ---------- Form konfirmasi ---------- */
+const CHOICES = [
+  { type: 'confirm_all', label: 'Confirm entire order', cls: 'ok',
+    hint: 'Accept all quantities and dates as ordered.' },
+  { type: 'update_lines', label: 'Update line items', cls: 'pr',
+    hint: 'Accept partially — set confirmed quantity and dates per line.' },
+  { type: 'propose_changes', label: 'Propose changes', cls: 'pe',
+    hint: 'Propose different quantity, price, or delivery date for review.' },
+  { type: 'reject', label: 'Reject order', cls: 'da',
+    hint: 'Decline the whole order with a reason.' },
+];
+
+const dateOnly = (v) => (v ? String(v).slice(0, 10) : '');
+const todayIso = () => new Date().toISOString().slice(0, 10);
+const intOf = (v) => { const n = Number(String(v).replace(/[^\d]/g, '')); return Number.isFinite(n) ? n : NaN; };
+
+/* Status baris diturunkan dari kuantitas, bukan dipilih pemasok. */
+function lineStatusFor(qty, ordered) {
+  const q = Number(qty);
+  if (!Number.isFinite(q) || q <= 0) return 'rejected';
+  return q >= ordered ? 'confirmed' : 'partial';
+}
+function stageFromLines(lines) {
+  const st = lines.map((l) => lineStatusFor(l.confirmedQty, l.orderedQty));
+  if (st.every((x) => x === 'rejected')) return 'rejected';
+  if (st.every((x) => x === 'confirmed')) return 'confirmed';
+  return 'partial';
+}
+
+function openForm(order, choice) {
+  const ch = CHOICES.find((c) => c.type === choice);
+  const isLines = choice === 'update_lines';
+  const isProp = choice === 'propose_changes';
+  const isRej = choice === 'reject';
+  const header = { cn: order.poNumber + 'OC', sr: '', sd: todayIso(), dd: '', cm: '' };
+  let lines = order.lines.map((l) => ({
+    no: l.no, item: l.item, unit: l.unit, orderedQty: l.quantity, unitPrice: l.unitPrice,
+    deliveryDate: l.deliveryDate, confirmedQty: String(l.quantity),
+    shippingDate: todayIso(), lineDeliveryDate: dateOnly(l.deliveryDate),
+    proposedQty: String(l.quantity), proposedPrice: String(l.unitPrice),
+    proposedDate: dateOnly(l.deliveryDate),
+  }));
+  let reason = '';
+
+  function close() { el('modalRoot').innerHTML = ''; }
+
+  function draw(errs) {
+    errs = errs || [];
+    el('modalRoot').innerHTML = `
+      <div class="backdrop" id="bd"><div class="modal ${isLines || isProp ? 'modal--wide' : ''}"><div class="modal__body">
+        <h3>${esc(ch.label)}</h3>
+        <p class="muted" style="margin:4px 0 16px">Purchase order ${esc(order.poNumber)}</p>
+
+        ${choice === 'confirm_all' ? `
+          <div class="sec">Order confirmation header</div>
+          <div class="grid2">
+            <div class="field"><label>Confirmation #</label><input id="cn" value="${esc(header.cn)}"></div>
+            <div class="field"><label>Supplier reference</label><input id="sr" value="${esc(header.sr)}"></div>
+            <div class="field"><label>Est. shipping date *</label><input id="sd" type="date" value="${header.sd}"></div>
+            <div class="field"><label>Est. delivery date *</label><input id="dd" type="date" value="${header.dd}"></div>
+          </div>
+          <div class="field" style="margin-top:12px"><label>Comments</label><textarea id="cm" rows="2">${esc(header.cm)}</textarea></div>` : ''}
+
+        ${isLines ? `
+          <div class="sec">Line items</div>
+          <p class="muted" style="margin:0 0 8px">Line status follows the confirmed quantity: zero is rejected, full is confirmed, anything between is partial.</p>
+          <div class="scroll"><table><thead><tr>
+            <th>#</th><th>Item</th><th>Ordered</th><th>Confirm qty</th><th>Est. shipping</th><th>Est. delivery</th><th>Status</th>
+          </tr></thead><tbody>
+          ${lines.map((l) => { const st = lineStatusFor(intOf(l.confirmedQty), l.orderedQty); return `<tr>
+            <td>${l.no}</td><td><span class="strong">${esc(l.item)}</span></td>
+            <td>${l.orderedQty} ${esc(l.unit)}</td>
+            <td><input type="text" inputmode="numeric" data-q="${l.no}" value="${esc(l.confirmedQty)}"></td>
+            <td><input type="date" data-sd="${l.no}" value="${l.shippingDate}"></td>
+            <td><input type="date" data-ld="${l.no}" value="${l.lineDeliveryDate}"></td>
+            <td><span class="pill pill--${DATA.lineStatusTone[st]}">${esc(DATA.lineStatusLabel[st])}</span></td>
+          </tr>`; }).join('')}
+          </tbody></table></div>` : ''}
+
+        ${isProp ? `
+          <div class="sec">Proposed line items</div>
+          <div class="scroll"><table><thead><tr>
+            <th>#</th><th>Item</th><th>Ordered</th><th>Proposed qty</th><th>Proposed price</th><th>Proposed delivery</th>
+          </tr></thead><tbody>
+          ${lines.map((l) => `<tr>
+            <td>${l.no}</td><td><span class="strong">${esc(l.item)}</span></td>
+            <td><span class="meta">${l.orderedQty} ${esc(l.unit)}</span><span class="meta">@ ${idr(l.unitPrice)}</span><span class="meta">${dateOnly(l.deliveryDate)}</span></td>
+            <td><input type="text" inputmode="numeric" data-pq="${l.no}" value="${esc(l.proposedQty)}"></td>
+            <td><input type="text" inputmode="numeric" data-pp="${l.no}" value="${esc(l.proposedPrice)}"></td>
+            <td><input type="date" data-pd="${l.no}" value="${l.proposedDate}"></td>
+          </tr>`).join('')}
+          </tbody></table></div>` : ''}
+
+        ${isRej || isProp ? `<div class="field" style="margin-top:14px">
+          <label>${isRej ? 'Reason for rejection *' : 'Reason for the proposed changes *'}</label>
+          <textarea id="rs" rows="4">${esc(reason)}</textarea></div>` : ''}
+
+        ${isProp ? `<div class="notice notice--info" style="margin-top:14px">
+          <b>The order stays pending</b>Proposing is not the same as agreeing. Paragon procurement reviews it first.</div>` : ''}
+
+        ${errs.map((e) => `<p class="err">${esc(e)}</p>`).join('')}
+        <div class="modal__actions">
+          <button class="btn" id="cancel">Cancel</button>
+          <button class="btn ${isRej ? 'btn--danger' : 'btn--primary'}" id="send">Submit confirmation</button>
+        </div>
+      </div></div></div>`;
+
+    el('bd').addEventListener('click', (e) => { if (e.target.id === 'bd') close(); });
+    el('cancel').addEventListener('click', close);
+
+    /* Nilai disimpan sebagai teks dan tabel tidak digambar ulang saat
+       mengetik; menggambar ulang membuat kursor melompat ke awal. */
+    const bind = (attr, key, digits) =>
+      document.querySelectorAll('[' + attr + ']').forEach((input) =>
+        input.addEventListener('input', (e) => {
+          const line = lines.find((x) => x.no === +e.target.getAttribute(attr));
+          line[key] = digits ? e.target.value.replace(/[^\d]/g, '') : e.target.value;
+          if (digits && e.target.value !== line[key]) e.target.value = line[key];
+          if (key === 'confirmedQty') {
+            const st = lineStatusFor(intOf(line.confirmedQty), line.orderedQty);
+            e.target.closest('tr').lastElementChild.innerHTML =
+              '<span class="pill pill--' + DATA.lineStatusTone[st] + '">' + DATA.lineStatusLabel[st] + '</span>';
+          }
+        }));
+    bind('data-q', 'confirmedQty', true);
+    bind('data-sd', 'shippingDate', false);
+    bind('data-ld', 'lineDeliveryDate', false);
+    bind('data-pq', 'proposedQty', true);
+    bind('data-pp', 'proposedPrice', true);
+    bind('data-pd', 'proposedDate', false);
+
+    el('send').addEventListener('click', () => {
+      const errs2 = [];
+      if (choice === 'confirm_all') {
+        header.cn = el('cn').value; header.sr = el('sr').value;
+        header.sd = el('sd').value; header.dd = el('dd').value; header.cm = el('cm').value;
+        if (!header.sd) errs2.push('Estimated shipping date is required.');
+        if (!header.dd) errs2.push('Estimated delivery date is required.');
+        if (header.sd && header.dd && header.dd < header.sd) errs2.push('Delivery cannot precede shipping.');
+      }
+      if (isRej || isProp) {
+        reason = el('rs').value.trim();
+        if (reason.length < 15) errs2.push('Please explain in at least 15 characters.');
+      }
+      if (isLines) {
+        lines.forEach((l) => {
+          const q = intOf(l.confirmedQty);
+          if (!Number.isFinite(q) || q < 0 || q > l.orderedQty)
+            errs2.push(`Line ${l.no}: quantity must be between 0 and ${l.orderedQty}.`);
+          if (q > 0) {
+            if (!l.shippingDate || !l.lineDeliveryDate) errs2.push(`Line ${l.no}: both dates are required.`);
+            else if (l.lineDeliveryDate < l.shippingDate) errs2.push(`Line ${l.no}: delivery cannot precede shipping.`);
+          }
+        });
+      }
+      if (isProp) {
+        const changed = lines.some((l) => intOf(l.proposedQty) !== l.orderedQty
+          || intOf(l.proposedPrice) !== l.unitPrice || l.proposedDate !== dateOnly(l.deliveryDate));
+        if (!changed) errs2.push('No line has been changed. Nothing to propose.');
+        lines.forEach((l) => {
+          if (!(intOf(l.proposedQty) > 0) || !(intOf(l.proposedPrice) > 0) || !l.proposedDate)
+            errs2.push(`Line ${l.no}: quantity, price, and delivery date are required.`);
+        });
+      }
+      if (errs2.length) { draw(errs2); return; }
+
+      const normalised = lines.map((l) => ({ ...l,
+        confirmedQty: intOf(l.confirmedQty), proposedQty: intOf(l.proposedQty),
+        proposedPrice: intOf(l.proposedPrice) }));
+      const stage = isLines ? stageFromLines(normalised)
+        : { confirm_all: 'confirmed', reject: 'rejected', propose_changes: 'new' }[choice];
+      const o = state.orders.find((x) => x.id === order.id);
+      o.stage = stage;
+      state.confirmations[order.id] = { type: choice, label: ch.label, header, lines: normalised,
+        reason, at: new Date().toISOString(),
+        proposal: isProp ? { status: 'pending' } : null };
+      close();
+      toast(ch.label + ' submitted for PO ' + order.poNumber + '.');
+      render();
+    });
+  }
+  draw();
+}
+
+/* ---------- Router ---------- */
+function render() {
+  el('navCount').textContent = state.orders.filter((o) => o.stage === 'new').length;
+  if (state.route.name === 'po') renderPo(state.route.id);
+  else renderList();
+  window.scrollTo({ top: 0 });
+}
+
+el('whoName').textContent = DATA.supplierName;
+el('whoId').textContent = DATA.accountId;
+el('whoInit').textContent = DATA.supplierName.split(' ').slice(0, 2).map((w) => w[0]).join('');
+
+el('themeBtn').addEventListener('click', () => {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', dark ? 'light' : 'dark');
+  el('themeBtn').textContent = dark ? 'Mode gelap' : 'Mode terang';
+});
+
+render();
+</script>
+</body>
+</html>

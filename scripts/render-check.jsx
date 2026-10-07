@@ -11,6 +11,7 @@ import { AppStoreProvider } from '../src/store/AppStore.jsx';
 import { ThemeProvider } from '../src/store/ThemeContext.jsx';
 import { LanguageProvider } from '../src/i18n/LanguageContext.jsx';
 import { QuestionnaireStoreProvider } from '../src/questionnaire/store/QuestionnaireStore.jsx';
+import { OrderStoreProvider } from '../src/orders/store/OrderStore.jsx';
 import { ToastProvider } from '../src/components/ui/Toast.jsx';
 import App from '../src/App.jsx';
 
@@ -19,6 +20,7 @@ const PUBLIC_ROUTES = ['/masuk', '/daftar', '/lupa-sandi', '/internal/masuk', '/
 const GUARDED_ROUTES = [
   '/portal/status',
   '/portal/beranda',
+  '/portal/order-confirmation',
   '/portal/profil',
   '/portal/akun',
   '/portal/persetujuan',
@@ -69,7 +71,11 @@ function render(route) {
           React.createElement(
             QuestionnaireStoreProvider,
             null,
-            React.createElement(ToastProvider, null, React.createElement(App)),
+            React.createElement(
+              OrderStoreProvider,
+              null,
+              React.createElement(ToastProvider, null, React.createElement(App)),
+            ),
           ),
         ),
       ),

@@ -108,50 +108,177 @@ Kata sandi apa pun diterima; yang diperiksa hanya email atau ID akun.
 |---|---|
 | `SUP-PAC-0131` | Profil lengkap, menunggu verifikasi dokumen |
 | `SUP-RAW-0118` | Pemasok aktif, bisa mengubah profil |
+| `SUP-PKG-0145` | Jalur B: profil disiapkan admin, menunggu pemasok meninjau dan menyetujui |
 
 ## Menelusuri kedua jalur
+
+Tangkapan layar tiap langkah di bawah tersedia pada `docs/screenshots/`, diambil
+langsung dari aplikasi ini dengan menelusuri kedua jalur dari ujung ke ujung
+memakai data contoh bawaan. Versi dokumen ini yang memuat gambarnya diterbitkan
+sebagai artifact terpisah.
 
 Setelah sebuah pengajuan disetujui, layar tinjauan menampilkan langkah **"Tugaskan
 kuesioner"** sebelum kedua tombol jalur onboarding aktif — lihat
 [Pokayoke penugasan kuesioner](#pokayoke-penugasan-kuesioner-sebelum-onboarding)
 di Bagian B. Kedua jalur di bawah ini sudah menyertakan langkah tersebut.
 
+> Tangkapan layar di dokumen ini diambil langsung dari aplikasi memakai data
+> contoh bawaan, dengan menelusuri kedua jalur dari ujung ke ujung. Karena data
+> hidup di memori, angka dan tanggalnya akan berbeda pada sesi Anda.
+>
+> Berkas gambarnya ada di `docs/screenshots/`. Versi dokumen yang gambarnya
+> tertanam — agar tetap tampil bila berkas ini dipindahkan keluar dari repo —
+> tersedia sebagai `README-dengan-gambar.md`.
+
 **Jalur A — undang pemasok**
 
 1. Masuk sebagai Staf Procurement, buka antrian, pilih pengajuan berstatus menunggu.
+
+![Langkah 1 — antrian Supplier request, pengajuan terpilih di sebelah kanan](docs/screenshots/a1-antrian.jpg)
+
+*Langkah 1 — antrian Supplier request, pengajuan terpilih di sebelah kanan*
+
 2. Buka ketiga tab (tombol keputusan terkunci sampai semuanya dibuka), lalu setujui.
+
+![Langkah 2 — ketiga tab dibuka, tombol keputusan terbuka di bawah](docs/screenshots/a2-tab-dibuka.jpg)
+
+*Langkah 2 — ketiga tab dibuka, tombol keputusan terbuka di bawah*
+
 3. Tekan **Tugaskan kuesioner**, pilih kuesioner terbit, tenggat, dan peninjau. Tanpa
    langkah ini kedua kartu jalur onboarding tetap terkunci.
+
+![Langkah 3 — kedua kartu jalur onboarding terkunci sebelum kuesioner ditugaskan](docs/screenshots/a3-jalur-terkunci.jpg)
+
+*Langkah 3 — kedua kartu jalur onboarding terkunci sebelum kuesioner ditugaskan*
+
+![Langkah 3 — dialog penugasan: peninjau di header, kuesioner sebagai baris](docs/screenshots/a4-dialog-tugaskan.jpg)
+
+*Langkah 3 — dialog penugasan: peninjau di header, kuesioner sebagai baris*
+
+![Langkah 3 — kuesioner tertugaskan, kedua kartu jalur terbuka](docs/screenshots/a5-jalur-terbuka.jpg)
+
+*Langkah 3 — kuesioner tertugaskan, kedua kartu jalur terbuka*
+
 4. Tekan **Kirim undangan**. Salin ID akun dan kata sandi sementara dari dialog.
+
+![Langkah 4 — ID akun dan kata sandi sementara beserta masa berlakunya](docs/screenshots/a6-kredensial.jpg)
+
+*Langkah 4 — ID akun dan kata sandi sementara beserta masa berlakunya*
+
 5. Keluar, masuk ke portal pemasok dengan ID akun tersebut, ganti kata sandi.
+
+![Langkah 5 — layar masuk portal pemasok, memakai ID akun dari dialog undangan](docs/screenshots/a5b-masuk-portal.jpg)
+
+*Langkah 5 — layar masuk portal pemasok, memakai ID akun dari dialog undangan*
+
+![Langkah 5 — kata sandi sementara hanya berlaku sekali; pemasok membuat sandi sendiri](docs/screenshots/a5-ganti-sandi.jpg)
+
+*Langkah 5 — kata sandi sementara hanya berlaku sekali; pemasok membuat sandi sendiri*
+
 6. Isi kelima bagian profil, setujui kedua pernyataan pada layar persetujuan.
+
+![Langkah 6 — profil perusahaan di portal pemasok, delapan bagian pada rail kiri](docs/screenshots/a7-profil-pemasok.jpg)
+
+*Langkah 6 — profil perusahaan di portal pemasok, delapan bagian pada rail kiri*
+
+![Langkah 6 — tab Status & riwayat memuat keadaan dan linimasa prosesnya](docs/screenshots/a7b-status-riwayat.jpg)
+
+*Langkah 6 — tab Status & riwayat memuat keadaan dan linimasa prosesnya*
+
 7. Masuk kembali sebagai staf, buka **Verifikasi dokumen**, setujui atau minta perbaikan
    field yang bermasalah satu per satu. Setelah disetujui, pemasok berstatus
    **Menunggu validasi kuesioner**.
+
+![Langkah 7 — checklist seluruh field profil, dikelompokkan per bagian](docs/screenshots/a8-verifikasi-dokumen.jpg)
+
+*Langkah 7 — checklist seluruh field profil, dikelompokkan per bagian*
+
 8. Buka **Tinjauan**, setujui kuesioner yang tadi ditugaskan. Begitu seluruhnya
    disetujui, pemasok pindah ke **Menunggu persetujuan manager**.
+
+![Langkah 8 — layar tinjauan: jawaban per seksi, skor, dan tombol keputusan](docs/screenshots/a9b-detail-tinjauan.jpg)
+
+*Langkah 8 — layar tinjauan: jawaban per seksi, skor, dan tombol keputusan*
+
 9. Keluar, masuk sebagai Manager Procurement (`lestari.handayani@paragon-corp.com`),
    buka **Persetujuan profil**. Buka kedua tab — profil dan hasil kuesioner —
    lalu setujui. Pemasok masuk tahap **Qualification**.
+
+![Langkah 9 — tab Profil pemasok; tombol keputusan terkunci sampai kedua tab dibuka](docs/screenshots/a10-persetujuan-manager.jpg)
+
+*Langkah 9 — tab Profil pemasok; tombol keputusan terkunci sampai kedua tab dibuka*
+
+![Langkah 9 — tab Hasil kuesioner beserta peninjau, keadaan, dan skor tiap kuesioner](docs/screenshots/a10b-tab-kuesioner.jpg)
+
+*Langkah 9 — tab Hasil kuesioner beserta peninjau, keadaan, dan skor tiap kuesioner*
+
 10. Masuk kembali sebagai staf, buka **Kualifikasi**, tetapkan cara pemilihan
     pemasok (open tender atau direct choose), isi barisnya, lalu selesaikan —
     pemasok langsung menjadi **Preferred**.
+
+![Langkah 10 — header cara pemilihan pemasok dan baris komoditas–negara](docs/screenshots/a11b-form-kualifikasi.jpg)
+
+*Langkah 10 — header cara pemilihan pemasok dan baris komoditas–negara*
+
 11. Keluar, masuk sebagai Master Data Management (`bayu.nugroho@paragon-corp.com`),
     buka **Kirim ke SAP**, lalu kirim atau minta revisi. Pemasok bertanda open
     tender akan tertahan sampai hasil tendernya awardee.
+
+![Langkah 11 — antrean kirim ke SAP beserta log kegagalan di bagian bawah](docs/screenshots/a12-kirim-ke-sap.jpg)
+
+*Langkah 11 — antrean kirim ke SAP beserta log kegagalan di bagian bawah*
+
 
 **Jalur B — registrasi internal**
 
 1. Masuk sebagai Staf Procurement atau Staf Procurement Admin — keduanya berwenang
    sama — lalu setujui sebuah pengajuan.
+
+![Jalur B langkah 1 — antrian pengajuan, dibuka sebagai Staf Procurement Admin](docs/screenshots/b1-antrian.jpg)
+
+*Jalur B langkah 1 — antrian pengajuan, dibuka sebagai Staf Procurement Admin*
+
 2. Tekan **Tugaskan kuesioner** terlebih dahulu, seperti pada Jalur A.
+
+![Jalur B langkah 2 — registrasi internal ikut terkunci sebelum kuesioner ditugaskan](docs/screenshots/b2-jalur-terkunci.jpg)
+
+*Jalur B langkah 2 — registrasi internal ikut terkunci sebelum kuesioner ditugaskan*
+
+![Jalur B langkah 2 — setelah kuesioner ditugaskan, kedua jalur terbuka](docs/screenshots/b2b-jalur-terbuka.jpg)
+
+*Jalur B langkah 2 — setelah kuesioner ditugaskan, kedua jalur terbuka*
+
 3. Pilih **Mulai registrasi internal**, tentukan asal dokumen (email atau WhatsApp).
+
+![Jalur B langkah 3 — dialog pemilihan asal dokumen](docs/screenshots/b3-dialog-asal-dokumen.jpg)
+
+*Jalur B langkah 3 — dialog pemilihan asal dokumen*
+
 4. Isi kelima bagian, lalu **Selesai dan kirim akun**. Akun pemasok langsung
    dibuat tanpa persetujuan manager pada langkah ini.
+
+![Jalur B langkah 4 — formulir registrasi internal, bagian Data pajak](docs/screenshots/b4-form-registrasi-internal.jpg)
+
+*Jalur B langkah 4 — formulir registrasi internal, bagian Data pajak*
+
 5. Masuk sebagai pemasok memakai ID akun tersebut untuk meninjau dan menyetujui.
+
+![Jalur B langkah 5 — pemasok membuka profil yang disiapkan tim Paragon](docs/screenshots/b5-tinjau-profil.jpg)
+
+*Jalur B langkah 5 — pemasok membuka profil yang disiapkan tim Paragon*
+
+![Jalur B langkah 5 — pernyataan kedua berbunyi "disiapkan oleh tim Paragon", berbeda dari Jalur A](docs/screenshots/b5b-persetujuan.jpg)
+
+*Jalur B langkah 5 — pernyataan kedua berbunyi "disiapkan oleh tim Paragon", berbeda dari Jalur A*
+
 6. Jalurnya lalu bertemu Jalur A: verifikasi dokumen, validasi kuesioner, dan
    **persetujuan manager** atas profil dan kuesioner sebelum qualification
-   terbuka.
+   terbuka — lihat langkah 7 sampai 11 di atas beserta tangkapan layarnya.
+
+![Jalur B langkah 6 — linimasa tahapan pemasok: kedua jalur menyatu mulai Registrasi](docs/screenshots/b6-tahapan-bertemu.jpg)
+
+*Jalur B langkah 6 — linimasa tahapan pemasok: kedua jalur menyatu mulai Registrasi*
+
 
 **Menelusuri preferred supplier dan pengiriman ke SAP**
 
@@ -528,6 +655,15 @@ Master Data Management mengirim data ke SAP:
 - Pemasok yang didiskualifikasi dapat dikembalikan ke tahap qualification, sehingga
   keputusan tidak menjadi jalan buntu.
 
+
+![Daftar preferred supplier — hanya status Preferred dan Disqualification yang tampil](docs/screenshots/m-preferred-daftar.jpg)
+
+*Daftar preferred supplier — hanya status Preferred dan Disqualification yang tampil*
+
+![Layar tinjauan: empat tab berkas, dan kartu Kirim ke SAP yang menjelaskan mengapa pengiriman tertahan](docs/screenshots/m-preferred-detail.jpg)
+
+*Layar tinjauan: empat tab berkas, dan kartu Kirim ke SAP yang menjelaskan mengapa pengiriman tertahan*
+
 ## Modul Kualifikasi Pemasok
 
 Setelah profil pemasok lolos periksa dan kuesionernya divalidasi, staf
@@ -572,6 +708,15 @@ komoditas **belum dicocokkan dengan daftar UNSPSC resmi** — nomor inilah yang
 terbawa ke sistem pengadaan dan pelaporan, jadi mintalah tim master data
 memverifikasinya sebelum dipakai di produksi. Menambah atau mengoreksi butir
 cukup dilakukan pada `UNSPSC_COMMODITIES`.
+
+
+![Daftar kualifikasi — hanya pemasok tahap Qualification dan Preferred yang muncul](docs/screenshots/m-kualifikasi-daftar.jpg)
+
+*Daftar kualifikasi — hanya pemasok tahap Qualification dan Preferred yang muncul*
+
+![Formulir kualifikasi: header cara pemilihan pemasok, lalu baris komoditas–negara](docs/screenshots/m-kualifikasi-form.jpg)
+
+*Formulir kualifikasi: header cara pemilihan pemasok, lalu baris komoditas–negara*
 
 ## Modul Questionnaire (Fase 1–7)
 
@@ -640,6 +785,19 @@ Rancangan lengkap termasuk skema basis data dan spesifikasi API ada pada
 dokumen proposal terpisah; keduanya artefak rancangan untuk tim backend,
 karena proyek ini tanpa server.
 
+
+![Daftar template beserta tipe, jenis material, versi terbit, dan statusnya](docs/screenshots/m-template-daftar.jpg)
+
+*Daftar template beserta tipe, jenis material, versi terbit, dan statusnya*
+
+![Detail template: informasi dasar dan riwayat versinya](docs/screenshots/m-template-detail.jpg)
+
+*Detail template: informasi dasar dan riwayat versinya*
+
+![Builder kanvas tiga kolom — kotak perkakas tipe soal, susunan seksi, panel properti](docs/screenshots/m-builder.jpg)
+
+*Builder kanvas tiga kolom — kotak perkakas tipe soal, susunan seksi, panel properti*
+
 ## Membuat template kuesioner
 
 Formulir informasi dasar memuat nama, tipe, deskripsi, jenis material, dan
@@ -664,6 +822,11 @@ sebagai larik `materialTypes`.
 bebas yang tidak dipakai aturan mana pun — sasaran pemasok tumpang tindih
 dengan jenis material, dan perkiraan waktu adalah tebakan yang tidak pernah
 diperbarui setelah pertanyaannya bertambah.
+
+
+![Formulir template: kode dibangkitkan otomatis dari nama, jenis material dapat dipilih lebih dari satu](docs/screenshots/m-template-baru.jpg)
+
+*Formulir template: kode dibangkitkan otomatis dari nama, jenis material dapat dipilih lebih dari satu*
 
 ## Menugaskan kuesioner
 
@@ -703,6 +866,15 @@ sedang dibuka.
 Aturan mana yang wajib, penolakan kuesioner ganda, dan bentuk galat per baris
 tinggal di satu berkas bersama `validateAssignmentRows()` — supaya kedua tempat
 tidak berbeda perlahan ketika salah satunya disunting.
+
+
+![Header pemasok dan peninjau di atas, lalu satu baris per kuesioner yang ditugaskan](docs/screenshots/m-penugasan-baru.jpg)
+
+*Header pemasok dan peninjau di atas, lalu satu baris per kuesioner yang ditugaskan*
+
+![Daftar penugasan memantau kemajuan pengisian dan menandai yang lewat tenggat](docs/screenshots/m-penugasan-daftar.jpg)
+
+*Daftar penugasan memantau kemajuan pengisian dan menandai yang lewat tenggat*
 
 ## Pokayoke penugasan kuesioner sebelum onboarding
 
@@ -954,6 +1126,11 @@ Sampai modul itu ada, `tenderOutcome` hanya dapat berubah lewat store — pada
 antarmuka nilainya tampil sebagai kolom baca-saja beserta keterangan mengapa
 pengirimannya tertahan.
 
+
+![Konsol MDM: antrean kirim, gerbang kelayakan, riwayat pengiriman, dan log kegagalan di bawahnya](docs/screenshots/m-sap-kirim.jpg)
+
+*Konsol MDM: antrean kirim, gerbang kelayakan, riwayat pengiriman, dan log kegagalan di bawahnya*
+
 ## Status Active / Blocked
 
 Terpisah dari tahapan onboarding, setiap pemasok punya status operasional
@@ -986,6 +1163,11 @@ memperlihatkan siapa saja yang tertinggal pada satu kuesioner tertentu, dan
 mengisi" — justru merekalah yang paling mudah terlewat bila daftarnya disusun
 dari penugasan yang ada.
 
+
+![KPI, tingkat respons, sebaran risiko, dan kepatuhan pengisian dalam satu layar](docs/screenshots/m-dashboard-kuesioner.jpg)
+
+*KPI, tingkat respons, sebaran risiko, dan kepatuhan pengisian dalam satu layar*
+
 ## Ringkasan pemasok
 
 `/internal/ringkasan-pemasok` menyatukan tiga hal yang selama ini tersebar:
@@ -1012,6 +1194,11 @@ sederhana, bukan `Math.random()`. Alasannya praktis: angka yang berubah tiap
 render membuat daftar berkedip dan saringan "sudah pernah order" tidak dapat
 dipercaya saat menelusuri demo. Satu berkas itu yang perlu diganti ketika
 integrasi tersedia.
+
+
+![Rencana kerja sama, aktivitas order dari SAP, dan status akun dalam satu daftar tersaring](docs/screenshots/m-ringkasan-pemasok.jpg)
+
+*Rencana kerja sama, aktivitas order dari SAP, dan status akun dalam satu daftar tersaring*
 
 ## Update data vendor (MMI001)
 

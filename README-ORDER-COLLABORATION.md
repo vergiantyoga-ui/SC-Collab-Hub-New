@@ -9,6 +9,9 @@ Keduanya dipisah karena isinya memang menjawab pertanyaan berbeda dan dibaca
 orang berbeda. `README.md` menjelaskan bagaimana pemasok masuk ke sistem;
 dokumen ini menjelaskan apa yang terjadi setelahnya.
 
+> Tangkapan layar di dokumen ini diambil langsung dari aplikasi memakai data
+> contoh bawaan. Berkas gambarnya ada di `docs/screenshots/`.
+>
 > ⚠️ **Seluruh dokumen order berasal dari SAP dan sambungannya belum ada.**
 > Proyek ini front-end saja. Yang dibangun adalah bentuk datanya, aturan
 > pengelompokannya, dan tampilannya — bukan integrasinya. Rinciannya pada
@@ -123,6 +126,182 @@ Pemasok yang belum punya PO sama sekali melihat keadaan kosong yang menjelaskan
 kapan pesanan akan muncul — bukan tujuh kartu bernilai nol, yang terbaca seperti
 kerusakan.
 
+
+![Beranda pemasok — tujuh kartu tahapan, nilai terealisasi, aging, dan antrean yang menunggu tindakan](docs/screenshots/oc-beranda-pemasok.jpg)
+
+*Beranda pemasok — tujuh kartu tahapan, nilai terealisasi, aging, dan antrean yang menunggu tindakan*
+
+## Order confirmation (portal pemasok)
+
+Kelompok menu **Order collaboration** pada portal pemasok berisi halaman
+**Order confirmation** (`/portal/order-confirmation`), tempat pemasok
+menanggapi purchase order dari Paragon.
+
+### Daftar PO
+
+Kepala halaman memakai ketujuh kartu tahapan yang sama dengan beranda, tetapi
+di sini kartunya **berfungsi ganda sebagai saringan**: menekan sebuah kartu
+menyaring tabel di bawahnya, menekannya lagi melepas saringan. Menaruh
+saringan terpisah dari kartu yang angkanya persis sama hanya membuat pengguna
+menebak apakah keduanya menghitung hal yang berbeda.
+
+Tabelnya memuat **PO number · Nama supplier · Order date · Delivery date ·
+Status · Amount**, dengan pencarian dan pengurutan. *Delivery date* diambil
+dari tanggal kirim terawal di antara baris itemnya — sebuah PO dapat memuat
+beberapa tanggal, dan yang paling awal itulah yang menentukan kapan pemasok
+harus mulai bergerak.
+
+Nomor PO dapat diklik dan membuka dokumennya.
+
+### Dokumen purchase order
+
+`/portal/order-confirmation/:poId` menampilkan PO dalam **bentuk dokumen yang
+sama dengan yang diterima pemasok lewat email**: kop Paragon, blok
+"Invoice to" dan "To", tabel item beserta harga satuan dan kuantitas, blok
+Subtotal/Untaxed/Taxes/Total, baris terbilang, lalu INCOTERM, termin
+pembayaran, dan alamat pengiriman.
+
+Bentuk itu sengaja ditiru, bukan diganti tata letak aplikasi sendiri: pemasok
+yang mencocokkan PO di portal dengan PO di emailnya tidak perlu menerjemahkan
+dua tampilan yang berbeda.
+
+**Unduh PDF** memakai dialog cetak peramban (`window.print()`) beserta gaya
+`@media print` yang menyembunyikan kerangka aplikasi. Pustaka PDF sengaja
+tidak dipakai: dokumen ini sudah berupa HTML yang tata letaknya persis seperti
+yang diinginkan, dan menambah pustaka berarti menulis ulang tata letak yang
+sama untuk kedua kalinya — dua salinan yang pasti menyimpang seiring waktu.
+Konsekuensinya, hasil unduhan bergantung pada dialog cetak peramban, dan
+pengguna memilih "Save as PDF" di sana.
+
+### Empat keputusan konfirmasi
+
+Tombol **Order confirmation** adalah **dropdown**, bukan dialog bertingkat:
+keempat pilihan beserta keterangannya muncul langsung di bawah tombolnya, lalu
+formulir yang dipilih terbuka sekali saja. Dialog yang isinya hanya empat
+tombol menambah satu lapis tanpa menambah keterangan apa pun.
+
+| Keputusan | Isinya | Tahapan PO setelahnya |
+|---|---|---|
+| **Confirm entire order** | Header konfirmasi saja | `Confirmed` |
+| **Update line items** | Tabel baris: kuantitas, tanggal kirim, tanggal terima | **Dihitung dari barisnya** |
+| **Propose changes** | Tabel baris: kuantitas, harga, tanggal kirim | **Tetap `Pending confirmation`** |
+| **Reject order** | Alasan penolakan | `Rejected` |
+
+**Tanggal pindah ke baris, bukan header.** Pada *update line items* estimasi
+tanggal kirim dan terima diisi per baris, karena satu PO dapat memuat material
+yang jadwalnya berbeda — satu tanggal di header memaksa pemasok memberi janji
+yang tidak akurat untuk sebagian barisnya.
+
+**Status baris tidak lagi dipilih, melainkan diturunkan dari kuantitas** lewat
+`lineStatusFor()`: nol berarti *Rejected*, penuh berarti *Confirmed*, di
+antaranya *Confirmed partial*. Membiarkan pemasok memilih status sekaligus
+mengetik kuantitas membuka peluang keduanya bertentangan, misalnya "Confirmed"
+dengan kuantitas nol.
+
+Tahapan PO pada *update line items* juga dihitung dari gabungan barisnya
+(`stageFromLines()`): seluruhnya nol berarti PO ditolak, seluruhnya penuh
+berarti dikonfirmasi, sisanya konfirmasi sebagian.
+
+**Propose changes tidak memakai header sama sekali.** Yang diusulkan adalah
+isi barisnya — kuantitas, harga satuan, dan tanggal kirim — bukan janji
+pengiriman, sehingga bidang header tidak punya arti di sana.
+
+**Kuantitas dan harga diketik sebagai teks, bukan `input type="number"`.**
+Menyimpannya sebagai angka memaksa tiap ketikan melewati `Number()`, sehingga
+"1" sempat menjadi `1`, dirender ulang, dan kursor melompat ke awal. Nilainya
+dibiarkan apa adanya selama mengetik dan baru ditafsirkan saat divalidasi.
+
+**Usulan perubahan sengaja tidak memindahkan tahapan.** Mengusulkan bukan
+berarti disetujui; PO tetap menunggu sampai Paragon menanggapi dan pemasok
+mengonfirmasi versi terbarunya. Aturannya ada pada `stageAfterConfirmation()`
+dan diuji terpisah.
+
+Header konfirmasinya mengikuti portal pemasok yang lazim: Confirmation #,
+Supplier reference, Est. shipping date, Est. delivery date, Est. shipping
+cost, Est. tax cost, dan Comments. **Confirmation # dibangkitkan dari nomor
+PO** dengan akhiran `OC` (`confirmationNumberFor()`), sehingga pemasok tidak
+perlu mencatat dua nomor berbeda — tetapi tetap dapat menggantinya dengan
+nomor sales order sendiri.
+
+Keadaan tiap baris mengikuti istilah yang sama: *Confirmed*, *Confirmed With
+New Date*, *Confirmed Partial*, *Backordered*, *Rejected*. Kolom tanggal baru
+hanya aktif bila keadaannya *Confirmed With New Date* — tanggal baru pada
+baris yang dikonfirmasi apa adanya tidak berarti apa-apa.
+
+**Validasi yang berlaku:**
+
+- *Confirm entire order*: estimasi tanggal kirim dan terima wajib diisi.
+- *Update line items*: tiap baris berkuantitas di atas nol wajib punya kedua
+  tanggalnya, dan kuantitas tidak boleh melebihi yang dipesan.
+- Tanggal terima tidak boleh mendahului tanggal kirim, di header maupun baris.
+- *Propose changes*: setidaknya satu baris harus benar-benar berubah, dan tiap
+  baris wajib punya kuantitas, harga, serta tanggal.
+- Penolakan dan usulan perubahan wajib beralasan, minimal 15 karakter.
+
+## Tinjauan konfirmasi (konsol internal)
+
+`/internal/konfirmasi-pemasok` menampilkan apa yang dikirim pemasok atas tiap
+purchase order.
+
+**Tiga dari empat jenis konfirmasi bersifat baca saja.** Menerima, menerima
+sebagian, atau menolak pesanan adalah hak pemasok; procurement tidak
+menyetujui keputusan itu, hanya melihatnya. Layarnya menyatakan hal itu secara
+terbuka lewat penanda "View only", bukan dengan tombol mati tanpa keterangan.
+
+**Yang menuntut keputusan hanyalah *propose changes*,** karena usulan harga,
+kuantitas, atau tanggal mengubah isi PO dan karenanya harus disepakati. Tabel
+usulannya menampilkan nilai lama dan usulan berdampingan — yang lama dicoret,
+yang baru ditebalkan — dan hanya baris yang benar-benar berubah yang diberi
+latar; baris lain ditandai *unchanged* supaya procurement tidak perlu
+membandingkan sendiri kolom demi kolom.
+
+| Keputusan | Tahapan PO | Muncul di kartu |
+|---|---|---|
+| **Decline changes** | `Changes rejected` | **New order** — pemasok harus menanggapi lagi |
+| **Approve changes** | `Changes approved` | **Order** |
+
+Penolakan wajib beralasan; persetujuan boleh tanpa catatan.
+
+### Sync setelah persetujuan
+
+Menyetujui usulan **tidak langsung mengubah PO**. Alur sesungguhnya: procurement
+memperbarui PO di SAP, lalu versi terbarunya ditarik kembali ke aplikasi. Karena
+itu persetujuan hanya memunculkan tombol **Sync this PO from SAP** pada halaman
+PO pemasok.
+
+Sync berlaku **untuk satu PO saja**, bukan seluruhnya: pembaruan massal akan
+menimpa PO lain yang sedang ditanggapi pemasok. Setelah ditarik, kuantitas,
+harga, dan tanggal baris mengikuti usulan yang disetujui, dan subtotal, pajak,
+serta total PO dihitung ulang.
+
+⚠️ Tanpa backend, "menarik dari SAP" berarti menerapkan nilai usulan yang
+disetujui langsung ke barisnya — itulah yang akan dikembalikan SAP setelah
+procurement memperbaruinya di sana.
+
+⚠️ Konfirmasi hanya hidup di memori. Pada sistem sungguhan ia dikirim balik ke
+SAP; di sini keadaannya kembali semula saat halaman disegarkan.
+
+
+![Daftar PO — kartu tahapan berfungsi sebagai saringan tabel di bawahnya](docs/screenshots/oc-list.jpg)
+
+*Daftar PO — kartu tahapan berfungsi sebagai saringan tabel di bawahnya*
+
+![Dokumen PO, tata letaknya meniru PO Paragon yang diterima pemasok lewat email](docs/screenshots/oc-po-detail.jpg)
+
+*Dokumen PO, tata letaknya meniru PO Paragon yang diterima pemasok lewat email*
+
+![Langkah pertama dialog: empat keputusan beserta keterangan singkatnya](docs/screenshots/oc-dialog-choices.jpg)
+
+*Langkah pertama dialog: empat keputusan beserta keterangan singkatnya*
+
+![Update line items — header konfirmasi di atas, baris item dengan kuantitas, status, dan tanggal baru](docs/screenshots/oc-dialog-lines.jpg)
+
+*Update line items — header konfirmasi di atas, baris item dengan kuantitas, status, dan tanggal baru*
+
+![Setelah konfirmasi terkirim: status PO berpindah dan ringkasannya muncul di atas dokumen](docs/screenshots/oc-after-confirm.jpg)
+
+*Setelah konfirmasi terkirim: status PO berpindah dan ringkasannya muncul di atas dokumen*
+
 ## Ringkasan order collaboration (internal)
 
 `/internal/order-collaboration` — ringkasan kedua pada kelompok **Beranda**.
@@ -162,6 +341,28 @@ masalah GR; mengukurnya dari tanggal PO akan menuduh langkah yang salah.
 | PO belum dibuatkan ASN | `confirmedAt` — pemasok mengonfirmasi |
 | GR belum dikonfirmasi | `grPostedAt` — GR terbentuk di SAP |
 
+
+![Ringkasan internal — kartu yang sama lintas pemasok, saringan jenis material, tiga aging, dan dokumen tertunggak](docs/screenshots/oc-ringkasan-internal.jpg)
+
+*Ringkasan internal — kartu yang sama lintas pemasok, saringan jenis material, tiga aging, dan dokumen tertunggak*
+
+## Bahasa status
+
+Seluruh status pada modul Order Collaboration ditulis dalam **bahasa Inggris** —
+`Pending confirmation`, `Partially confirmed`, `GR awaiting confirmation`,
+`Changes approved`, dan seterusnya — mengikuti istilah yang dipakai portal
+pemasok dan SAP.
+
+Alasannya dua: pemasok lintas negara membaca layar yang sama, dan istilah
+seperti *goods receipt* atau *backordered* memang tidak punya padanan Indonesia
+yang lazim di lingkungan procurement. Bagian aplikasi lain — registrasi,
+kualifikasi, kuesioner — tetap berbahasa Indonesia, karena pembacanya tim
+Paragon sendiri.
+
+Sebuah pemeriksaan (`E1`–`E4` pada `orders-check.mjs`) menjaga agar label
+tahapan, keadaan baris, dan keterangan kartu tidak diam-diam kembali ke bahasa
+Indonesia.
+
 ## Aturan aging
 
 Ember umurnya sama untuk seluruh grafik aging, didefinisikan sekali pada
@@ -195,9 +396,16 @@ src/orders/
   components/
     OrderVisuals.jsx   OrderCardGrid, BarChart, LineChart, formatIdr
     orders.css         kartu, grafik, tabel dokumen
+  store/
+    OrderStore.jsx       purchase order + keadaan konfirmasi (di memori)
   pages/
     SupplierOrderHome.jsx          beranda portal pemasok
+    SupplierOrderConfirmation.jsx  daftar PO + saringan kartu
+    PurchaseOrderDetail.jsx        dokumen PO, unduh PDF, konfirmasi
     OrderCollaborationSummary.jsx  ringkasan konsol internal
+    po-document.css                tata letak dokumen + aturan cetak
+  components/
+    OrderConfirmationDialog.jsx    dialog empat keputusan
 
 scripts/
   orders-check.mjs     35 pemeriksaan aturan murni
@@ -273,12 +481,13 @@ belum punya PO, dan ringkasan internal beserta kedua nama ringkasan pada menu.
 
 Modul ini baru sebatas **ringkasan**. Yang belum ada:
 
-- **Halaman daftar dan detail PO.** Kartunya belum dapat diklik menuju daftar
-  tersaring; `OrderCardGrid` sudah menerima prop `linkFor` untuk itu, tetapi
-  belum ada halaman tujuannya.
-- **Tindakan pemasok**: mengonfirmasi atau menolak PO, mengonfirmasi sebagian,
-  membuat ASN, mengonfirmasi GR, dan mengirim invoice. Seluruhnya menulis ke
-  SAP, jadi menunggu backend.
+- **Tindakan pemasok yang tersisa**: membuat ASN, mengonfirmasi GR, dan
+  mengirim invoice. Konfirmasi pesanan sudah ada; sisanya menulis ke SAP dan
+  menunggu backend.
+- **Pemberitahuan.** Pemasok tidak diberi tahu saat usulannya diputuskan;
+  ia harus membuka PO-nya sendiri untuk mengetahuinya.
+- **Riwayat konfirmasi.** Hanya konfirmasi terakhir yang tersimpan per PO,
+  sehingga putaran usulan–penolakan–usulan ulang tidak meninggalkan jejak.
 - **Unggahan dokumen** invoice dan faktur pajak.
 - **Notifikasi** untuk PO baru dan GR yang menunggu konfirmasi. Kerangkanya
   sudah ada pada modul kuesioner dan dapat dipakai ulang.

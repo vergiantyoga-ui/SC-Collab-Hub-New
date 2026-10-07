@@ -21,7 +21,9 @@ try {
       '--outfile=scripts/.e2e.built.cjs',
       '--loader:.css=empty',
     ],
-    { stdio: 'ignore' },
+    // Galat esbuild harus terlihat: dibungkam, kegagalan bundel muncul
+    // sebagai "ada pemeriksaan yang gagal" tanpa menyebut sebabnya.
+    { stdio: 'inherit' },
   );
   run('Registrasi end-to-end lewat store', process.execPath, ['scripts/.e2e.built.cjs']);
   run('Mesin questionnaire', process.execPath, ['scripts/questionnaire-check.mjs']);
@@ -42,7 +44,9 @@ try {
       '--outfile=scripts/.render-check.built.cjs',
       '--loader:.css=empty',
     ],
-    { stdio: 'ignore' },
+    // Galat esbuild harus terlihat: dibungkam, kegagalan bundel muncul
+    // sebagai "ada pemeriksaan yang gagal" tanpa menyebut sebabnya.
+    { stdio: 'inherit' },
   );
   run('Render halaman & guard akses', process.execPath, ['scripts/.render-check.built.cjs']);
 
@@ -58,7 +62,9 @@ try {
       '--outfile=scripts/.mdm-render-check.built.cjs',
       '--loader:.css=empty',
     ],
-    { stdio: 'ignore' },
+    // Galat esbuild harus terlihat: dibungkam, kegagalan bundel muncul
+    // sebagai "ada pemeriksaan yang gagal" tanpa menyebut sebabnya.
+    { stdio: 'inherit' },
   );
   run('Render halaman MDM & dashboard baru', process.execPath, [
     'scripts/.mdm-render-check.built.cjs',

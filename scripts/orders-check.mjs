@@ -16,8 +16,19 @@ import {
   spendByMaterialType,
   topSuppliers,
   totalValue,
+  CONFIRMATION_TYPE,
+  CONFIRMATION_LABEL,
+  LINE_STATUS,
+  LINE_STATUS_LABEL,
+  confirmationNumberFor,
+  stageAfterConfirmation,
+  stageAfterProposalDecision,
+  proposalLineChanged,
+  lineStatusFor,
+  PO_STAGE_LABEL,
 } from '../src/orders/orderRules.js';
 import { PURCHASE_ORDERS, ordersOf } from '../src/orders/orderMockData.js';
+
 
 let passed = 0;
 let failed = 0;
@@ -180,6 +191,103 @@ check('D8 ketujuh kartu terisi pada data contoh',
 check('D7 ASN hanya ada setelah tahap ASN',
   PURCHASE_ORDERS.filter((o) => o.stage === PO_STAGE.NEW).every((o) => o.asnNumber === null),
   true);
+
+/* ---------------- Konfirmasi pesanan ---------------- */
+
+check('K1 empat jenis keputusan tersedia', Object.keys(CONFIRMATION_TYPE).length, 4);
+check('K2 tiap keputusan punya label', Object.keys(CONFIRMATION_LABEL).length, 4);
+// Nomor konfirmasi dapat ditebak dari nomor PO, jadi pemasok tidak perlu
+// mencatat dua nomor berbeda.
+check('K3 nomor konfirmasi diturunkan dari nomor PO',
+  confirmationNumberFor('4500005176'), '4500005176OC');
+// Keadaan baris menyusut menjadi tiga karena kini diturunkan dari kuantitas,
+// bukan dipilih pemasok: nol, sebagian, penuh.
+check('K4 tiga keadaan baris tersedia', Object.keys(LINE_STATUS).length, 3);
+// Usulan perubahan tidak memindahkan tahapan: mengusulkan bukan disetujui.
+check('K6 usulan perubahan menahan PO tetap menunggu',
+  stageAfterConfirmation(CONFIRMATION_TYPE.PROPOSE_CHANGES), PO_STAGE.NEW);
+check('K7 konfirmasi penuh memindahkan ke dikonfirmasi',
+  stageAfterConfirmation(CONFIRMATION_TYPE.CONFIRM_ALL), PO_STAGE.CONFIRMED);
+check('K8 penolakan memindahkan ke ditolak',
+  stageAfterConfirmation(CONFIRMATION_TYPE.REJECT), PO_STAGE.REJECTED);
+// Tahapan PO kini dihitung dari barisnya, bukan ditetapkan datar.
+check('K9 sebagian baris dikurangi menjadi konfirmasi sebagian',
+  stageAfterConfirmation(CONFIRMATION_TYPE.UPDATE_LINES,
+    [{ confirmedQty: 2, orderedQty: 5 }, { confirmedQty: 3, orderedQty: 3 }]),
+  PO_STAGE.PARTIAL);
+check('K10 seluruh baris penuh menjadi dikonfirmasi',
+  stageAfterConfirmation(CONFIRMATION_TYPE.UPDATE_LINES,
+    [{ confirmedQty: 5, orderedQty: 5 }]),
+  PO_STAGE.CONFIRMED);
+// Seluruh baris nol sama saja dengan menolak pesanan.
+check('K11 seluruh baris nol menjadi ditolak',
+  stageAfterConfirmation(CONFIRMATION_TYPE.UPDATE_LINES,
+    [{ confirmedQty: 0, orderedQty: 5 }, { confirmedQty: 0, orderedQty: 3 }]),
+  PO_STAGE.REJECTED);
+check('K5 tiap keadaan baris punya label',
+  Object.values(LINE_STATUS).every((v) => Boolean(LINE_STATUS_LABEL[v])), true);
+
+/* ---------------- Dokumen PO ---------------- */
+
+const withLines = PURCHASE_ORDERS[0];
+check('L1 setiap PO punya baris item', PURCHASE_ORDERS.every((o) => o.lines.length > 0), true);
+// Total PO harus berasal dari barisnya; kalau tidak, dokumen dan kartu
+// beranda akan menampilkan angka yang berbeda untuk PO yang sama.
+check('L2 untaxed sama dengan jumlah baris',
+  PURCHASE_ORDERS.every((o) => o.untaxedAmount === o.lines.reduce((s, l) => s + l.amount, 0)),
+  true);
+check('L3 total sama dengan untaxed ditambah pajak',
+  PURCHASE_ORDERS.every((o) => o.amount === o.untaxedAmount + o.taxes), true);
+check('L4 tiap baris punya harga satuan dan kuantitas positif',
+  PURCHASE_ORDERS.every((o) => o.lines.every((l) => l.unitPrice > 0 && l.quantity > 0)), true);
+check('L5 nilai baris adalah harga satuan kali kuantitas',
+  PURCHASE_ORDERS.every((o) => o.lines.every((l) => l.amount === l.unitPrice * l.quantity)), true);
+// Baris pertama meniru formula pada PO Paragon: harga satuan besar, qty satu.
+check('L6 baris pertama berkuantitas satu',
+  PURCHASE_ORDERS.every((o) => o.lines[0].quantity === 1), true);
+check('L7 dokumen memuat bidang termin dan incoterm',
+  Boolean(withLines.incoterm && withLines.paymentTerms && withLines.deliveryTo && withLines.vendorCode),
+  true);
+
+/* ---------------- Status baris diturunkan dari kuantitas ---------------- */
+
+check('S1 kuantitas nol berarti ditolak', lineStatusFor(0, 10), LINE_STATUS.REJECTED);
+check('S2 kuantitas penuh berarti dikonfirmasi', lineStatusFor(10, 10), LINE_STATUS.CONFIRMED);
+check('S3 kuantitas di antaranya berarti sebagian', lineStatusFor(4, 10), LINE_STATUS.PARTIAL);
+// Kuantitas melebihi pesanan tetap dihitung penuh, bukan keadaan tersendiri.
+check('S4 kuantitas berlebih tetap dikonfirmasi', lineStatusFor(12, 10), LINE_STATUS.CONFIRMED);
+check('S5 nilai tak masuk akal dianggap ditolak', lineStatusFor('abc', 10), LINE_STATUS.REJECTED);
+
+/* ---------------- Keputusan usulan perubahan ---------------- */
+
+check('P1 usulan ditolak mengembalikan PO ke antrean pemasok',
+  stageAfterProposalDecision(false), PO_STAGE.CHANGES_REJECTED);
+check('P2 usulan disetujui menandai PO siap disinkronkan',
+  stageAfterProposalDecision(true), PO_STAGE.CHANGES_APPROVED);
+// Changes rejected harus muncul pada kartu New order supaya pemasok
+// menanggapinya lagi; changes approved pada kartu Order.
+const cardOf = (stage) => ORDER_CARDS.find((c) => c.stages.includes(stage)).id;
+check('P3 changes rejected masuk kartu new order', cardOf(PO_STAGE.CHANGES_REJECTED), 'new_order');
+check('P4 changes approved masuk kartu order', cardOf(PO_STAGE.CHANGES_APPROVED), 'order');
+
+check('P5 baris tanpa perubahan terdeteksi',
+  proposalLineChanged({ proposedQty: 5, orderedQty: 5, proposedPrice: 100, unitPrice: 100,
+    proposedDate: '2026-09-01', deliveryDate: '2026-09-01T00:00:00.000Z' }), false);
+check('P6 perubahan harga terdeteksi',
+  proposalLineChanged({ proposedQty: 5, orderedQty: 5, proposedPrice: 120, unitPrice: 100,
+    proposedDate: '2026-09-01', deliveryDate: '2026-09-01T00:00:00.000Z' }), true);
+
+/* ---------------- Seluruh label berbahasa Inggris ---------------- */
+
+const INDONESIAN = /\b(menunggu|dikonfirmasi|ditolak|sebagian|terkirim|siap|belum|sudah)\b/i;
+check('E1 label tahapan tidak berbahasa Indonesia',
+  Object.values(PO_STAGE_LABEL).filter((l) => INDONESIAN.test(l)), []);
+check('E2 label keadaan baris tidak berbahasa Indonesia',
+  Object.values(LINE_STATUS_LABEL).filter((l) => INDONESIAN.test(l)), []);
+check('E3 keterangan kartu tidak berbahasa Indonesia',
+  ORDER_CARDS.map((c) => c.description).filter((d) => INDONESIAN.test(d)), []);
+check('E4 setiap tahapan punya label', 
+  Object.values(PO_STAGE).every((st) => Boolean(PO_STAGE_LABEL[st])), true);
 
 console.log(`\n${passed} lolos, ${failed} gagal.\n`);
 if (failed > 0) process.exit(1);
