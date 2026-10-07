@@ -40,7 +40,7 @@ export const ASSIGNMENTS = [
     supplierId: 'SUP-2026-0118',
     supplierName: 'PT Kimia Prima Lestari',
     supplierSite: 'Pulogadung, Jakarta Timur',
-    dueDate: daysFromNow(5),
+    dueDate: daysFromNow(-4),
     reviewerId: 'usr-admin-1',
     reviewerName: 'Rangga Prasetyo',
     priority: 'high',
@@ -154,17 +154,33 @@ export const RESPONSES = [
       { at: daysAgo(3), label: 'Kuesioner dikirim', actor: 'Siti Aminah' },
     ],
   },
+  /*
+   * Kedua kuesioner PT Karton Sejati Abadi sengaja sudah terkirim.
+   *
+   * Gerbang persetujuan manager hanya terbuka setelah SELURUH kuesioner yang
+   * ditugaskan disetujui. Selama salah satunya masih berstatus sedang diisi,
+   * tidak ada pemasok contoh yang dapat mencapai gerbang itu — fiturnya lalu
+   * tidak dapat ditelusuri sama sekali saat demo.
+   */
   {
     id: 'res_0004',
     assignmentId: 'asg_0004',
-    status: RESPONSE_STATUS.IN_PROGRESS,
+    status: RESPONSE_STATUS.SUBMITTED,
     startedAt: daysAgo(25),
-    submittedAt: null,
-    answers: { q_animal_company: 'PT Karton Sejati Abadi' },
+    submittedAt: daysAgo(2),
+    answers: {
+      q_animal_company: 'PT Karton Sejati Abadi',
+      q_animal_material: 'Karton gelombang B-flute',
+      q_animal_contains: 'no',
+      q_animal_rep: 'Siti Aminah',
+    },
     attachments: {},
     revision: 1,
     reviews: [],
-    history: [{ at: daysAgo(25), label: 'Pengisian dimulai', actor: 'Siti Aminah' }],
+    history: [
+      { at: daysAgo(25), label: 'Pengisian dimulai', actor: 'Siti Aminah' },
+      { at: daysAgo(2), label: 'Kuesioner dikirim', actor: 'Siti Aminah' },
+    ],
   },
 ];
 
