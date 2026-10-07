@@ -69,7 +69,7 @@ export default function PurchaseOrderDetail() {
   const submission = useCurrentSubmission();
 
   const state = useOrderState();
-  const { submitConfirmation, syncFromSap } = useOrderActions();
+  const { submitConfirmation } = useOrderActions();
 
   const order = findOrder(state, poId);
   const confirmation = state.confirmations[poId];
@@ -109,7 +109,6 @@ export default function PurchaseOrderDetail() {
     order.stage,
   );
   const proposal = confirmation?.proposal;
-  const canSync = proposal?.status === PROPOSAL_STATUS.APPROVED && !order.syncedAt;
 
   function handleSubmit(payload) {
     submitConfirmation(order.id, payload, submission.contact?.name ?? 'Pemasok');
@@ -190,22 +189,16 @@ export default function PurchaseOrderDetail() {
               />
             )}
 
-            {canSync && (
+            {/*
+              * Penarikan dari SAP dilakukan tim procurement, bukan pemasok:
+              * merekalah yang memperbarui PO di SAP, jadi merekalah yang tahu
+              * kapan versi barunya siap ditarik. Pemasok hanya menunggu.
+              */}
+            {proposal.status === PROPOSAL_STATUS.APPROVED && !order.syncedAt && (
               <div className="notice notice--info" style={{ marginTop: 'var(--sp-3)' }}>
-                <span className="notice__title">Purchase order updated in SAP</span>
-                Procurement has approved the changes and updated the order in SAP. Pull the
-                revised lines into this order.
-                <div style={{ marginTop: 'var(--sp-3)' }}>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      syncFromSap(order.id, submission.contact?.name ?? 'Supplier');
-                      toast.success(`Purchase order ${order.poNumber} synced from SAP.`);
-                    }}
-                  >
-                    Sync this PO from SAP
-                  </Button>
-                </div>
+                <span className="notice__title">Awaiting updated purchase order</span>
+                Procurement has approved your changes and is updating the order in SAP.
+                The revised lines appear here once they pull the update.
               </div>
             )}
 

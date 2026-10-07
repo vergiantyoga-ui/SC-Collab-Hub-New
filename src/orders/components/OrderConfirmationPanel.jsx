@@ -16,23 +16,16 @@ import {
 const todayIso = () => new Date().toISOString().slice(0, 10);
 const dateOnly = (iso) => (iso ? String(iso).slice(0, 10) : '');
 
+/*
+ * Keterangan tiap pilihan sengaja tidak ditampilkan di dropdown: label-nya
+ * sudah menjelaskan dirinya, dan paragraf di dalam menu membuat daftar empat
+ * baris menjadi blok teks yang justru lebih lambat dibaca.
+ */
 const CHOICES = [
-  {
-    type: CONFIRMATION_TYPE.CONFIRM_ALL,
-    hint: 'Accept all quantities and dates as ordered.',
-    tone: 'success',
-  },
-  {
-    type: CONFIRMATION_TYPE.UPDATE_LINES,
-    hint: 'Accept partially — set confirmed quantity and dates per line.',
-    tone: 'progress',
-  },
-  {
-    type: CONFIRMATION_TYPE.PROPOSE_CHANGES,
-    hint: 'Propose different quantity, price, or delivery date for review.',
-    tone: 'pending',
-  },
-  { type: CONFIRMATION_TYPE.REJECT, hint: 'Decline the whole order with a reason.', tone: 'danger' },
+  { type: CONFIRMATION_TYPE.CONFIRM_ALL, tone: 'success' },
+  { type: CONFIRMATION_TYPE.UPDATE_LINES, tone: 'progress' },
+  { type: CONFIRMATION_TYPE.PROPOSE_CHANGES, tone: 'pending' },
+  { type: CONFIRMATION_TYPE.REJECT, tone: 'danger' },
 ];
 
 /**
@@ -95,10 +88,7 @@ export default function OrderConfirmationPanel({ order, onSubmit }) {
                 }}
               >
                 <span className={`ocmenu__dot ocmenu__dot--${c.tone}`} aria-hidden="true" />
-                <span>
-                  <strong>{CONFIRMATION_LABEL[c.type]}</strong>
-                  <small>{c.hint}</small>
-                </span>
+                <span>{CONFIRMATION_LABEL[c.type]}</span>
               </button>
             ))}
           </div>
@@ -337,9 +327,21 @@ function ConfirmationForm({ order, choice, onClose, onSubmit }) {
                             inputMode="numeric"
                             value={l.confirmedQty}
                             aria-label={`Confirmed quantity line ${l.no}`}
-                            onChange={(e) =>
-                              setLine(l.no, { confirmedQty: e.target.value.replace(/[^\d]/g, '') })
-                            }
+                            onChange={(e) => {
+                              /*
+                               * Dibatasi saat mengetik, bukan hanya saat
+                               * dikirim: pemasok tidak dapat menjanjikan lebih
+                               * banyak daripada yang dipesan, dan menahannya
+                               * di akhir berarti ia sempat mengisi angka yang
+                               * tidak pernah mungkin diterima.
+                               */
+                              const digits = e.target.value.replace(/[^\d]/g, '');
+                              const capped =
+                                digits === '' || Number(digits) <= l.orderedQty
+                                  ? digits
+                                  : String(l.orderedQty);
+                              setLine(l.no, { confirmedQty: capped });
+                            }}
                           />
                         </td>
                         <td>
@@ -408,7 +410,7 @@ function ConfirmationForm({ order, choice, onClose, onSubmit }) {
                           {l.orderedQty} {l.unit}
                         </span>
                         <span className="order-table__meta">
-                          @ {l.unitPrice.toLocaleString('id-ID')}
+                          @ Rp {l.unitPrice.toLocaleString('id-ID')}
                         </span>
                         <span className="order-table__meta">{dateOnly(l.deliveryDate)}</span>
                       </td>

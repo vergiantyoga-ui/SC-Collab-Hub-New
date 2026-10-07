@@ -27,8 +27,14 @@ import { formatIdr } from '../components/OrderVisuals.jsx';
 import { formatDate, formatDateTime } from '../../lib/format.js';
 import './po-document.css';
 
+/*
+ * Saringan bawaan memuat seluruh pekerjaan yang masih menuntut procurement:
+ * usulan yang belum diputuskan, DAN usulan yang sudah disetujui tetapi PO-nya
+ * belum ditarik dari SAP. Tanpa yang kedua, PO menghilang dari daftar begitu
+ * disetujui dan tombol sync-nya tidak pernah terjangkau.
+ */
 const FILTERS = [
-  { id: 'proposals', label: 'Awaiting decision' },
+  { id: 'todo', label: 'Needs action' },
   { id: 'all', label: 'All confirmations' },
 ];
 
@@ -48,10 +54,10 @@ const dateOnly = (v) => (v ? String(v).slice(0, 10) : '');
 export default function ConfirmationReview() {
   const { submissions, session } = useAppState();
   const state = useOrderState();
-  const { decideProposal } = useOrderActions();
+  const { decideProposal, syncFromSap } = useOrderActions();
   const toast = useToast();
 
-  const [filter, setFilter] = useState('proposals');
+  const [filter, setFilter] = useState('todo');
   const [selectedId, setSelectedId] = useState(null);
   const [deciding, setDeciding] = useState(null); // 'approve' | 'reject'
   const [note, setNote] = useState('');
@@ -66,9 +72,12 @@ export default function ConfirmationReview() {
       order: state.orders.find((o) => o.id === poId),
     }));
     const live = all.filter((r) => r.order);
-    return filter === 'proposals'
-      ? live.filter((r) => r.record.proposal?.status === PROPOSAL_STATUS.PENDING)
-      : live;
+    if (filter === 'all') return live;
+    return live.filter(
+      (r) =>
+        r.record.proposal?.status === PROPOSAL_STATUS.PENDING ||
+        (r.record.proposal?.status === PROPOSAL_STATUS.APPROVED && !r.order.syncedAt),
+    );
   }, [state, filter]);
 
   const selected = rows.find((r) => r.poId === selectedId) ?? rows[0] ?? null;
@@ -125,8 +134,8 @@ export default function ConfirmationReview() {
         <div className="card">
           <EmptyState
             title={
-              filter === 'proposals'
-                ? 'No proposals awaiting a decision'
+              filter === 'todo'
+                ? 'Nothing needs your action'
                 : 'No supplier confirmations yet'
             }
             description="Confirmations appear here as soon as a supplier responds to a purchase order in their portal."
@@ -336,10 +345,30 @@ export default function ConfirmationReview() {
                       {proposal.note}
                       {proposal.status === PROPOSAL_STATUS.APPROVED && (
                         <div style={{ marginTop: 'var(--sp-2)' }}>
-                          Perbarui PO ini di SAP, lalu pemasok menariknya lewat tombol sync
-                          pada halaman PO-nya.
-                          {selected.order.syncedAt && (
-                            <strong> Sudah ditarik {formatDateTime(selected.order.syncedAt)}.</strong>
+                          {selected.order.syncedAt ? (
+                            <>
+                              Purchase order sudah ditarik dari SAP{' '}
+                              {formatDateTime(selected.order.syncedAt)} ·{' '}
+                              {selected.order.syncedBy}.
+                            </>
+                          ) : (
+                            <>
+                              Perbarui PO ini di SAP, lalu tarik versi terbarunya ke sini.
+                              Pemasok melihat perubahannya setelah penarikan selesai.
+                              <div style={{ marginTop: 'var(--sp-3)' }}>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    syncFromSap(selected.poId, user?.name ?? '');
+                                    toast.success(
+                                      `Purchase order ${selected.order.poNumber} synced from SAP.`,
+                                    );
+                                  }}
+                                >
+                                  Sync this PO from SAP
+                                </Button>
+                              </div>
+                            </>
                           )}
                         </div>
                       )}

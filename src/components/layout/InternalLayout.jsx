@@ -39,10 +39,16 @@ export default function InternalLayout() {
     (item) => item.status === 'submitted' || item.status === 'under_review',
   ).length;
   const isMdm = user.role === ROLE.MDM;
-  // Usulan perubahan yang menunggu keputusan procurement.
-  const pendingProposals = Object.values(orderState.confirmations).filter(
-    (c) => c.proposal?.status === 'pending',
-  ).length;
+  /*
+   * Pekerjaan procurement pada konfirmasi pemasok: usulan yang belum
+   * diputuskan, ditambah usulan yang sudah disetujui tetapi PO-nya belum
+   * ditarik dari SAP. Keduanya sama-sama belum selesai.
+   */
+  const pendingProposals = Object.entries(orderState.confirmations).filter(([poId, c]) => {
+    if (c.proposal?.status === 'pending') return true;
+    if (c.proposal?.status !== 'approved') return false;
+    return !orderState.orders.find((o) => o.id === poId)?.syncedAt;
+  }).length;
   // Pemasok preferred yang belum terkirim ke SAP — antrean kerja tim MDM.
   const awaitingSap = submissions.filter(
     (item) =>
