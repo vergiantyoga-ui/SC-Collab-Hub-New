@@ -36,7 +36,7 @@ const CHOICES = [
  * keterangan apa pun; dropdown menampilkan keempatnya langsung di bawah
  * tombolnya, lalu formulir yang dipilih terbuka sekali saja.
  */
-export default function OrderConfirmationPanel({ order, onSubmit }) {
+export default function OrderConfirmationPanel({ order, onSubmit, disabled = false, disabledReason }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [choice, setChoice] = useState(null);
   const wrapRef = useRef(null);
@@ -69,6 +69,8 @@ export default function OrderConfirmationPanel({ order, onSubmit }) {
           className="btn btn--primary"
           aria-expanded={menuOpen}
           aria-haspopup="menu"
+          disabled={disabled}
+          title={disabled ? disabledReason : undefined}
           onClick={() => setMenuOpen((v) => !v)}
         >
           Order confirmation ▾

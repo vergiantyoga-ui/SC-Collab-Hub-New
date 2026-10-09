@@ -82,6 +82,11 @@ export default function InternalLayout() {
           icon: 'verify',
           count: pendingProposals,
         },
+        {
+          to: '/internal/asn',
+          label: 'Advanced shipping notice',
+          icon: 'document',
+        },
       ],
     },
     {

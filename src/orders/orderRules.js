@@ -416,3 +416,103 @@ export function proposalLineChanged(line) {
     (line.proposedDate || '') !== (line.deliveryDate || '').slice(0, 10)
   );
 }
+
+/* ------------------------------------------------------------------
+   Advanced Shipping Notice (ASN)
+   ------------------------------------------------------------------ */
+
+/** Tahapan PO yang boleh dibuatkan ASN: hanya yang sudah dikonfirmasi. */
+export const ASN_ELIGIBLE_STAGES = [PO_STAGE.CONFIRMED, PO_STAGE.PARTIAL];
+
+export const canCreateAsn = (stage) => ASN_ELIGIBLE_STAGES.includes(stage);
+
+/**
+ * Konfirmasi pesanan masih dapat diubah selama belum seluruhnya diterima.
+ *
+ * PO berstatus `Confirmed` tidak lagi punya baris yang tersisa untuk
+ * dikonfirmasi, jadi tombolnya dimatikan; `Partially confirmed` masih punya.
+ */
+export const canConfirmOrder = (stage) =>
+  [PO_STAGE.NEW, PO_STAGE.PARTIAL, PO_STAGE.CHANGES_REJECTED].includes(stage);
+
+const isoDate = (v) => (v ? String(v).slice(0, 10) : '');
+
+/**
+ * Kuantitas dan tanggal yang dikonfirmasi pemasok untuk tiap baris PO —
+ * titik acuan ASN dan nilai yang dipakai tombol auto fill.
+ *
+ * Sumbernya bergantung pada cara PO dikonfirmasi:
+ * - *update line items*: kuantitas dan tanggal terima per baris;
+ * - *confirm entire order*: kuantitas penuh, tanggal terima dari header;
+ * - tanpa catatan konfirmasi (PO yang sudah berstatus confirmed dari SAP):
+ *   kuantitas penuh dan tanggal kirim asli PO.
+ */
+export function confirmedBaseline(order, confirmation) {
+  return order.lines.map((line) => {
+    const fromLines = confirmation?.type === CONFIRMATION_TYPE.UPDATE_LINES
+      ? confirmation.lines.find((l) => l.no === line.no)
+      : null;
+
+    if (fromLines) {
+      return {
+        no: line.no,
+        qty: Number(fromLines.confirmedQty) || 0,
+        date: isoDate(fromLines.lineDeliveryDate) || isoDate(line.deliveryDate),
+      };
+    }
+    if (confirmation?.type === CONFIRMATION_TYPE.CONFIRM_ALL) {
+      return {
+        no: line.no,
+        qty: line.quantity,
+        date: isoDate(confirmation.header?.deliveryDate) || isoDate(line.deliveryDate),
+      };
+    }
+    return { no: line.no, qty: line.quantity, date: isoDate(line.deliveryDate) };
+  });
+}
+
+/**
+ * Nomor ASN, diturunkan dari nomor PO dan urutannya.
+ * Satu PO dapat dikirim bertahap, jadi tiap ASN diberi urutan sendiri.
+ */
+export const asnNumberFor = (poNumber, sequence) =>
+  `ASN-${poNumber}-${String(sequence).padStart(2, '0')}`;
+
+/**
+ * Validasi ASN.
+ *
+ * Kuantitas kirim tidak boleh melebihi yang dikonfirmasi — pemasok tidak dapat
+ * mengirim lebih dari yang ia janjikan. Baris berkuantitas nol dianggap tidak
+ * ikut dikirim, tetapi setidaknya satu baris harus terkirim. Batch,
+ * tanggal produksi, dan kedaluwarsa opsional; bila keduanya diisi,
+ * kedaluwarsa harus setelah produksi.
+ *
+ * @returns {Record<string, string>} galat per kunci (`lines`, `l<no>`, …)
+ */
+export function validateAsn(lines, baseline) {
+  const found = {};
+  let shipped = 0;
+
+  lines.forEach((line) => {
+    const base = baseline.find((b) => b.no === line.no);
+    const qty = Number(line.qty);
+    if (line.qty === '' || line.qty == null || !Number.isFinite(qty) || qty < 0) {
+      found[`l${line.no}`] = `Line ${line.no}: quantity is required.`;
+      return;
+    }
+    if (base && qty > base.qty) {
+      found[`l${line.no}`] = `Line ${line.no}: cannot ship more than the confirmed ${base.qty}.`;
+      return;
+    }
+    if (qty > 0) {
+      shipped += 1;
+      if (!line.date) found[`l${line.no}`] = `Line ${line.no}: delivery date is required.`;
+    }
+    if (line.manufDate && line.expiryDate && line.expiryDate <= line.manufDate) {
+      found[`l${line.no}x`] = `Line ${line.no}: expiry date must be after manufacturing date.`;
+    }
+  });
+
+  if (shipped === 0) found.lines = 'At least one line must have a quantity to ship.';
+  return found;
+}

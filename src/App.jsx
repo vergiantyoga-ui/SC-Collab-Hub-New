@@ -22,6 +22,7 @@ import InternalAccount from './pages/internal/InternalAccount.jsx';
 import ManagementReview from './pages/internal/ManagementReview.jsx';
 import OrderCollaborationSummary from './orders/pages/OrderCollaborationSummary.jsx';
 import ConfirmationReview from './orders/pages/ConfirmationReview.jsx';
+import AsnList from './orders/pages/AsnList.jsx';
 import SupplierOrderHome from './orders/pages/SupplierOrderHome.jsx';
 import SupplierOrderConfirmation from './orders/pages/SupplierOrderConfirmation.jsx';
 import PurchaseOrderDetail from './orders/pages/PurchaseOrderDetail.jsx';
@@ -116,6 +117,7 @@ export default function App() {
         <Route path="persetujuan-profil" element={<ManagementReview />} />
         <Route path="order-collaboration" element={<OrderCollaborationSummary />} />
         <Route path="konfirmasi-pemasok" element={<ConfirmationReview />} />
+        <Route path="asn" element={<AsnList />} />
         <Route path="sap" element={<SapReview />} />
         {/* Log kegagalan kini menjadi bagian dari halaman Kirim ke SAP. */}
         <Route path="sap/log" element={<Navigate to="/internal/sap" replace />} />

@@ -379,3 +379,34 @@
 .prop-changed {
   background: color-mix(in srgb, var(--blue-600) 5%, transparent);
 }
+
+/* ---- Formulir ASN ---- */
+/* Dua belas kolom tidak muat pada lebar modal biasa. */
+.modal.modal--asn {
+  width: min(1240px, 100%);
+}
+.asn-readonly {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunk);
+  font-weight: 600;
+}
+.asn-lines th,
+.asn-lines td {
+  vertical-align: middle;
+}
+.asn-lines .asn-group {
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+}
+/* Kolom yang diisi pemasok diberi latar supaya terbedakan dari kolom
+   acuan yang hanya dibaca. */
+.asn-lines .asn-group--input {
+  background: color-mix(in srgb, var(--blue-600) 6%, transparent);
+}
+.asn-lines .oc-qty { min-width: 80px; }
+.asn-lines .oc-date { min-width: 130px; }
+.nowrap { white-space: nowrap; }
+.asn-short { color: #b45309; font-weight: 600; }

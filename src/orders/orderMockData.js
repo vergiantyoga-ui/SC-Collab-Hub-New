@@ -167,6 +167,8 @@ function ordersForSupplier(submission, index) {
         : ((ls % 20) + 1) * 270;
       return {
         no: li + 1,
+        /* Nomor material SAP, deterministik dari seed — dibutuhkan ASN. */
+        materialNumber: `${isFormula ? '2' : '3'}${String(ls % 10000000).padStart(7, '0')}`,
         item: `${tpl.item} ${tpl.suffix}`.trim(),
         description: `${project}\n${tpl.item}`,
         note: 'Sample Material - PM',

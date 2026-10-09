@@ -3,8 +3,10 @@ import { PURCHASE_ORDERS } from '../orderMockData.js';
 import {
   stageAfterConfirmation,
   stageAfterProposalDecision,
+  asnNumberFor,
   CONFIRMATION_TYPE,
   PROPOSAL_STATUS,
+  PO_STAGE,
 } from '../orderRules.js';
 
 /**
@@ -43,6 +45,8 @@ const initialState = {
   orders: PURCHASE_ORDERS,
   /** poId → catatan konfirmasi. */
   confirmations: {},
+  /** Seluruh ASN yang dibuat pemasok, terbaru di depan. */
+  asns: [],
 };
 
 function reducer(state, action) {
@@ -115,6 +119,17 @@ function reducer(state, action) {
         ),
       };
     }
+
+    case 'CREATE_ASN':
+      return {
+        ...state,
+        asns: [action.asn, ...state.asns],
+        // ASN dibuat berarti barang dalam perjalanan: PO pindah ke kartu
+        // "Order to goods receipt", menunggu GR.
+        orders: state.orders.map((o) =>
+          o.id === action.asn.poId ? { ...o, stage: PO_STAGE.ASN_CREATED } : o,
+        ),
+      };
 
     case 'RESET':
       return initialState;
@@ -191,6 +206,31 @@ export function OrderStoreProvider({ children }) {
        */
       syncFromSap(poId, actor) {
         dispatch({ type: 'SYNC_PO', poId, actor: actor ?? '', at: now() });
+      },
+
+      /**
+       * Pemasok membuat ASN atas PO yang sudah dikonfirmasi.
+       *
+       * Nomornya dihitung dari jumlah ASN yang sudah ada untuk PO itu — dibaca
+       * dari argumen, bukan dari closure, karena aksi ini dibuat sekali dan
+       * state di closure-nya basi.
+       */
+      createAsn({ order, existingCount, attachment, lines }, actor) {
+        dispatch({
+          type: 'CREATE_ASN',
+          asn: {
+            id: `asn-${order.id}-${existingCount + 1}`,
+            asnNumber: asnNumberFor(order.poNumber, existingCount + 1),
+            poId: order.id,
+            poNumber: order.poNumber,
+            supplierId: order.supplierId,
+            supplierName: order.supplierName,
+            attachment: attachment ?? null,
+            lines,
+            createdAt: now(),
+            createdBy: actor ?? '',
+          },
+        });
       },
 
       reset: () => dispatch({ type: 'RESET' }),

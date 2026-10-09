@@ -19,8 +19,12 @@ import {
   PROPOSAL_STATUS_LABEL,
   PROPOSAL_STATUS_TONE,
   lineStatusFor,
+  canCreateAsn,
+  canConfirmOrder,
 } from '../orderRules.js';
+import { useState } from 'react';
 import OrderConfirmationPanel from '../components/OrderConfirmationPanel.jsx';
+import CreateAsnForm from '../components/CreateAsnForm.jsx';
 import { formatDate, formatDateTime } from '../../lib/format.js';
 import './po-document.css';
 
@@ -69,7 +73,8 @@ export default function PurchaseOrderDetail() {
   const submission = useCurrentSubmission();
 
   const state = useOrderState();
-  const { submitConfirmation } = useOrderActions();
+  const { submitConfirmation, createAsn } = useOrderActions();
+  const [asnOpen, setAsnOpen] = useState(false);
 
   const order = findOrder(state, poId);
   const confirmation = state.confirmations[poId];
@@ -102,12 +107,14 @@ export default function PurchaseOrderDetail() {
   }
 
   /*
-   * Pemasok dapat menanggapi PO yang menunggu, yang baru sebagian, dan yang
-   * usulan perubahannya ditolak — ketiganya sama-sama belum tuntas.
+   * Order confirmation tetap tampil selama PO dapat dikonfirmasi, dan
+   * ditampilkan tetapi dimatikan bila PO sudah dikonfirmasi penuh — tombol
+   * yang tiba-tiba hilang membuat pemasok mengira halamannya rusak.
    */
-  const canConfirm = [PO_STAGE.NEW, PO_STAGE.PARTIAL, PO_STAGE.CHANGES_REJECTED].includes(
-    order.stage,
-  );
+  const canConfirm = canConfirmOrder(order.stage);
+  const showConfirm = canConfirm || order.stage === PO_STAGE.CONFIRMED;
+  const asnAllowed = canCreateAsn(order.stage);
+  const asnsForPo = state.asns.filter((a) => a.poId === order.id);
   const proposal = confirmation?.proposal;
 
   function handleSubmit(payload) {
@@ -132,7 +139,19 @@ export default function PurchaseOrderDetail() {
             <Button variant="secondary" onClick={() => window.print()}>
               Download PDF
             </Button>
-            {canConfirm && <OrderConfirmationPanel order={order} onSubmit={handleSubmit} />}
+            {asnAllowed && (
+              <Button variant="secondary" onClick={() => setAsnOpen(true)}>
+                Create ASN
+              </Button>
+            )}
+            {showConfirm && (
+              <OrderConfirmationPanel
+                order={order}
+                onSubmit={handleSubmit}
+                disabled={!canConfirm}
+                disabledReason="All lines are already confirmed."
+              />
+            )}
           </div>
         }
       />
@@ -209,6 +228,58 @@ export default function PurchaseOrderDetail() {
             )}
           </div>
         </div>
+      )}
+
+      {asnsForPo.length > 0 && (
+        <div className="card po-noprint" style={{ marginBottom: 'var(--sp-4)' }}>
+          <div className="card__head">
+            <h2 className="card__title">Advanced shipping notices</h2>
+          </div>
+          <div className="card__body table-scroll">
+            <table className="order-table">
+              <thead>
+                <tr>
+                  <th>ASN number</th>
+                  <th>Created</th>
+                  <th>Lines</th>
+                  <th>Attachment</th>
+                </tr>
+              </thead>
+              <tbody>
+                {asnsForPo.map((a) => (
+                  <tr key={a.id}>
+                    <td className="order-table__strong">{a.asnNumber}</td>
+                    <td>{formatDateTime(a.createdAt)}</td>
+                    <td>
+                      {a.lines.map((l) => (
+                        <span key={l.no} className="order-table__meta">
+                          {l.materialNumber} · {l.shipQty} {l.unit} · {formatDate(l.shipDate)}
+                        </span>
+                      ))}
+                    </td>
+                    <td>{a.attachment?.name ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {asnOpen && (
+        <CreateAsnForm
+          order={order}
+          confirmation={confirmation}
+          onClose={() => setAsnOpen(false)}
+          onSubmit={(payload) => {
+            createAsn(
+              { order, existingCount: asnsForPo.length, ...payload },
+              submission.contact?.name ?? 'Supplier',
+            );
+            setAsnOpen(false);
+            toast.success(`ASN created for PO ${order.poNumber}.`);
+          }}
+        />
       )}
 
       {/* ---------- Dokumen PO ---------- */}
