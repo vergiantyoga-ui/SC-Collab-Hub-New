@@ -187,6 +187,7 @@ const CASES = [
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'New order' },
   // Layar tinjauan konfirmasi pemasok.
   { email: STAFF_EMAIL, route: '/internal/konfirmasi-pemasok', expect: 'Supplier order confirmations' },
+  { email: STAFF_EMAIL, route: '/internal/asn', expect: 'Advanced shipping notices' },
   { email: STAFF_EMAIL, route: '/internal/beranda', expect: '/internal/konfirmasi-pemasok' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Item to confirm' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Order to goods receipt' },

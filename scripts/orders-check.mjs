@@ -26,6 +26,11 @@ import {
   proposalLineChanged,
   lineStatusFor,
   PO_STAGE_LABEL,
+  canCreateAsn,
+  canConfirmOrder,
+  confirmedBaseline,
+  validateAsn,
+  asnNumberFor,
 } from '../src/orders/orderRules.js';
 import { PURCHASE_ORDERS, ordersOf } from '../src/orders/orderMockData.js';
 
@@ -288,6 +293,48 @@ check('E3 keterangan kartu tidak berbahasa Indonesia',
   ORDER_CARDS.map((c) => c.description).filter((d) => INDONESIAN.test(d)), []);
 check('E4 setiap tahapan punya label', 
   Object.values(PO_STAGE).every((st) => Boolean(PO_STAGE_LABEL[st])), true);
+
+/* ---------------- Advanced shipping notice ---------------- */
+
+check('N1 ASN hanya untuk PO confirmed', canCreateAsn(PO_STAGE.CONFIRMED), true);
+check('N2 ASN untuk PO partially confirmed', canCreateAsn(PO_STAGE.PARTIAL), true);
+check('N3 ASN tidak untuk PO yang belum dikonfirmasi', canCreateAsn(PO_STAGE.NEW), false);
+// Confirmed penuh tidak punya baris tersisa untuk dikonfirmasi; partial masih.
+check('N4 order confirmation mati untuk confirmed', canConfirmOrder(PO_STAGE.CONFIRMED), false);
+check('N5 order confirmation hidup untuk partial', canConfirmOrder(PO_STAGE.PARTIAL), true);
+
+const poX = { lines: [
+  { no: 1, quantity: 10, deliveryDate: '2026-10-01T00:00:00.000Z' },
+  { no: 2, quantity: 5, deliveryDate: '2026-10-02T00:00:00.000Z' },
+] };
+check('N6 tanpa catatan konfirmasi memakai nilai PO',
+  confirmedBaseline(poX, null).map((b) => [b.qty, b.date]),
+  [[10, '2026-10-01'], [5, '2026-10-02']]);
+check('N7 confirm entire order memakai tanggal header',
+  confirmedBaseline(poX, { type: CONFIRMATION_TYPE.CONFIRM_ALL, header: { deliveryDate: '2026-10-09' } })
+    .map((b) => b.date), ['2026-10-09', '2026-10-09']);
+check('N8 update line items memakai kuantitas dan tanggal per baris',
+  confirmedBaseline(poX, { type: CONFIRMATION_TYPE.UPDATE_LINES, lines: [
+    { no: 1, confirmedQty: 6, lineDeliveryDate: '2026-10-07' },
+    { no: 2, confirmedQty: 0, lineDeliveryDate: '' },
+  ] }).map((b) => b.qty), [6, 0]);
+
+const baseX = confirmedBaseline(poX, null);
+check('N9 ASN tidak boleh melebihi yang dikonfirmasi',
+  Boolean(validateAsn([{ no: 1, qty: '11', date: '2026-10-01' }, { no: 2, qty: '0' }], baseX).l1), true);
+check('N10 ASN harus mengirim setidaknya satu baris',
+  Boolean(validateAsn([{ no: 1, qty: '0' }, { no: 2, qty: '0' }], baseX).lines), true);
+check('N11 baris dikirim wajib bertanggal',
+  Boolean(validateAsn([{ no: 1, qty: '3', date: '' }, { no: 2, qty: '0' }], baseX).l1), true);
+check('N12 kedaluwarsa harus setelah produksi',
+  Boolean(validateAsn([{ no: 1, qty: '3', date: '2026-10-01', manufDate: '2026-09-01',
+    expiryDate: '2026-08-01' }, { no: 2, qty: '0' }], baseX).l1x), true);
+// Batch, tanggal produksi, dan kedaluwarsa opsional.
+check('N13 ASN sah tanpa batch dan tanggal produksi',
+  Object.keys(validateAsn([{ no: 1, qty: '3', date: '2026-10-01' }, { no: 2, qty: '0' }], baseX)).length, 0);
+check('N14 nomor ASN berurutan per PO', asnNumberFor('4500110191', 2), 'ASN-4500110191-02');
+check('N15 setiap baris PO punya nomor material',
+  PURCHASE_ORDERS.every((o) => o.lines.every((l) => /^\d{8}$/.test(l.materialNumber))), true);
 
 console.log(`\n${passed} lolos, ${failed} gagal.\n`);
 if (failed > 0) process.exit(1);
