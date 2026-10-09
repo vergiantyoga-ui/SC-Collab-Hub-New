@@ -176,9 +176,13 @@ pengguna memilih "Save as PDF" di sana.
 ### Empat keputusan konfirmasi
 
 Tombol **Order confirmation** adalah **dropdown**, bukan dialog bertingkat:
-keempat pilihan beserta keterangannya muncul langsung di bawah tombolnya, lalu
-formulir yang dipilih terbuka sekali saja. Dialog yang isinya hanya empat
-tombol menambah satu lapis tanpa menambah keterangan apa pun.
+keempat pilihan muncul langsung di bawah tombolnya, lalu formulir yang dipilih
+terbuka sekali saja. Dialog yang isinya hanya empat tombol menambah satu lapis
+tanpa menambah keterangan apa pun.
+
+Daftarnya memuat **label saja, tanpa keterangan**. Labelnya sudah menjelaskan
+dirinya, dan paragraf di dalam menu mengubah daftar empat baris menjadi blok
+teks yang justru lebih lambat dibaca.
 
 | Keputusan | Isinya | Tahapan PO setelahnya |
 |---|---|---|
@@ -211,6 +215,16 @@ Menyimpannya sebagai angka memaksa tiap ketikan melewati `Number()`, sehingga
 "1" sempat menjadi `1`, dirender ulang, dan kursor melompat ke awal. Nilainya
 dibiarkan apa adanya selama mengetik dan baru ditafsirkan saat divalidasi.
 
+**Kuantitas yang dikonfirmasi dibatasi saat mengetik**, bukan ditolak saat
+dikirim: pemasok tidak dapat menjanjikan lebih banyak daripada yang dipesan,
+dan menahannya sampai akhir berarti ia sempat mengisi angka yang tidak pernah
+mungkin diterima. Mengetik 9999 pada baris berkuantitas 1 langsung terpotong
+menjadi 1.
+
+Pada *propose changes*, kolom **Ordered** menampilkan harga satuan lama beserta
+satuan mata uangnya (`@ Rp 4.166.000`), supaya tidak terbaca sebagai kuantitas
+saat disandingkan dengan kolom kuantitas di sebelahnya.
+
 **Usulan perubahan sengaja tidak memindahkan tahapan.** Mengusulkan bukan
 berarti disetujui; PO tetap menunggu sampai Paragon menanggapi dan pemasok
 mengonfirmasi versi terbarunya. Aturannya ada pada `stageAfterConfirmation()`
@@ -237,6 +251,78 @@ baris yang dikonfirmasi apa adanya tidak berarti apa-apa.
 - *Propose changes*: setidaknya satu baris harus benar-benar berubah, dan tiap
   baris wajib punya kuantitas, harga, serta tanggal.
 - Penolakan dan usulan perubahan wajib beralasan, minimal 15 karakter.
+
+## Advanced shipping notice (ASN)
+
+PO berstatus **Confirmed** atau **Partially confirmed** menampilkan tombol
+**Create ASN** di samping Order confirmation.
+
+Tombol **Order confirmation dimatikan pada PO Confirmed** — seluruh barisnya
+sudah diterima, jadi tidak ada yang tersisa untuk dikonfirmasi. Tombolnya tetap
+tampil, tidak dihilangkan: tombol yang tiba-tiba lenyap membuat pemasok mengira
+halamannya rusak. Pada *Partially confirmed* tombolnya tetap aktif, karena masih
+ada baris yang belum diterima penuh. Aturannya pada `canConfirmOrder()` dan
+`canCreateAsn()`.
+
+### Isi formulir
+
+**Header:** nomor PO (baca saja) dan lampiran opsional — surat jalan, packing
+list, atau COA. Lampiran memakai `FileField` yang sama dengan bagian lain
+aplikasi, sehingga aturan PDF/JPG/PNG, 2 MB, dan nama berkas berlaku otomatis.
+
+**Baris item** menampilkan tiga pasang nilai berdampingan:
+
+| Kelompok | Kolom | Diisi oleh |
+|---|---|---|
+| Ordered (PO) | Qty, delivery date | Baca saja |
+| Confirmed | Qty, delivery date | Baca saja |
+| **Ship now** | **Qty \*, delivery date \*** | **Pemasok** |
+| — | UoM | Baca saja |
+| — | Supplier batch, manuf. date, expiry date | Pemasok, opsional |
+
+Kolom *Ship now* diberi latar biru supaya terbedakan dari kolom acuan yang
+hanya dibaca.
+
+**Nilai *Confirmed* diturunkan menurut cara PO dikonfirmasi** (`confirmedBaseline()`):
+dari baris pada *update line items*, dari tanggal header pada *confirm entire
+order*, atau dari nilai PO asli bila PO sudah berstatus confirmed langsung dari
+SAP tanpa catatan konfirmasi di aplikasi ini.
+
+### Auto fill
+
+Tombol **Auto fill from confirmation** mengisi kuantitas dan tanggal kirim
+setiap baris dengan nilai *Confirmed*.
+
+Kolom kirim sengaja **dimulai kosong**, bukan terisi otomatis. Mengisinya
+otomatis membuat ASN dapat dikirim tanpa pemasok benar-benar memeriksa apa yang
+ia muat ke truk; tombol auto fill tetap tersedia untuk kasus yang memang
+mengirim seluruhnya sesuai konfirmasi, tetapi menekannya adalah keputusan sadar.
+
+### Aturan
+
+- Kuantitas kirim **dibatasi saat mengetik** agar tidak melebihi yang
+  dikonfirmasi — pemasok tidak dapat mengirim lebih dari yang ia janjikan.
+- Baris yang dikonfirmasi nol dimatikan; baris berkuantitas kirim nol tidak
+  ikut dicatat di ASN.
+- Setidaknya satu baris harus dikirim, dan tiap baris yang dikirim wajib
+  bertanggal.
+- Bila tanggal produksi dan kedaluwarsa sama-sama diisi, kedaluwarsa harus
+  setelah produksi.
+- Nomor ASN berurutan per PO (`ASN-4500110310-01`, `-02`, …) karena satu PO
+  dapat dikirim bertahap.
+
+Setelah ASN dibuat, PO pindah ke tahapan `ASN created, awaiting GR` — kartu
+**Order to goods receipt**.
+
+### Tampilan internal
+
+`/internal/asn` menampilkan seluruh ASN dalam mode **baca saja**: ASN adalah
+pemberitahuan dari pemasok, bukan dokumen yang disetujui Paragon, dan
+penerimaan barangnya dicatat lewat goods receipt di SAP.
+
+Yang ditonjolkan adalah **selisih antara yang dikonfirmasi dan yang dikirim**:
+baris yang dikirim kurang dari konfirmasinya diberi keterangan "*N* short of
+confirmed", karena itulah yang perlu diketahui procurement sebelum barang tiba.
 
 ## Tinjauan konfirmasi (konsol internal)
 
@@ -266,8 +352,15 @@ Penolakan wajib beralasan; persetujuan boleh tanpa catatan.
 
 Menyetujui usulan **tidak langsung mengubah PO**. Alur sesungguhnya: procurement
 memperbarui PO di SAP, lalu versi terbarunya ditarik kembali ke aplikasi. Karena
-itu persetujuan hanya memunculkan tombol **Sync this PO from SAP** pada halaman
-PO pemasok.
+itu persetujuan memunculkan tombol **Sync this PO from SAP** pada layar
+procurement — **bukan pada portal pemasok**. Merekalah yang memperbarui PO di
+SAP, jadi merekalah yang tahu kapan versi barunya siap ditarik; pemasok hanya
+melihat keterangan bahwa pembaruannya sedang disiapkan.
+
+Karena itu saringan bawaan layar ini bernama **Needs action** dan memuat dua
+hal: usulan yang belum diputuskan, dan usulan yang sudah disetujui tetapi
+PO-nya belum ditarik. Tanpa yang kedua, PO menghilang dari daftar begitu
+disetujui dan tombol sync-nya tidak pernah terjangkau.
 
 Sync berlaku **untuk satu PO saja**, bukan seluruhnya: pembaruan massal akan
 menimpa PO lain yang sedang ditanggapi pemasok. Setelah ditarik, kuantitas,
@@ -481,9 +574,12 @@ belum punya PO, dan ringkasan internal beserta kedua nama ringkasan pada menu.
 
 Modul ini baru sebatas **ringkasan**. Yang belum ada:
 
-- **Tindakan pemasok yang tersisa**: membuat ASN, mengonfirmasi GR, dan
-  mengirim invoice. Konfirmasi pesanan sudah ada; sisanya menulis ke SAP dan
-  menunggu backend.
+- **Tindakan pemasok yang tersisa**: mengonfirmasi GR dan mengirim invoice.
+  Konfirmasi pesanan dan ASN sudah ada; sisanya menulis ke SAP dan menunggu
+  backend.
+- **ASN bertahap pada PO yang sama.** Nomor ASN sudah berurutan, tetapi setelah
+  ASN pertama PO pindah ke `ASN created` dan tombol Create ASN hilang. Kiriman
+  susulan untuk sisa kuantitas belum dapat dibuat.
 - **Pemberitahuan.** Pemasok tidak diberi tahu saat usulannya diputuskan;
   ia harus membuka PO-nya sendiri untuk mengetahuinya.
 - **Riwayat konfirmasi.** Hanya konfirmasi terakhir yang tersimpan per PO,
