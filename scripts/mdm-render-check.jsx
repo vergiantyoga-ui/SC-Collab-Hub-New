@@ -186,9 +186,10 @@ const CASES = [
   // Ketujuh kartu tahapan pada ringkasan order collaboration.
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'New order' },
   // Layar tinjauan konfirmasi pemasok.
-  { email: STAFF_EMAIL, route: '/internal/konfirmasi-pemasok', expect: 'Supplier order confirmations' },
-  { email: STAFF_EMAIL, route: '/internal/asn', expect: 'Advanced shipping notices' },
-  { email: STAFF_EMAIL, route: '/internal/beranda', expect: '/internal/konfirmasi-pemasok' },
+  // Konfirmasi pemasok dan ASN digabung ke ringkasan; tautan lama diarahkan ke sana.
+  { email: STAFF_EMAIL, route: '/internal/konfirmasi-pemasok', expect: 'Ringkasan order collaboration' },
+  { email: STAFF_EMAIL, route: '/internal/asn', expect: 'Ringkasan order collaboration' },
+  { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Supplier response' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Item to confirm' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Order to goods receipt' },
   { email: STAFF_EMAIL, route: '/internal/order-collaboration', expect: 'Order to invoice' },
@@ -470,6 +471,24 @@ try {
   );
 } catch (error) {
   check('menu verifikasi dokumen disembunyikan dari manager', false, error.message);
+}
+
+// Menu Konfirmasi pemasok dan ASN sudah dilebur ke ringkasan order
+// collaboration; tautannya tidak boleh muncul lagi di menu samping.
+try {
+  const text = renderAs(STAFF_EMAIL, '/internal/beranda');
+  check(
+    'menu konfirmasi pemasok dan ASN sudah dilebur',
+    // Keluaran render berupa JSON pohon komponen, jadi tautan muncul sebagai
+    // "href":"/internal/asn" — bukan href="…". Pola yang salah membuat
+    // pemeriksaan ini selalu lolos tanpa memeriksa apa pun.
+    !text.includes('"/internal/konfirmasi-pemasok"') &&
+      !text.includes('"/internal/asn"') &&
+      text.includes('"/internal/order-collaboration"'),
+    'tautan menu lama masih muncul',
+  );
+} catch (error) {
+  check('menu konfirmasi pemasok dan ASN sudah dilebur', false, error.message);
 }
 
 console.log(

@@ -208,9 +208,10 @@ check('K3 nomor konfirmasi diturunkan dari nomor PO',
 // Keadaan baris menyusut menjadi tiga karena kini diturunkan dari kuantitas,
 // bukan dipilih pemasok: nol, sebagian, penuh.
 check('K4 tiga keadaan baris tersedia', Object.keys(LINE_STATUS).length, 3);
-// Usulan perubahan tidak memindahkan tahapan: mengusulkan bukan disetujui.
-check('K6 usulan perubahan menahan PO tetap menunggu',
-  stageAfterConfirmation(CONFIRMATION_TYPE.PROPOSE_CHANGES), PO_STAGE.NEW);
+// Usulan perubahan memindahkan PO ke "changes proposed": pemasok sudah
+// menanggapi, dan yang ditunggu sekarang keputusan procurement.
+check('K6 usulan perubahan menjadi changes proposed',
+  stageAfterConfirmation(CONFIRMATION_TYPE.PROPOSE_CHANGES), PO_STAGE.CHANGES_PROPOSED);
 check('K7 konfirmasi penuh memindahkan ke dikonfirmasi',
   stageAfterConfirmation(CONFIRMATION_TYPE.CONFIRM_ALL), PO_STAGE.CONFIRMED);
 check('K8 penolakan memindahkan ke ditolak',
@@ -274,6 +275,17 @@ check('P2 usulan disetujui menandai PO siap disinkronkan',
 const cardOf = (stage) => ORDER_CARDS.find((c) => c.stages.includes(stage)).id;
 check('P3 changes rejected masuk kartu new order', cardOf(PO_STAGE.CHANGES_REJECTED), 'new_order');
 check('P4 changes approved masuk kartu order', cardOf(PO_STAGE.CHANGES_APPROVED), 'order');
+// Usulan yang menunggu keputusan dan PO yang ditolak pemasok sama-sama
+// terlihat dari kartu Order; PO ber-ASN dari kartu Order to goods receipt.
+check('P7 changes proposed masuk kartu order', cardOf(PO_STAGE.CHANGES_PROPOSED), 'order');
+check('P8 PO ditolak pemasok masuk kartu order', cardOf(PO_STAGE.REJECTED), 'order');
+check('P9 partially confirmed masuk kartu item to confirm',
+  ORDER_CARDS.find((c) => c.id === 'item_to_confirm').stages.includes(PO_STAGE.PARTIAL), true);
+check('P10 PO ber-ASN masuk kartu order to goods receipt',
+  ORDER_CARDS.find((c) => c.id === 'order_to_gr').stages.includes(PO_STAGE.ASN_CREATED), true);
+// Pemasok tidak dapat mengonfirmasi lagi selama usulannya sedang ditinjau.
+check('P11 order confirmation mati selama usulan ditinjau',
+  canConfirmOrder(PO_STAGE.CHANGES_PROPOSED), false);
 
 check('P5 baris tanpa perubahan terdeteksi',
   proposalLineChanged({ proposedQty: 5, orderedQty: 5, proposedPrice: 100, unitPrice: 100,
