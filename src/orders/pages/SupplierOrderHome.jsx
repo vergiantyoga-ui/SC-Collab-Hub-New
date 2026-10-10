@@ -5,7 +5,7 @@ import Button from '../../components/ui/Button.jsx';
 import EmptyState from '../../components/ui/EmptyState.jsx';
 import StatusBadge from '../../components/ui/StatusBadge.jsx';
 import { useCurrentSubmission } from '../../store/AppStore.jsx';
-import { ordersOf } from '../orderMockData.js';
+import { ordersOfSupplier, useOrderState } from '../store/OrderStore.jsx';
 import {
   PO_STAGE,
   PO_STAGE_LABEL,
@@ -36,7 +36,13 @@ export default function SupplierOrderHome() {
   const t = useT();
   const submission = useCurrentSubmission();
 
-  const orders = useMemo(() => ordersOf(submission.id), [submission.id]);
+  // Dibaca dari store, bukan data contoh mentah — kalau tidak, konfirmasi dan
+  // ASN yang dikirim pemasok tidak pernah tercermin pada kartu berandanya.
+  const orderState = useOrderState();
+  const orders = useMemo(
+    () => ordersOfSupplier(orderState, submission.id),
+    [orderState, submission.id],
+  );
   const cards = useMemo(() => summariseOrderCards(orders), [orders]);
 
   const invoiced = orders.filter((order) => order.stage === PO_STAGE.INVOICED);

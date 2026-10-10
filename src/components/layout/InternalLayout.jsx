@@ -75,17 +75,8 @@ export default function InternalLayout() {
           to: '/internal/order-collaboration',
           label: 'Ringkasan order collaboration',
           icon: 'queue',
-        },
-        {
-          to: '/internal/konfirmasi-pemasok',
-          label: 'Konfirmasi pemasok',
-          icon: 'verify',
+          // Lencana pindah ke sini bersama tinjauan usulan perubahan.
           count: pendingProposals,
-        },
-        {
-          to: '/internal/asn',
-          label: 'Advanced shipping notice',
-          icon: 'document',
         },
       ],
     },

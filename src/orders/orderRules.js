@@ -34,6 +34,11 @@ export const PO_STAGE = {
   /** Invoice sudah dikirim pemasok. */
   INVOICED: 'invoiced',
   /**
+   * Pemasok mengusulkan perubahan; menunggu keputusan procurement. PO sudah
+   * ditanggapi pemasok, jadi terhitung pada kartu Order, bukan New order.
+   */
+  CHANGES_PROPOSED: 'changes_proposed',
+  /**
    * Usulan perubahan dari pemasok ditolak procurement. PO kembali menunggu
    * tanggapan pemasok, jadi ikut terhitung pada kartu New order.
    */
@@ -60,6 +65,7 @@ export const PO_STAGE_LABEL = {
   [PO_STAGE.GR_POSTED]: 'GR awaiting confirmation',
   [PO_STAGE.GR_CONFIRMED]: 'Ready to invoice',
   [PO_STAGE.INVOICED]: 'Invoice submitted',
+  [PO_STAGE.CHANGES_PROPOSED]: 'Changes proposed',
   [PO_STAGE.CHANGES_REJECTED]: 'Changes rejected',
   [PO_STAGE.CHANGES_APPROVED]: 'Changes approved',
 };
@@ -73,6 +79,7 @@ export const PO_STAGE_TONE = {
   [PO_STAGE.GR_POSTED]: 'pending',
   [PO_STAGE.GR_CONFIRMED]: 'progress',
   [PO_STAGE.INVOICED]: 'success',
+  [PO_STAGE.CHANGES_PROPOSED]: 'pending',
   [PO_STAGE.CHANGES_REJECTED]: 'danger',
   [PO_STAGE.CHANGES_APPROVED]: 'progress',
 };
@@ -100,7 +107,7 @@ export const ORDER_CARDS = [
   {
     id: 'order',
     label: 'Order',
-    description: 'Confirmed, rejected, or with approved changes',
+    description: 'Confirmed, rejected, or with proposed changes',
     stages: [
       PO_STAGE.CONFIRMED,
       PO_STAGE.REJECTED,
@@ -108,6 +115,7 @@ export const ORDER_CARDS = [
       PO_STAGE.GR_POSTED,
       PO_STAGE.GR_CONFIRMED,
       PO_STAGE.INVOICED,
+      PO_STAGE.CHANGES_PROPOSED,
       PO_STAGE.CHANGES_APPROVED,
     ],
     tone: 'neutral',
@@ -370,15 +378,17 @@ export const confirmationNumberFor = (poNumber) => `${poNumber}OC`;
 /**
  * Tahapan PO setelah sebuah keputusan konfirmasi.
  *
- * Usulan perubahan sengaja tidak memindahkan tahapan: mengusulkan bukan
- * berarti disetujui, dan PO tetap menunggu sampai Paragon menanggapinya.
+ * Usulan perubahan memindahkan PO ke `Changes proposed`, bukan ke
+ * `Confirmed`: mengusulkan bukan berarti disetujui. Tahapan itu terhitung
+ * pada kartu Order karena pemasok sudah menanggapi; yang ditunggu kini
+ * keputusan procurement.
  */
 export function stageAfterConfirmation(type, lines = []) {
   if (type === CONFIRMATION_TYPE.UPDATE_LINES) return stageFromLines(lines);
   return {
     [CONFIRMATION_TYPE.CONFIRM_ALL]: PO_STAGE.CONFIRMED,
     [CONFIRMATION_TYPE.REJECT]: PO_STAGE.REJECTED,
-    [CONFIRMATION_TYPE.PROPOSE_CHANGES]: PO_STAGE.NEW,
+    [CONFIRMATION_TYPE.PROPOSE_CHANGES]: PO_STAGE.CHANGES_PROPOSED,
   }[type];
 }
 

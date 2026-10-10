@@ -145,7 +145,14 @@ function ConfirmationForm({ order, choice, onClose, onSubmit }) {
       deliveryDate: l.deliveryDate,
       confirmedQty: String(l.quantity),
       shippingDate: todayIso(),
-      lineDeliveryDate: dateOnly(l.deliveryDate),
+      /*
+       * Tanggal terima bawaan adalah tanggal PO, tetapi tidak pernah lebih awal
+       * dari hari ini. Tanpa batas itu, PO yang tanggal kirimnya sudah lewat
+       * menghasilkan nilai bawaan yang gagal validasinya sendiri — tanggal
+       * terima sebelum tanggal kirim — dan pemasok ditolak tanpa mengubah apa pun.
+       */
+      lineDeliveryDate:
+        dateOnly(l.deliveryDate) > todayIso() ? dateOnly(l.deliveryDate) : todayIso(),
       proposedQty: String(l.quantity),
       proposedPrice: String(l.unitPrice),
       proposedDate: dateOnly(l.deliveryDate),
@@ -470,9 +477,9 @@ function ConfirmationForm({ order, choice, onClose, onSubmit }) {
 
         {isPropose && (
           <div className="notice notice--info">
-            <span className="notice__title">The order stays pending</span>
-            Proposing is not the same as agreeing. Paragon procurement reviews the
-            proposal first; the order only moves once they decide.
+            <span className="notice__title">Awaiting procurement review</span>
+            Proposing is not the same as agreeing. The order is marked as changes
+            proposed until Paragon procurement approves or declines it.
           </div>
         )}
 

@@ -410,3 +410,35 @@
 .asn-lines .oc-date { min-width: 130px; }
 .nowrap { white-space: nowrap; }
 .asn-short { color: #b45309; font-weight: 600; }
+
+/* ---- Pusat kerja order collaboration (internal) ---- */
+.needs-action {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.needs-action--on { outline: 2px solid #b45309; outline-offset: -1px; }
+.row-action { background: color-mix(in srgb, #b45309 6%, transparent); }
+.row-selected { outline: 2px solid var(--blue-600); outline-offset: -2px; }
+.po-link--button {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.decision-box {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-sunk);
+}
+.asn-block + .asn-block {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-4);
+  border-top: 1px solid var(--line);
+}
